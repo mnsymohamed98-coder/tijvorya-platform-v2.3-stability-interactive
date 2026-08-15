@@ -1,0 +1,36 @@
+Tijvorya Platform v1.6.0 — تقرير التحقق
+تاريخ الفحص: 21 July 2026
+
+النتائج:
+[PASS] TypeScript: npm run typecheck
+[PASS] ESLint: npm run lint
+[PASS] Production Build: npm run build (Next.js 16.2.10 / webpack)
+[PASS] توليد 90 صفحة ثابتة ومسارات ديناميكية وProxy.
+
+اختبار التشغيل HTTP:
+[200] /ar
+[200] /ar/login
+[200] /ar/register
+[200] /ar/forgot-password
+[200] /ar/merchant/store
+[200] /ar/store/urban-select
+[200] /assets/ai-commerce-dashboard.webp
+[200] /api/health
+
+اختبار معالجة روابط 404 القديمة:
+[307] /store/urban-select -> /ar/store/urban-select
+[307] /ar/merchant/store/urban-select -> /ar/store/urban-select
+
+التحقق الوظيفي المنفذ:
+- استبدال صورة Hero في الشاشة الرئيسية بالصورة الجديدة.
+- إضافة Google OAuth إلى تسجيل الدخول والتسجيل ودخول الإدارة.
+- إضافة /auth/callback مع تبادل PKCE وحماية next من Open Redirect.
+- إضافة استعادة كلمة المرور وتغييرها.
+- حماية admin وmerchant وaccount وmessages وreset-password على مستوى Proxy عند اتصال Supabase.
+- عدم منح دور Admin من Google أو من اختيار المستخدم.
+- تنظيف رابط المتجر، منع التكرار، وترميز slug عند المعاينة.
+- إضافة migration للدور الآمن بعد Google onboarding.
+- إضافة رؤوس أمان HTTP.
+
+ملاحظة تشغيلية:
+Google OAuth وإرسال البريد يحتاجان إعداد Supabase/Google وتطبيق migration كما هو موضح في AUTH-SETUP-V1.6-AR.txt.

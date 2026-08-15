@@ -1,0 +1,19 @@
+TIJVORYA v2.1.1 - HOTFIX VERIFICATION
+=====================================
+
+Issue fixed:
+- Build error: Export Facebook doesn't exist in target module (lucide-react)
+
+Changes:
+- Added src/components/ui/social-brand-icons.tsx
+- Replaced Facebook/Instagram lucide-react imports in storefront-frame.tsx
+- Replaced Facebook/Instagram lucide-react imports in store/[slug]/about/page.tsx
+- Version bumped to 2.1.1
+
+Checks performed:
+- TypeScript/TSX parse check: PASS (128 files)
+- Internal @/ import resolution check: PASS
+- Remaining Facebook/Instagram imports from lucide-react: NONE
+
+Note:
+A full npm build was not executed in this isolated environment because project dependencies are not installed locally. The reported failing imports themselves have been removed and replaced with local SVG components.

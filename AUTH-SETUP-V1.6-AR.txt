@@ -1,0 +1,31 @@
+إعداد تسجيل الدخول الآمن وGoogle — Tijvorya v1.6
+
+1) طبّق ملف قاعدة البيانات:
+   supabase/migrations/20260721_v1_6_auth_security.sql
+
+2) في Supabase Dashboard:
+   Authentication > Providers > Google
+   فعّل Google وأدخل Client ID وClient Secret من Google Cloud.
+
+3) في Google Cloud OAuth أضف Callback URL الخاص بـSupabase، وهو ظاهر داخل صفحة Google Provider في Supabase.
+
+4) في Supabase Authentication > URL Configuration:
+   - Site URL: رابط الموقع الحقيقي، مثل https://example.com
+   - Redirect URLs:
+     http://localhost:3000/auth/callback
+     https://YOUR-DOMAIN/auth/callback
+
+5) فعّل Confirm email لحسابات البريد وكلمة المرور.
+
+6) من Authentication > Password Security:
+   - حد أدنى قوي لكلمة المرور.
+   - منع كلمات المرور المسرّبة إن كانت الخطة تدعم ذلك.
+   - تفعيل MFA للحسابات الإدارية الحساسة عند تجهيز واجهته.
+
+7) استخدم SMTP مخصصًا في الإنتاج لإرسال رسائل التأكيد واستعادة كلمة المرور.
+
+ملاحظات أمنية:
+- تسجيل Google لا يمنح صلاحية Admin تلقائيًا.
+- صلاحية الإدارة يجب اعتمادها داخل profiles بواسطة مدير موثوق.
+- مسارات admin وmerchant أصبحت محمية على الخادم عند اتصال Supabase.
+- روابط next الخارجية مرفوضة لمنع Open Redirect.

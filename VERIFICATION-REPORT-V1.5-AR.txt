@@ -1,0 +1,55 @@
+TIJVORYA PLATFORM V1.5 — VERIFICATION REPORT
+Date: 21 July 2026
+Project: tijvorya-platform
+Framework: Next.js 16.2.10 / React 19.2.7 / TypeScript 5.8.3
+
+1. SOURCE VALIDATION
+PASS — package.json synchronized to version 1.5.0.
+PASS — package-lock.json synchronized to version 1.5.0.
+PASS — independent admin layout installed.
+PASS — public footer contains no administration link.
+PASS — IBM Plex Arabic/English typography applied centrally.
+PASS — admin permissions and profile admin_role support added.
+
+2. STATIC CHECKS
+Command: npm run typecheck
+Result: PASS
+
+Command: npm run lint
+Result: PASS — 0 errors, 0 warnings
+
+3. PRODUCTION BUILD
+Command: npm run build
+Result: PASS
+Compiler: Turbopack
+TypeScript phase: PASS
+Page data collection: PASS
+Static generation: PASS
+Proxy middleware: PASS
+
+Verified admin routes in Arabic and English:
+- /[locale]/admin
+- /[locale]/admin/reels
+- /[locale]/admin/stores
+- /[locale]/admin/products
+- /[locale]/admin/orders
+- /[locale]/admin/users
+- /[locale]/admin/messages
+- /[locale]/admin/reports
+- /[locale]/admin/ai
+- /[locale]/admin/audit
+- /[locale]/admin/settings
+- /[locale]/admin-access
+
+4. RUNTIME SMOKE TEST
+Server: next start -p 3010
+/ar: HTTP 200
+/ar/admin: HTTP 200
+/ar/admin-access: HTTP 200
+/api/health: HTTP 200
+Health response version: 1.5.0
+
+5. DATABASE NOTE
+For an existing Supabase deployment, run the updated supabase/schema.sql migration so profiles.admin_role and its constraint are installed before assigning granular administrative roles.
+
+FINAL STATUS: VERIFIED FOR DELIVERY
