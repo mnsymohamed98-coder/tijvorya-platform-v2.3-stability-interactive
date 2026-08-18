@@ -1,105 +1,200 @@
-import OpenAI from "openai";
-import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { zodTextFormat } from "openai/helpers/zod";
 
-export type AIActor = {
-  id: string;
-  role: "admin" | "merchant" | "influencer" | "customer";
-  demo: boolean;
-};
+import {
+  aiErrorResponse,
+  assertAIFeatureEnabled,
+  enforceAIRateLimit,
+  getAIModel,
+  getOpenAIClient,
+  isDemoAIAllowed,
+  requireAIActor,
+} from "@/lib/ai/server";
 
-export type AIFeature = "product_writer" | "reel_writer" | "moderation" | "reel_review";
+const inputSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  category: z.string().trim().min(2).max(80),
+  features: z.string().trim().max(1000).default(""),
+  audience: z.string().trim().max(200).default(""),
+  tone: z
+    .enum(["premium", "friendly", "youthful", "sales"])
+    .default("premium"),
+});
 
-const buckets = new Map<string, { count: number; resetAt: number }>();
-let lastBucketCleanup = 0;
+const outputSchema = z.object({
+  nameEn: z.string().trim().min(1).max(160),
+  descriptionAr: z.string().trim().min(1).max(1200),
+  descriptionEn: z.string().trim().min(1).max(1200),
+  sellingPointsAr: z
+    .array(z.string().trim().min(1).max(180))
+    .max(5),
+  sellingPointsEn: z
+    .array(z.string().trim().min(1).max(180))
+    .max(5),
+  seoKeywords: z
+    .array(z.string().trim().min(1).max(60))
+    .max(10),
+});
 
-export function isOpenAIConfigured() {
-  return Boolean(process.env.OPENAI_API_KEY);
-}
+function demoOutput(input: z.infer<typeof inputSchema>) {
+  const details =
+    input.features ||
+    "جودة مختارة وتصميم عملي للاستخدام اليومي";
 
-export function getAIModel() {
-  return process.env.OPENAI_MODEL?.trim() || "gpt-5-mini";
-}
-
-export function getOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
-  return apiKey ? new OpenAI({ apiKey, timeout: 30_000, maxRetries: 2 }) : null;
-}
-
-export function isDemoAIAllowed() {
-  return process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-}
-
-export async function requireAIActor(allowedRoles: AIActor["role"][]): Promise<AIActor> {
-  if (isDemoAIAllowed()) return { id: "local-ai-actor", role: allowedRoles[0] ?? "merchant", demo: true };
-
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) throw new Error("UNAUTHORIZED");
-  const { data: authData, error: authError } = await supabase.auth.getUser();
-  if (authError || !authData.user) throw new Error("UNAUTHORIZED");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role,status")
-    .eq("id", authData.user.id)
-    .maybeSingle();
-
-  if (!profile || profile.status === "suspended") throw new Error("FORBIDDEN");
-  const role = profile.role as AIActor["role"];
-  if (!allowedRoles.includes(role)) throw new Error("FORBIDDEN");
-  return { id: authData.user.id, role, demo: false };
-}
-
-export async function assertAIFeatureEnabled(feature: AIFeature) {
-  if (process.env.AI_ENABLED === "false") throw new Error("AI_DISABLED");
-  if (isDemoAIAllowed()) return;
-
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) return;
-  const { data } = await supabase
-    .from("platform_settings")
-    .select("ai_enabled,ai_product_writer_enabled,ai_reel_writer_enabled,ai_moderation_enabled")
-    .eq("id", "main")
-    .maybeSingle();
-
-  if (data?.ai_enabled === false) throw new Error("AI_DISABLED");
-  if (feature === "product_writer" && data?.ai_product_writer_enabled === false) throw new Error("AI_FEATURE_DISABLED");
-  if (feature === "reel_writer" && data?.ai_reel_writer_enabled === false) throw new Error("AI_FEATURE_DISABLED");
-  if ((feature === "moderation" || feature === "reel_review") && data?.ai_moderation_enabled === false) throw new Error("AI_FEATURE_DISABLED");
-}
-
-export function enforceAIRateLimit(key: string) {
-  const now = Date.now();
-  if (now - lastBucketCleanup > 10 * 60 * 1000) {
-    for (const [bucketKey, bucket] of buckets) {
-      if (bucket.resetAt <= now) buckets.delete(bucketKey);
-    }
-    lastBucketCleanup = now;
-  }
-  const windowMs = 10 * 60 * 1000;
-  const configured = Number.parseInt(process.env.AI_RATE_LIMIT_PER_10_MIN ?? "20", 10);
-  const limit = Number.isFinite(configured) && configured > 0 ? Math.min(configured, 200) : 20;
-  const current = buckets.get(key);
-  if (!current || current.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return;
-  }
-  if (current.count >= limit) throw new Error("RATE_LIMITED");
-  current.count += 1;
-}
-
-export function aiErrorResponse(error: unknown) {
-  const message = error instanceof Error ? error.message : "AI_ERROR";
-  const table: Record<string, { status: number; ar: string; en: string }> = {
-    UNAUTHORIZED: { status: 401, ar: "يجب تسجيل الدخول لاستخدام أدوات الذكاء الاصطناعي.", en: "Sign in to use AI tools." },
-    FORBIDDEN: { status: 403, ar: "لا تملك صلاحية استخدام هذه الأداة.", en: "You are not allowed to use this tool." },
-    AI_DISABLED: { status: 503, ar: "الذكاء الاصطناعي متوقف من إعدادات المنصة.", en: "AI is disabled in platform settings." },
-    AI_FEATURE_DISABLED: { status: 503, ar: "هذه الميزة الذكية متوقفة من إعدادات المنصة.", en: "This AI feature is disabled." },
-    RATE_LIMITED: { status: 429, ar: "تم بلوغ حد الاستخدام المؤقت. حاول بعد عدة دقائق.", en: "Temporary AI usage limit reached. Try again later." },
-    OPENAI_NOT_CONFIGURED: { status: 503, ar: "مفتاح OpenAI غير مضاف إلى إعدادات الخادم.", en: "The OpenAI API key is not configured." },
-    INVALID_INPUT: { status: 400, ar: "البيانات المدخلة غير صالحة. راجع الحقول وحاول مجددًا.", en: "Invalid input. Review the fields and try again." },
+  return {
+    nameEn: input.name,
+    descriptionAr: `${input.name} من فئة ${input.category}، يجمع بين ${details}. صُمم ليقدّم تجربة عملية واضحة مع تفاصيل تساعد العميل على اتخاذ قرار الشراء بثقة.`,
+    descriptionEn: `${input.name} is a ${input.category} product combining selected quality with practical everyday value. Its clear details help customers buy with confidence.`,
+    sellingPointsAr: [
+      "جودة مختارة",
+      "تفاصيل واضحة",
+      "مناسب للاستخدام اليومي",
+    ],
+    sellingPointsEn: [
+      "Selected quality",
+      "Clear product details",
+      "Built for everyday use",
+    ],
+    seoKeywords: [
+      input.name,
+      input.category,
+      "Tijvorya",
+    ],
   };
-  if (error && typeof error === "object" && "name" in error && error.name === "ZodError") return table.INVALID_INPUT;
-  if (error instanceof SyntaxError) return table.INVALID_INPUT;
-  const known = table[message];
-  return known ?? { status: 500, ar: "تعذر تنفيذ الطلب الذكي حاليًا.", en: "The AI request could not be completed." };
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const actor = await requireAIActor([
+      "merchant",
+      "influencer",
+      "admin",
+    ]);
+
+    await assertAIFeatureEnabled("product_writer");
+
+    enforceAIRateLimit(
+      `${actor.id}:product_writer`
+    );
+
+    const rawBody = await request.json();
+
+    const parsedInput = inputSchema.safeParse(rawBody);
+
+    if (!parsedInput.success) {
+      console.error(
+        "PRODUCT_COPY_INVALID_INPUT",
+        parsedInput.error.flatten()
+      );
+
+      return NextResponse.json(
+        {
+          error: "البيانات المدخلة غير صالحة.",
+          errorEn: "Invalid input.",
+          debug: {
+            type: "INVALID_INPUT",
+            issues: parsedInput.error.issues,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const input = parsedInput.data;
+
+    const client = getOpenAIClient();
+
+    if (!client) {
+      if (isDemoAIAllowed()) {
+        return NextResponse.json({
+          data: demoOutput(input),
+          mode: "demo",
+        });
+      }
+
+      throw new Error("OPENAI_NOT_CONFIGURED");
+    }
+
+    const model = getAIModel();
+
+    console.log("PRODUCT_COPY_AI_REQUEST", {
+      model,
+      actorId: actor.id,
+      role: actor.role,
+    });
+
+    const response = await client.responses.parse({
+      model,
+      store: false,
+      instructions:
+        "أنت كاتب محتوى تجارة إلكترونية لمنصة Tijvorya. اكتب محتوى دقيقًا وغير مضلل، بلا ادعاءات طبية أو ضمانات غير مذكورة. اكتب العربية الفصحى السهلة والإنجليزية الطبيعية. لا تخترع مواصفات أو خصومات.",
+      input: JSON.stringify(input),
+      text: {
+        format: zodTextFormat(
+          outputSchema,
+          "tijvorya_product_copy"
+        ),
+      },
+      max_output_tokens: 900,
+    });
+
+    if (!response.output_parsed) {
+      console.error(
+        "PRODUCT_COPY_NO_PARSED_OUTPUT",
+        {
+          id: response.id,
+          status: response.status,
+          output: response.output,
+        }
+      );
+
+      throw new Error("AI_ERROR");
+    }
+
+    return NextResponse.json({
+      data: response.output_parsed,
+      mode: "live",
+      requestId: response._request_id,
+      model,
+    });
+  } catch (error) {
+    console.error(
+      "PRODUCT_COPY_AI_ERROR",
+      error
+    );
+
+    const detail = aiErrorResponse(error);
+
+    const debug =
+      error instanceof Error
+        ? {
+            name: error.name,
+            message: error.message,
+            cause:
+              error.cause instanceof Error
+                ? error.cause.message
+                : error.cause
+                  ? String(error.cause)
+                  : undefined,
+          }
+        : {
+            name: "UnknownError",
+            message: String(error),
+          };
+
+    return NextResponse.json(
+      {
+        error: detail.ar,
+        errorEn: detail.en,
+        debug,
+      },
+      {
+        status: detail.status,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
+  }
 }
