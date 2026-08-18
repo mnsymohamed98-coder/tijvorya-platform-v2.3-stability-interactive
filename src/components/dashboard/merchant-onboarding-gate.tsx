@@ -1,6 +1,5 @@
 "use client";
 
-import { LoaderCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { normalizeStoreWebsiteProfile } from "@/lib/store-website";
@@ -26,25 +25,28 @@ export function MerchantOnboardingGate({
 
   const isMerchant = currentUser?.role === "merchant";
 
-  const completed = useMemo(() => {
-    return stores.some((store) => {
-      if (store.ownerId !== currentUser?.id) {
-        return false;
-      }
+  const ownedStore = useMemo(() => {
+    if (!currentUser?.id) return undefined;
 
-      const website = normalizeStoreWebsiteProfile(store.website);
-
-      return website.onboardingCompleted;
-    });
+    return stores.find(
+      (store) => store.ownerId === currentUser.id
+    );
   }, [stores, currentUser?.id]);
 
-  const mustOnboard = Boolean(
+  const completed = useMemo(() => {
+    if (!ownedStore) return false;
+
+    return normalizeStoreWebsiteProfile(
+      ownedStore.website
+    ).onboardingCompleted;
+  }, [ownedStore]);
+
+  const mustOnboard =
     isMerchant &&
-      ready &&
-      !workspaceLoading &&
-      !completed &&
-      pathname !== onboardingPath
-  );
+    ready &&
+    !workspaceLoading &&
+    !completed &&
+    pathname !== onboardingPath;
 
   useEffect(() => {
     if (mustOnboard) {
@@ -54,34 +56,9 @@ export function MerchantOnboardingGate({
 
   /*
    * مهم:
-   * لا نعرض شاشة التحميل إذا كان المستخدم داخل صفحة onboarding نفسها.
-   * وإلا سيتم حجب نموذج إنشاء المتجر وسيبقى المستخدم عالقًا.
+   * لا نحجب محتوى لوحة التاجر بسبب workspaceLoading.
+   * التحويل إلى onboarding يحدث فقط بعد اكتمال التحميل
+   * والتأكد أن المتجر لم يكمل الإعداد.
    */
-  if (
-    isMerchant &&
-    pathname !== onboardingPath &&
-    (workspaceLoading || mustOnboard)
-  ) {
-    return (
-      <div className="merchant-gate-loading">
-        <LoaderCircle className="spin" />
-
-        <div>
-          <strong>
-            {locale === "ar"
-              ? "نجهز مساحة متجرك"
-              : "Preparing your store workspace"}
-          </strong>
-
-          <span>
-            {locale === "ar"
-              ? "لحظات وسيتم فتح إعداد موقعك التجاري."
-              : "Your merchant website setup will open in a moment."}
-          </span>
-        </div>
-      </div>
-    );
-  }
-
   return <>{children}</>;
 }
