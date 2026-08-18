@@ -14,6 +14,10 @@ create table if not exists public.profiles (
 );
 
 alter table public.profiles add column if not exists admin_role text;
+alter table public.profiles add column if not exists phone text;
+alter table public.profiles add column if not exists avatar text;
+alter table public.profiles add column if not exists status text not null default 'active';
+alter table public.profiles add column if not exists created_at timestamptz not null default now();
 do $$ begin
   alter table public.profiles add constraint profiles_admin_role_check check (admin_role is null or admin_role in ('super_admin','content_moderator','store_manager','customer_support','finance_manager'));
 exception when duplicate_object then null; end $$;
@@ -157,6 +161,7 @@ alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
 alter table public.platform_settings enable row level security;
 
+drop policy if exists "profiles self read" on public.profiles;
 create policy "profiles self read" on public.profiles for select using (id=auth.uid() or public.is_admin());
 create policy "profiles admin update" on public.profiles for update using (public.is_admin()) with check (public.is_admin());
 create policy "stores public active" on public.stores for select using (status='active' or owner_id=auth.uid() or public.is_admin());

@@ -56,30 +56,43 @@ export function resetLocalAuthAccounts() {
 
 function mapAuthUser(user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> }): AppUser {
   const name = String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split("@")[0] ?? "User");
+  const metadataRole = String(user.user_metadata?.role ?? "customer");
+  const role: UserRole = ["customer", "merchant", "influencer", "admin"].includes(metadataRole)
+    ? metadataRole as UserRole
+    : "customer";
   return {
     id: user.id,
     email: user.email ?? "",
     fullName: name,
-    role: "customer",
-    adminRole: undefined,
+    role,
+    adminRole: role === "admin" ? "super_admin" : undefined,
     avatar: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : name.slice(0, 2).toUpperCase(),
     phone: typeof user.user_metadata?.phone === "string" ? user.user_metadata.phone : undefined,
   };
 }
 
 async function hydrateProfile(supabase: NonNullable<ReturnType<typeof createClient>>, mapped: AppUser): Promise<AppUser> {
-  const { data } = await supabase.from("profiles").select("full_name,role,admin_role,status,avatar,phone,created_at").eq("id", mapped.id).maybeSingle();
-  if (!data) return { ...mapped, role: "customer", adminRole: undefined };
-  const fullName = String(data.full_name ?? mapped.fullName);
+  // Select all columns so authentication keeps working even when an older
+  // profiles table has not received every optional production column yet.
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", mapped.id).maybeSingle();
+  if (error || !data) return mapped;
+  const row = data as Record<string, unknown>;
+  const fullName = String(row.full_name ?? mapped.fullName);
+  const profileRole = String(row.role ?? mapped.role);
+  const role: UserRole = ["customer", "merchant", "influencer", "admin"].includes(profileRole)
+    ? profileRole as UserRole
+    : mapped.role;
   return {
     ...mapped,
     fullName,
-    role: String(data.role ?? mapped.role) as UserRole,
-    adminRole: data.admin_role ? String(data.admin_role) as AdminRole : mapped.adminRole,
-    status: data.status === "suspended" ? "suspended" : "active",
-    avatar: data.avatar ? String(data.avatar) : mapped.avatar ?? fullName.slice(0, 2).toUpperCase(),
-    phone: data.phone ? String(data.phone) : mapped.phone,
-    createdAt: data.created_at ? String(data.created_at) : mapped.createdAt,
+    role,
+    // An account explicitly marked admin remains usable even if the optional
+    // admin_role column is not present in an older database.
+    adminRole: row.admin_role ? String(row.admin_role) as AdminRole : role === "admin" ? "super_admin" : mapped.adminRole,
+    status: row.status === "suspended" ? "suspended" : "active",
+    avatar: row.avatar ? String(row.avatar) : mapped.avatar ?? fullName.slice(0, 2).toUpperCase(),
+    phone: row.phone ? String(row.phone) : mapped.phone,
+    createdAt: row.created_at ? String(row.created_at) : mapped.createdAt,
   };
 }
 
@@ -141,7 +154,7 @@ export async function signInWithGoogle(input: { locale: Locale; next?: string; r
   const origin = window.location.origin;
   const callback = new URL("/auth/callback", origin);
   callback.searchParams.set("locale", input.locale);
-  callback.searchParams.set("next", safeInternalPath(input.next, input.admin ? `/${input.locale}/admin` : `/${input.locale}/marketplace`));
+  if (input.next) callback.searchParams.set("next", safeInternalPath(input.next, input.admin ? `/${input.locale}/admin` : `/${input.locale}/marketplace`));
   if (input.role) callback.searchParams.set("role", input.role);
   if (input.admin) callback.searchParams.set("admin", "1");
   const { error } = await supabase.auth.signInWithOAuth({

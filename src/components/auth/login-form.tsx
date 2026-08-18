@@ -40,7 +40,7 @@ export function LoginForm() {
   async function googleSignIn() {
     setGoogleLoading(true);
     try {
-      await signInWithGoogle({ locale, next: requestedNext() || `/${locale}/marketplace` });
+      await signInWithGoogle({ locale, next: requestedNext() });
     } catch (error) {
       toast(error instanceof Error ? error.message : "Google sign-in failed", "error");
       setGoogleLoading(false);

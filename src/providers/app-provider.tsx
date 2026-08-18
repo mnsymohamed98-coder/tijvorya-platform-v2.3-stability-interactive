@@ -233,13 +233,20 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     hydrate();
 
     const supabase = productionMode ? createClient() : null;
-    const subscription = supabase?.auth.onAuthStateChange(async () => {
-      const user = await getCurrentUser();
-      if (active) {
-        loadedWorkspaceKey.current = null;
-        setWorkspaceLoading(Boolean(user));
-        setState((previous) => ({ ...previous, currentUser: user }));
-      }
+    // Never await another Supabase auth call from inside onAuthStateChange.
+    // Doing so can deadlock signInWithPassword/signInWithOAuth and leave the
+    // login button spinning forever. Defer the refresh to the next task.
+    const subscription = supabase?.auth.onAuthStateChange(() => {
+      window.setTimeout(() => {
+        void (async () => {
+          const user = await getCurrentUser();
+          if (active) {
+            loadedWorkspaceKey.current = null;
+            setWorkspaceLoading(Boolean(user));
+            setState((previous) => ({ ...previous, currentUser: user }));
+          }
+        })();
+      }, 0);
     }).data.subscription;
 
     return () => { active = false; subscription?.unsubscribe(); };

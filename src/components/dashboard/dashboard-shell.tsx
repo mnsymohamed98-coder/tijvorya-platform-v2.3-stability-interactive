@@ -48,7 +48,7 @@ export function DashboardShell({ children, role }: { children: React.ReactNode; 
     : conversations.filter((conversation) => conversation.status === "open").length;
 
   if (!currentUser || (currentUser.role !== role && !(role === "merchant" && currentUser.role === "influencer"))) {
-    return <div className="auth-gate"><Logo locale={locale} /><div className="auth-gate-card"><ShieldCheck /><h1>{locale === "ar" ? "هذه المنطقة محمية" : "This area is protected"}</h1><p>{locale === "ar" ? "سجّل الدخول بالحساب المناسب للوصول إلى لوحة التحكم." : "Sign in with the appropriate account to access this dashboard."}</p><Link className="button button-dark" href={role === "admin" ? `/${locale}/admin-access` : `/${locale}/login?next=${encodeURIComponent(pathname)}`}>{locale === "ar" ? (role === "admin" ? "دخول الإدارة" : "تسجيل الدخول") : (role === "admin" ? "Admin sign in" : "Sign in")}</Link></div></div>;
+    return <div className="auth-gate"><Logo locale={locale} /><div className="auth-gate-card"><ShieldCheck /><h1>{locale === "ar" ? "هذه المنطقة محمية" : "This area is protected"}</h1><p>{locale === "ar" ? "سجّل الدخول بالحساب المناسب للوصول إلى لوحة التحكم." : "Sign in with the appropriate account to access this dashboard."}</p><Link className="button button-dark" href={role === "admin" ? `/${locale}/admin-access` : `/${locale}/login?next=${encodeURIComponent(pathname)}`}>{locale === "ar" ? "تسجيل الدخول" : "Sign in"}</Link></div></div>;
   }
 
   async function logout() { await signOut(); setCurrentUser(null); router.push(`/${locale}`); }

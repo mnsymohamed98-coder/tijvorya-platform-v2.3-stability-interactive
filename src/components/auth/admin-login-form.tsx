@@ -39,7 +39,7 @@ export function AdminLoginForm() {
 
   return <form className="auth-form admin-auth-form" onSubmit={submit}>
     <div className="admin-lock-icon"><ShieldCheck /></div>
-    <div className="auth-heading"><span className="eyebrow">TIJVORYA CONTROL CENTER</span><h1>{locale === "ar" ? "دخول إدارة المنصة" : "Platform administration"}</h1><p>{locale === "ar" ? "منطقة خاصة ومحمية لإدارة المستخدمين والمتاجر والريلز والطلبات وإعدادات التشغيل." : "Private protected access for users, stores, reels, orders and platform operations."}</p></div>
+    <div className="auth-heading"><span className="eyebrow">TIJVORYA CONTROL CENTER</span><h1>{locale === "ar" ? "مركز التحكم" : "Control center"}</h1><p>{locale === "ar" ? "منطقة خاصة ومحمية لإدارة المستخدمين والمتاجر والريلز والطلبات وإعدادات التشغيل." : "Private protected access for users, stores, reels, orders and platform operations."}</p></div>
     <button className="oauth-button" type="button" onClick={googleSignIn} disabled={googleLoading || loading}><span className="google-mark">G</span>{googleLoading && <LoaderCircle className="spin" />}{locale === "ar" ? "الدخول الإداري باستخدام Google" : "Admin sign-in with Google"}</button>
     <div className="auth-divider"><span>{locale === "ar" ? "أو البريد الإداري" : "or admin email"}</span></div>
     <label className="field"><span>{locale === "ar" ? "البريد الإداري" : "Admin email"}</span><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
