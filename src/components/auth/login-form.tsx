@@ -270,7 +270,7 @@ export function LoginForm() {
 
         <Link href={`/${locale}/register`}>
           {locale === "ar"
-            ? "أنشئ حسابًا"
+            ? "أنشئ حسابًا" 
             : "Create an account"}
         </Link>
       </p>
