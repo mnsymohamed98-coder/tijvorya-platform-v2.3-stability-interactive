@@ -356,3 +356,17 @@ body.interactions-ready .reveal-ready{transition:opacity .48s ease,transform .48
 @media(prefers-reduced-motion:reduce){.hero-live-panel{animation:none}.hero-live-product-grid img,.hero-live-reel-grid img{transition:none}}
 .upload-dropzone.is-dragging{border-color:var(--primary);background:#edf5ff;box-shadow:0 0 0 4px rgba(23,105,224,.08);transform:translateY(-1px)}
 .reel-more-wrap{position:relative}.reel-more-menu{position:absolute;z-index:15;inset-inline-end:54px;bottom:0;min-width:165px;padding:6px;background:rgba(18,24,36,.96);border:1px solid rgba(255,255,255,.16);border-radius:11px;box-shadow:0 16px 35px rgba(0,0,0,.28);backdrop-filter:blur(10px)}.reel-more-menu button{width:100%;min-height:38px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#fff;text-align:start;font-size:11px;font-weight:800}.reel-more-menu button:hover{background:rgba(255,255,255,.10)}
+
+/* v2.3.1 dashboard overflow + avatar hotfix */
+html,body{max-width:100%;overflow-x:hidden}
+.dashboard-layout,.dashboard-main,.dashboard-content,.dashboard-topbar{min-width:0;max-width:100%}
+.dashboard-main{overflow-x:hidden}
+.dashboard-content{width:100%;overflow-x:hidden}
+.dashboard-topbar{min-width:0}
+.dashboard-account{min-width:0;max-width:100%;overflow:hidden}
+.account-copy{min-width:0;max-width:220px}
+.account-copy strong,.account-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.avatar{width:36px;height:36px;min-width:36px;max-width:36px;flex:0 0 36px;border-radius:50%;display:grid;place-items:center;background:#e9f2ff;color:#155ab7;font-size:11px;font-weight:800;overflow:hidden;white-space:nowrap;text-overflow:clip;line-height:36px;text-align:center}
+.avatar img{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%}
+.table-wrap,.messages-layout,.chart-card,.editor-card,.admin-modal{max-width:100%}
+img,video,svg{max-width:100%}
