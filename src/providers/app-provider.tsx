@@ -669,33 +669,142 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     appendAudit(verified ? "store_verified" : "store_unverified", id, verified ? `تم توثيق المتجر ${target.name}` : `تم إلغاء توثيق المتجر ${target.name}`, state.currentUser?.id);
   }, [state.stores, state.currentUser?.id, updateStore, appendAudit]);
 
+  const refreshAdminUsers = useCallback(async () => {
+    if (!productionMode) return;
+
+    const remote = await loadAdminWorkspace();
+
+    setState((previous) => ({
+      ...previous,
+      users: remote.users ?? previous.users,
+    }));
+  }, [productionMode]);
+
   const setUserStatus = useCallback(async (id: string, status: AppUser["status"]) => {
     const target = state.users.find((user) => user.id === id);
     if (!target || target.role === "admin") return;
-    const updated = { ...target, status };
-    if (productionMode) await updateProfile(id, { status });
-    setState((previous) => ({ ...previous, users: previous.users.map((user) => user.id === id ? updated : user) }));
-    appendAudit(status === "suspended" ? "user_suspended" : "user_activated", id, status === "suspended" ? `تم تعليق حساب ${target.fullName}` : `تم تفعيل حساب ${target.fullName}`, state.currentUser?.id);
-  }, [state.users, state.currentUser?.id, productionMode, appendAudit]);
+
+    try {
+      if (productionMode) {
+        await updateProfile(id, { status });
+        await refreshAdminUsers();
+      } else {
+        const updated = { ...target, status };
+        setState((previous) => ({
+          ...previous,
+          users: previous.users.map((user) => user.id === id ? updated : user),
+        }));
+      }
+
+      appendAudit(
+        status === "suspended" ? "user_suspended" : "user_activated",
+        id,
+        status === "suspended"
+          ? `تم تعليق حساب ${target.fullName}`
+          : `تم تفعيل حساب ${target.fullName}`,
+        state.currentUser?.id
+      );
+
+      toast(
+        locale === "ar"
+          ? status === "suspended"
+            ? "تم تعليق الحساب وحفظ التعديل"
+            : "تم تفعيل الحساب وحفظ التعديل"
+          : status === "suspended"
+            ? "Account suspended and saved"
+            : "Account activated and saved"
+      );
+    } catch (error) {
+      console.error("SET_USER_STATUS_ERROR", error);
+      toast(
+        locale === "ar"
+          ? "تعذر حفظ حالة المستخدم في قاعدة البيانات."
+          : "Unable to save the user status to the database.",
+        "error"
+      );
+      throw error;
+    }
+  }, [state.users, state.currentUser?.id, productionMode, refreshAdminUsers, appendAudit, toast, locale]);
 
   const setUserRole = useCallback(async (id: string, role: UserRole) => {
     const target = state.users.find((user) => user.id === id);
     if (!target || target.role === "admin" || role === "admin") return;
-    const updated = { ...target, role };
-    if (productionMode) await updateProfile(id, { role });
-    setState((previous) => ({ ...previous, users: previous.users.map((user) => user.id === id ? updated : user) }));
-    appendAudit("user_role_changed", id, `تم تغيير دور ${target.fullName} إلى ${role}`, state.currentUser?.id);
-  }, [state.users, state.currentUser?.id, productionMode, appendAudit]);
+
+    try {
+      if (productionMode) {
+        await updateProfile(id, { role });
+        await refreshAdminUsers();
+      } else {
+        const updated = { ...target, role };
+        setState((previous) => ({
+          ...previous,
+          users: previous.users.map((user) => user.id === id ? updated : user),
+        }));
+      }
+
+      appendAudit(
+        "user_role_changed",
+        id,
+        `تم تغيير دور ${target.fullName} إلى ${role}`,
+        state.currentUser?.id
+      );
+
+      toast(
+        locale === "ar"
+          ? "تم تغيير دور المستخدم وحفظ التعديل"
+          : "User role updated and saved"
+      );
+    } catch (error) {
+      console.error("SET_USER_ROLE_ERROR", error);
+      toast(
+        locale === "ar"
+          ? "تعذر حفظ دور المستخدم في قاعدة البيانات."
+          : "Unable to save the user role to the database.",
+        "error"
+      );
+      throw error;
+    }
+  }, [state.users, state.currentUser?.id, productionMode, refreshAdminUsers, appendAudit, toast, locale]);
 
   const setAdminRole = useCallback(async (id: string, adminRole: AdminRole) => {
     const target = state.users.find((user) => user.id === id);
     if (!target || target.role !== "admin") return;
-    const updated = { ...target, adminRole };
-    if (productionMode) await updateProfile(id, { adminRole });
-    setState((previous) => ({ ...previous, users: previous.users.map((user) => user.id === id ? updated : user) }));
-    appendAudit("user_role_changed", id, `تم تغيير الصلاحية الإدارية لـ ${target.fullName} إلى ${adminRole}`, state.currentUser?.id);
-    toast(locale === "ar" ? "تم تحديث الصلاحية الإدارية" : "Administrative permission updated");
-  }, [state.users, state.currentUser?.id, productionMode, appendAudit, toast, locale]);
+
+    try {
+      if (productionMode) {
+        await updateProfile(id, { adminRole });
+        await refreshAdminUsers();
+      } else {
+        const updated = { ...target, adminRole };
+        setState((previous) => ({
+          ...previous,
+          users: previous.users.map((user) => user.id === id ? updated : user),
+        }));
+      }
+
+      appendAudit(
+        "user_role_changed",
+        id,
+        `تم تغيير الصلاحية الإدارية لـ ${target.fullName} إلى ${adminRole}`,
+        state.currentUser?.id
+      );
+
+      toast(
+        locale === "ar"
+          ? "تم تحديث الصلاحية الإدارية وحفظ التعديل"
+          : "Administrative permission updated and saved"
+      );
+    } catch (error) {
+      console.error("SET_ADMIN_ROLE_ERROR", error);
+      toast(
+        locale === "ar"
+          ? "تعذر حفظ الصلاحية الإدارية في قاعدة البيانات."
+          : "Unable to save the administrative permission to the database.",
+        "error"
+      );
+      throw error;
+    }
+  }, [state.users, state.currentUser?.id, productionMode, refreshAdminUsers, appendAudit, toast, locale]);
 
   const updatePlatformSettings = useCallback(async (platformSettings: PlatformSettings) => {
     if (productionMode) await upsertPlatformSettings(platformSettings);
