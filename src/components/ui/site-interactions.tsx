@@ -12,11 +12,25 @@ const REVEAL_SELECTOR = [
   ".readiness-card",
   ".editor-card",
   ".dashboard-card",
-  ".admin-kpi-card",
+  ".admin-kpi",
+  ".admin-panel",
   ".admin-service",
+  ".stat-card",
+  ".chart-card",
+  ".pricing-card",
   ".merchant-benefit-grid article",
   ".merchant-about-fact-grid article",
   ".merchant-story-card",
+  ".merchant-about-intro",
+  ".merchant-business-identity",
+  ".merchant-category-grid a",
+  ".merchant-contact-cards a",
+  ".merchant-reel-grid a",
+  ".about-stack article",
+  ".timeline-grid article",
+  ".category-link",
+  ".feature-editorial",
+  ".cta-panel",
 ].join(",");
 
 export function SiteInteractions() {
@@ -50,7 +64,6 @@ export function SiteInteractions() {
     window.addEventListener("resize", onScroll, { passive: true });
 
     let observer: IntersectionObserver | undefined;
-    let mutationObserver: MutationObserver | undefined;
 
     const registerRevealTargets = () => {
       document.querySelectorAll<HTMLElement>(REVEAL_SELECTOR).forEach((element) => {
@@ -76,7 +89,7 @@ export function SiteInteractions() {
     }
 
     registerRevealTargets();
-    mutationObserver = new MutationObserver(registerRevealTargets);
+    const mutationObserver = new MutationObserver(registerRevealTargets);
     mutationObserver.observe(document.body, { childList: true, subtree: true });
 
     const hero = document.querySelector<HTMLElement>(".hero-visual-shell");
