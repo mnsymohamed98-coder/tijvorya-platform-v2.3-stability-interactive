@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { absoluteUrl } from "@/lib/site";
+import type { StoreWebsiteProfile } from "@/types";
 
 export type PublicProductSeo = {
   id: string;
@@ -27,6 +28,9 @@ export type PublicStoreSeo = {
   cover: string;
   city: string;
   rating: number;
+  verified: boolean;
+  phone?: string;
+  website?: Partial<StoreWebsiteProfile>;
 };
 
 function publicClient() {
@@ -58,14 +62,16 @@ export const getPublicStoreSeo = cache(async (slug: string): Promise<PublicStore
   const supabase = publicClient();
   if (!supabase) return null;
   const { data: store, error } = await supabase.from("stores")
-    .select("id,slug,name,name_en,description,description_en,logo_url,cover_url,city,rating,status")
+    .select("id,slug,name,name_en,description,description_en,logo_url,cover_url,city,rating,status,verified,phone,website")
     .eq("slug", slug).eq("status", "active").maybeSingle();
   if (error || !store) return null;
   return {
     id: String(store.id), slug: String(store.slug), name: String(store.name), nameEn: String(store.name_en ?? store.name),
     description: String(store.description ?? ""), descriptionEn: String(store.description_en ?? store.description ?? ""),
     logo: seoImage(String(store.logo_url ?? "/assets/logo.svg")), cover: seoImage(String(store.cover_url ?? store.logo_url ?? "/assets/logo.svg")),
-    city: String(store.city ?? ""), rating: Number(store.rating ?? 0),
+    city: String(store.city ?? ""), rating: Number(store.rating ?? 0), verified: Boolean(store.verified),
+    phone: store.phone ? String(store.phone) : undefined,
+    website: store.website && typeof store.website === "object" ? (store.website as Partial<StoreWebsiteProfile>) : undefined,
   };
 });
 

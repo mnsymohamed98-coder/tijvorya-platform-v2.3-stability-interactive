@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  BadgeCheck,
   Globe2,
   Grid2X2,
   Home,
@@ -275,6 +276,15 @@ export function StorefrontFrame({
               ? "الموقع الرسمي للمتجر"
               : "Official merchant storefront"}
           </span>
+
+          {store.verified && (
+            <span className="merchant-verified-chip">
+              <BadgeCheck />
+              {locale === "ar"
+                ? "متجر موثّق"
+                : "Verified merchant"}
+            </span>
+          )}
 
           <span className="merchant-domain-label">
             <Globe2 />

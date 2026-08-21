@@ -7,6 +7,8 @@ import {
 
 import {
   merchantDomainUrl,
+  normalizeStoreWebsiteProfile,
+  safeExternalUrl,
 } from "@/lib/store-website";
 
 const SITE_URL = "https://www.tijvorya.com";
@@ -171,12 +173,33 @@ export default async function StoreLayout({
     decodeURIComponent(slug)
   );
 
+  const website = store
+    ? normalizeStoreWebsiteProfile(store.website)
+    : undefined;
+
+  const storeUrl = store
+    ? merchantDomainUrl(
+        store.slug,
+        normalizedLocale
+      )
+    : undefined;
+
+  const sameAs = website
+    ? [
+        safeExternalUrl(website.instagram),
+        safeExternalUrl(website.facebook),
+        safeExternalUrl(website.tiktok),
+      ].filter((value): value is string => Boolean(value))
+    : [];
+
   const data = store
     ? {
         "@context":
           "https://schema.org",
 
         "@type": "Store",
+
+        "@id": storeUrl,
 
         name:
           normalizedLocale === "en"
@@ -199,10 +222,15 @@ export default async function StoreLayout({
           store.logo
         ),
 
-        url: merchantDomainUrl(
-          store.slug,
-          normalizedLocale
-        ),
+        url: storeUrl,
+
+        telephone: store.phone || undefined,
+
+        email: website?.businessEmail || undefined,
+
+        identifier: website?.registrationNumber || undefined,
+
+        sameAs: sameAs.length > 0 ? sameAs : undefined,
 
         address: store.city
           ? {
@@ -213,6 +241,14 @@ export default async function StoreLayout({
                 store.city,
             }
           : undefined,
+
+        additionalProperty: [
+          {
+            "@type": "PropertyValue",
+            name: "verified",
+            value: Boolean(store.verified),
+          },
+        ],
       }
     : null;
 
