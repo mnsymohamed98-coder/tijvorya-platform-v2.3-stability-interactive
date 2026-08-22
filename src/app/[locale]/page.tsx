@@ -44,6 +44,26 @@ export default function HomePage() {
   const categories = Array.from(new Set(publicProducts.map((product) => product.category).filter(Boolean))).slice(0, 6);
   const launchReadyStores = activeStores.filter((store) => store.website?.onboardingCompleted === true && Boolean(store.logo));
 
+  const metrics = locale === "ar" ? [
+    { icon: Film, label: "ريلز قابلة للشراء" },
+    { icon: Store, label: "متاجر مستقلة" },
+    { icon: Users, label: "تاجر ومتسوّق وإدارة" },
+    { icon: BarChart3, label: "تشغيل وتحليلات موحّدة" },
+    { icon: ShieldCheck, label: "توثيق ومراجعة محتوى" },
+    { icon: Truck, label: "جاهزية للتوصيل والدفع" },
+    { icon: Languages, label: "عربية وإنجليزية أصلية" },
+    { icon: Sparkles, label: "ذكاء اصطناعي مسؤول" },
+  ] : [
+    { icon: Film, label: "Shoppable reels" },
+    { icon: Store, label: "Independent storefronts" },
+    { icon: Users, label: "Merchant, shopper & admin" },
+    { icon: BarChart3, label: "Unified operations & analytics" },
+    { icon: ShieldCheck, label: "Verification & content review" },
+    { icon: Truck, label: "Delivery & payments ready" },
+    { icon: Languages, label: "Native Arabic & English" },
+    { icon: Sparkles, label: "Responsible AI" },
+  ];
+
   const pillars = locale === "ar" ? [
     { icon: PlayCircle, title: "اكتشاف يقود إلى الشراء", text: "ريلز مرتبطة مباشرة بالمنتج والسعر والمتجر، بدل فصل المحتوى عن المبيعات." },
     { icon: ShieldCheck, title: "ثقة قبل النمو", text: "توثيق المتاجر، مراجعة المحتوى، وصلاحيات واضحة للإدارة والتاجر والمتسوّق." },
@@ -101,12 +121,10 @@ export default function HomePage() {
       </div>
     </div></section>
 
-    <section className="metrics-strip"><div className="container metrics-grid">
-      <div><strong><Film /></strong><span>{locale === "ar" ? "ريلز قابلة للشراء" : "Shoppable reels"}</span></div>
-      <div><strong><Store /></strong><span>{locale === "ar" ? "متاجر مستقلة" : "Independent storefronts"}</span></div>
-      <div><strong><Users /></strong><span>{locale === "ar" ? "تاجر ومتسوّق وإدارة" : "Merchant, shopper and admin"}</span></div>
-      <div><strong><BarChart3 /></strong><span>{locale === "ar" ? "تشغيل وتحليلات موحّدة" : "Unified operations and analytics"}</span></div>
-    </div></section>
+    <section className="metrics-strip"><div className="metrics-marquee"><div className="metrics-track">
+      <div className="metrics-track-set">{metrics.map(({ icon: Icon, label }, index) => <div className="metrics-chip" key={`metric-a-${index}`}><span className="metrics-chip-icon"><Icon /></span><span>{label}</span></div>)}</div>
+      <div className="metrics-track-set" aria-hidden="true">{metrics.map(({ icon: Icon, label }, index) => <div className="metrics-chip" key={`metric-b-${index}`}><span className="metrics-chip-icon"><Icon /></span><span>{label}</span></div>)}</div>
+    </div></div></section>
 
     <section className="section container"><div className="section-head"><div><span className="eyebrow">COMMERCE ENGINE</span><h2>{locale === "ar" ? "أربعة عناصر تبني منصة تُستخدم وتُوثق وتكبر." : "Four foundations for a platform people use, trust and grow with."}</h2><p>{locale === "ar" ? "الانتشار لا يبدأ بإضافة مزايا كثيرة؛ يبدأ بتجربة واضحة، ثقة قوية، تشغيل قابل للقياس، وذكاء يخدم قرار الشراء." : "Scale does not start with feature volume. It starts with clarity, trust, measurable operations and intelligence that supports buying decisions."}</p></div></div><div className="platform-pillars">{pillars.map(({ icon: Icon, title, text }) => <article className="pillar-card" key={title}><span><Icon /></span><h3>{title}</h3><p>{text}</p></article>)}</div></section>
 
