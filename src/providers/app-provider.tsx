@@ -236,7 +236,12 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     // Never await another Supabase auth call from inside onAuthStateChange.
     // Doing so can deadlock signInWithPassword/signInWithOAuth and leave the
     // login button spinning forever. Defer the refresh to the next task.
-    const subscription = supabase?.auth.onAuthStateChange(() => {
+    // Only SIGNED_IN/SIGNED_OUT represent an actual identity change. Supabase
+    // also fires INITIAL_SESSION immediately on subscribe (duplicating the
+    // hydrate() call above) and TOKEN_REFRESHED on silent token renewal -
+    // reacting to those forced a full, redundant workspace reload each time.
+    const subscription = supabase?.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT") return;
       window.setTimeout(() => {
         void (async () => {
           const user = await getCurrentUser();

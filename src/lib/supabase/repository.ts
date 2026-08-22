@@ -2,6 +2,18 @@ import type { AppUser, ChatMessage, Conversation, Order, PlatformSettings, Produ
 import { normalizeStoreWebsiteProfile } from "@/lib/store-website";
 import { createClient, isSupabaseConfigured } from "./client";
 
+// Explicit column lists (instead of "*") so every workspace load only pulls
+// what the mapXxx() functions below actually read, cutting payload size.
+const STORE_COLUMNS = "id,owner_id,slug,name,name_en,description,description_en,logo_url,cover_url,rating,verified,city,completion,status,phone,whatsapp,delivery_fee,theme_color,theme,website";
+const PRODUCT_COLUMNS = "id,store_id,name,name_en,description,description_en,price,compare_at_price,stock,category,image_url,images,status,rating,variants,featured";
+const REEL_COLUMNS = "id,store_id,product_id,caption,caption_en,video_url,cover_url,status,views,likes,created_at,submitted_at,rejection_reason,reviewed_at,reviewed_by,hashtags,best_post_time,ai_score,ai_suggestions,watch_time_seconds,shares,saves,product_clicks,orders_attributed";
+const ORDER_ITEM_COLUMNS = "product_id,product_name,quantity,unit_price,variant";
+const ORDER_COLUMNS = `id,store_id,customer_id,customer_name,phone,address,notes,status,subtotal,delivery_fee,total,created_at,order_items(${ORDER_ITEM_COLUMNS})`;
+const PROFILE_COLUMNS = "id,full_name,email,role,admin_role,status,avatar,phone,created_at";
+const PLATFORM_SETTINGS_COLUMNS = "id,platform_name,support_email,maintenance_mode,merchant_registration_enabled,reel_moderation_required,max_reel_size_mb,commission_percent,ai_enabled,ai_product_writer_enabled,ai_reel_writer_enabled,ai_moderation_enabled,ai_daily_request_limit,messaging_enabled,updated_at";
+const CONVERSATION_COLUMNS = "id,store_id,customer_id,customer_name,customer_avatar,subject,product_id,order_id,status,unread_by_merchant,unread_by_customer,last_message_at,created_at";
+const MESSAGE_COLUMNS = "id,conversation_id,sender_id,sender_role,text,created_at,read_at";
+
 type WorkspaceData = {
   stores: Store[];
   products: Product[];
@@ -18,9 +30,9 @@ export async function loadPublicData(): Promise<Pick<WorkspaceData, "stores" | "
   const supabase = createClient();
   if (!supabase) return { stores: [], products: [], reels: [] };
   const [storesResult, productsResult, reelsResult] = await Promise.all([
-    supabase.from("stores").select("*").eq("status", "active").order("created_at", { ascending: false }),
-    supabase.from("products").select("*").eq("status", "active").order("created_at", { ascending: false }),
-    supabase.from("reels").select("*").eq("status", "approved").order("created_at", { ascending: false }),
+    supabase.from("stores").select(STORE_COLUMNS).eq("status", "active").order("created_at", { ascending: false }),
+    supabase.from("products").select(PRODUCT_COLUMNS).eq("status", "active").order("created_at", { ascending: false }),
+    supabase.from("reels").select(REEL_COLUMNS).eq("status", "approved").order("created_at", { ascending: false }),
   ]);
   if (storesResult.error || productsResult.error || reelsResult.error) throw new Error("تعذر تحميل بيانات المنصة من قاعدة البيانات.");
   return {
@@ -36,7 +48,7 @@ export async function loadCustomerWorkspace(customerId?: string): Promise<Worksp
   const supabase = createClient();
   if (!supabase) return { ...publicData, orders: [], conversations: [], messages: [] };
   const [ordersResult, communication] = await Promise.all([
-    supabase.from("orders").select("*, order_items(*)").eq("customer_id", customerId).order("created_at", { ascending: false }),
+    supabase.from("orders").select(ORDER_COLUMNS).eq("customer_id", customerId).order("created_at", { ascending: false }),
     loadConversationWorkspace({ customerId }),
   ]);
   if (ordersResult.error) throw ordersResult.error;
@@ -51,14 +63,14 @@ export async function loadCustomerWorkspace(customerId?: string): Promise<Worksp
 export async function loadMerchantWorkspace(ownerId: string): Promise<WorkspaceData> {
   const supabase = createClient();
   if (!supabase) return { stores: [], products: [], reels: [], orders: [], conversations: [], messages: [] };
-  const { data: storesRows, error: storesError } = await supabase.from("stores").select("*").eq("owner_id", ownerId).order("created_at", { ascending: false });
+  const { data: storesRows, error: storesError } = await supabase.from("stores").select(STORE_COLUMNS).eq("owner_id", ownerId).order("created_at", { ascending: false });
   if (storesError) throw storesError;
   const stores = (storesRows ?? []).map(mapStore);
   const storeIds = stores.map((store) => store.id);
   if (!storeIds.length) return { stores, products: [], reels: [], orders: [], conversations: [], messages: [] };
   const [productsResult, reelsResult, orders, communication] = await Promise.all([
-    supabase.from("products").select("*").in("store_id", storeIds).order("created_at", { ascending: false }),
-    supabase.from("reels").select("*").in("store_id", storeIds).order("created_at", { ascending: false }),
+    supabase.from("products").select(PRODUCT_COLUMNS).in("store_id", storeIds).order("created_at", { ascending: false }),
+    supabase.from("reels").select(REEL_COLUMNS).in("store_id", storeIds).order("created_at", { ascending: false }),
     loadMerchantOrders(storeIds),
     loadConversationWorkspace({ storeIds }),
   ]);
@@ -77,12 +89,12 @@ export async function loadAdminWorkspace(): Promise<WorkspaceData> {
   const supabase = createClient();
   if (!supabase) return { stores: [], products: [], reels: [], orders: [], conversations: [], messages: [], users: [] };
   const [storesResult, productsResult, reelsResult, ordersResult, profilesResult, settingsResult, communication] = await Promise.all([
-    supabase.from("stores").select("*").order("created_at", { ascending: false }),
-    supabase.from("products").select("*").order("created_at", { ascending: false }),
-    supabase.from("reels").select("*").order("created_at", { ascending: false }),
-    supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }),
-    supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-    supabase.from("platform_settings").select("*").eq("id", "main").maybeSingle(),
+    supabase.from("stores").select(STORE_COLUMNS).order("created_at", { ascending: false }),
+    supabase.from("products").select(PRODUCT_COLUMNS).order("created_at", { ascending: false }),
+    supabase.from("reels").select(REEL_COLUMNS).order("created_at", { ascending: false }),
+    supabase.from("orders").select(ORDER_COLUMNS).order("created_at", { ascending: false }),
+    supabase.from("profiles").select(PROFILE_COLUMNS).order("created_at", { ascending: false }),
+    supabase.from("platform_settings").select(PLATFORM_SETTINGS_COLUMNS).eq("id", "main").maybeSingle(),
     loadConversationWorkspace({}),
   ]);
   const error = storesResult.error ?? productsResult.error ?? reelsResult.error ?? ordersResult.error ?? profilesResult.error ?? settingsResult.error;
@@ -102,7 +114,7 @@ export async function loadAdminWorkspace(): Promise<WorkspaceData> {
 export async function loadMerchantOrders(storeIds: string[]): Promise<Order[]> {
   const supabase = createClient();
   if (!supabase || storeIds.length === 0) return [];
-  const { data, error } = await supabase.from("orders").select("*, order_items(*)").in("store_id", storeIds).order("created_at", { ascending: false });
+  const { data, error } = await supabase.from("orders").select(ORDER_COLUMNS).in("store_id", storeIds).order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(mapOrder);
 }
@@ -110,7 +122,7 @@ export async function loadMerchantOrders(storeIds: string[]): Promise<Order[]> {
 async function loadConversationWorkspace(input: { customerId?: string; storeIds?: string[] }) {
   const supabase = createClient();
   if (!supabase) return { conversations: [] as Conversation[], messages: [] as ChatMessage[] };
-  let query = supabase.from("conversations").select("*").order("last_message_at", { ascending: false });
+  let query = supabase.from("conversations").select(CONVERSATION_COLUMNS).order("last_message_at", { ascending: false });
   if (input.customerId) query = query.eq("customer_id", input.customerId);
   if (input.storeIds?.length) query = query.in("store_id", input.storeIds);
   const { data: conversationRows, error: conversationError } = await query;
@@ -118,7 +130,7 @@ async function loadConversationWorkspace(input: { customerId?: string; storeIds?
   const conversations = (conversationRows ?? []).map(mapConversation);
   const ids = conversations.map((conversation) => conversation.id);
   if (!ids.length) return { conversations, messages: [] as ChatMessage[] };
-  const { data: messageRows, error: messageError } = await supabase.from("messages").select("*").in("conversation_id", ids).order("created_at", { ascending: true });
+  const { data: messageRows, error: messageError } = await supabase.from("messages").select(MESSAGE_COLUMNS).in("conversation_id", ids).order("created_at", { ascending: true });
   if (messageError) throw messageError;
   return { conversations, messages: (messageRows ?? []).map(mapMessage) };
 }
