@@ -46,3 +46,16 @@ export function safeInternalPath(value: string | null | undefined, fallback = "/
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return fallback;
   return value;
 }
+
+// Supabase/PostgREST errors are plain objects with a `message` string, not
+// `Error` instances, so `error instanceof Error` misses them and callers
+// fall back to a generic message that hides the real reason (e.g. an RLS
+// policy rejection). This reads `.message` off anything error-shaped.
+export function errorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error && typeof (error as { message?: unknown }).message === "string") {
+    return (error as { message: string }).message;
+  }
+  if (typeof error === "string" && error.trim()) return error;
+  return fallback;
+}

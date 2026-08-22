@@ -1,11 +1,11 @@
 "use client";
 
-import { Archive, ArrowLeft, Lock, MessageCircle, MessagesSquare, Package, RotateCcw, Search, Send, ShoppingBag, Store as StoreIcon, UserRound } from "lucide-react";
+import { Archive, ArrowLeft, Check, CheckCheck, Lock, MessageCircle, MessagesSquare, Package, RotateCcw, Search, Send, ShoppingBag, Store as StoreIcon, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useApp } from "@/providers/app-provider";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 import type { Conversation } from "@/types";
 
 type Mode = "customer" | "merchant" | "admin";
@@ -91,7 +91,7 @@ function MessagingWorkspaceInner({ mode }: { mode: Mode }) {
 
   useEffect(() => {
     if (!selectedIdForRead || shouldCompose || mode === "admin") return;
-    void markConversationRead(selectedIdForRead, mode === "customer" ? "customer" : "merchant");
+    markConversationRead(selectedIdForRead, mode === "customer" ? "customer" : "merchant").catch(() => {});
   }, [selectedIdForRead, mode, markConversationRead, shouldCompose]);
 
   if (!platformSettings.messagingEnabled) {
@@ -123,7 +123,7 @@ function MessagingWorkspaceInner({ mode }: { mode: Mode }) {
       await sendMessage(selected.id, text);
       event.currentTarget.reset();
     } catch (error) {
-      toast(error instanceof Error ? error.message : "Unable to send message", "error");
+      toast(errorMessage(error, locale === "ar" ? "تعذر إرسال الرسالة" : "Unable to send message"), "error");
     } finally {
       setSending(false);
     }
@@ -149,7 +149,7 @@ function MessagingWorkspaceInner({ mode }: { mode: Mode }) {
       setComposeMessage("");
       setMobileListOpen(false);
     } catch (error) {
-      toast(error instanceof Error ? error.message : "Unable to start conversation", "error");
+      toast(errorMessage(error, locale === "ar" ? "تعذر بدء المحادثة" : "Unable to start conversation"), "error");
     } finally {
       setSending(false);
     }
@@ -193,7 +193,7 @@ function MessagingWorkspaceInner({ mode }: { mode: Mode }) {
           <div className="conversation-context">
             {selected.productId && <Link href={`/${locale}/product/${selected.productId}`}><Package />{locale === "ar" ? "المنتج" : "Product"}</Link>}
             {selected.orderId && <Link href={`/${locale}/order/${selected.orderId}`}><ShoppingBag />{selected.orderId}</Link>}
-            {mode !== "customer" && <button onClick={() => void setConversationStatus(selected.id, selected.status === "open" ? "closed" : "open")}>{selected.status === "open" ? <Archive /> : <RotateCcw />}{selected.status === "open" ? (locale === "ar" ? "إغلاق" : "Close") : (locale === "ar" ? "إعادة فتح" : "Reopen")}</button>}
+            {mode !== "customer" && <button onClick={() => setConversationStatus(selected.id, selected.status === "open" ? "closed" : "open").catch((error) => toast(errorMessage(error, locale === "ar" ? "تعذر تحديث حالة المحادثة" : "Unable to update conversation status"), "error"))}>{selected.status === "open" ? <Archive /> : <RotateCcw />}{selected.status === "open" ? (locale === "ar" ? "إغلاق" : "Close") : (locale === "ar" ? "إعادة فتح" : "Reopen")}</button>}
           </div>
         </header>
         <div className="conversation-messages">
@@ -203,14 +203,14 @@ function MessagingWorkspaceInner({ mode }: { mode: Mode }) {
             return <div key={message.id} className={cn("message-bubble", mine && "is-mine", message.senderRole === "admin" && "is-admin")}>
               {message.senderRole === "admin" && <small className="admin-message-label">{locale === "ar" ? "إدارة المنصة" : "Platform admin"}</small>}
               <p>{message.text}</p>
-              <time>{new Date(message.createdAt).toLocaleTimeString(locale === "ar" ? "ar" : "en", { hour: "2-digit", minute: "2-digit" })}</time>
+              <time>{new Date(message.createdAt).toLocaleTimeString(locale === "ar" ? "ar" : "en", { hour: "2-digit", minute: "2-digit" })}{mine && (message.readAt ? <CheckCheck className="message-receipt" /> : <Check className="message-receipt" />)}</time>
             </div>;
           })}
         </div>
         <form className="conversation-composer" onSubmit={submitReply}>
           {selected.status === "closed" ? <div className="conversation-closed"><Lock />{locale === "ar" ? "هذه المحادثة مغلقة. أعد فتحها لإرسال رسالة." : "This conversation is closed. Reopen it to reply."}</div> : <>
-            <textarea name="message" rows={2} maxLength={2000} required placeholder={locale === "ar" ? "اكتب رسالة واضحة…" : "Write a clear message…"} />
-            <button className="button button-dark" disabled={sending}><Send />{locale === "ar" ? "إرسال" : "Send"}</button>
+            <textarea name="message" rows={1} maxLength={2000} required placeholder={locale === "ar" ? "اكتب رسالة واضحة…" : "Write a clear message…"} />
+            <button className="button button-dark composer-send" disabled={sending} aria-label={locale === "ar" ? "إرسال" : "Send"} title={locale === "ar" ? "إرسال" : "Send"}><Send /></button>
           </>}
         </form>
       </> : mode === "customer" ? <form className="new-conversation-card" onSubmit={submitNewConversation}>
