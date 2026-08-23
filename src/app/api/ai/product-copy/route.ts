@@ -150,27 +150,29 @@ export async function POST(request: NextRequest) {
     const detail = aiErrorResponse(error);
 
     const debug =
-      error instanceof Error
-        ? {
-            name: error.name,
-            message: error.message,
-            cause:
-              error.cause instanceof Error
-                ? error.cause.message
-                : error.cause
-                  ? String(error.cause)
-                  : undefined,
-          }
-        : {
-            name: "UnknownError",
-            message: String(error),
-          };
+      process.env.NODE_ENV === "production"
+        ? undefined
+        : error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              cause:
+                error.cause instanceof Error
+                  ? error.cause.message
+                  : error.cause
+                    ? String(error.cause)
+                    : undefined,
+            }
+          : {
+              name: "UnknownError",
+              message: String(error),
+            };
 
     return NextResponse.json(
       {
         error: detail.ar,
         errorEn: detail.en,
-        debug,
+        ...(debug ? { debug } : {}),
       },
       {
         status: detail.status,
