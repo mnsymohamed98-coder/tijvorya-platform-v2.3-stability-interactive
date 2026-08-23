@@ -9,7 +9,15 @@ export const metadata: Metadata = {
   description: localeSeo.ar.description,
   applicationName: "Tijvorya",
   category: "ecommerce",
-  icons: { icon: "/assets/logo.svg", apple: "/assets/logo.svg" },
+  icons: {
+    icon: [
+      { url: "/assets/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/assets/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/assets/favicon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/assets/favicon-180.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/assets/favicon-32.png",
+  },
   manifest: "/manifest.webmanifest",
   robots: { index: true, follow: true },
   verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
