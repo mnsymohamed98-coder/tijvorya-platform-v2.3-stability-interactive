@@ -8,7 +8,7 @@ export function HomeStructuredData({ locale }: { locale: Locale }) {
       "@type": "Organization",
       name: siteConfig.name,
       url: siteConfig.url,
-      logo: absoluteUrl("/assets/logo.svg"),
+      logo: absoluteUrl("/assets/tijvorya-mark-official.png"),
       description: localeSeo[locale].description,
     },
     {
