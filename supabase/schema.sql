@@ -681,3 +681,89 @@ alter table public.stores add column if not exists website jsonb not null defaul
   'facebook', '',
   'tiktok', ''
 );
+
+-- v2.4 Security fix: the "stores owner write" and "reels owner" policies let an owner change
+-- ANY column on their own row, including trust/moderation fields that must stay admin-only
+-- (stores.verified, stores.status, reels.status). These triggers close that gap without
+-- touching the existing policies or any client code - admins are unaffected (short-circuited
+-- at the top), and legitimate owner writes (draft -> active on first publish, draft/pending
+-- reel submissions, auto-approved reels when reel_moderation_required is off) still pass.
+begin;
+
+create or replace function public.protect_store_write()
+returns trigger language plpgsql security definer set search_path=public as $$
+begin
+  if pg_trigger_depth() > 1 then
+    return new;
+  end if;
+
+  if public.is_admin() then
+    return new;
+  end if;
+
+  if tg_op = 'INSERT' then
+    if new.verified then
+      raise exception 'Only an administrator can verify a store';
+    end if;
+    if new.status = 'suspended' then
+      raise exception 'Only an administrator can suspend a store';
+    end if;
+    return new;
+  end if;
+
+  if new.verified is distinct from old.verified then
+    raise exception 'Only an administrator can change store verification';
+  end if;
+  if old.status = 'suspended' and new.status is distinct from old.status then
+    raise exception 'Only an administrator can lift a store suspension';
+  end if;
+  if new.status = 'suspended' and old.status is distinct from new.status then
+    raise exception 'Only an administrator can suspend a store';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_store_write_trigger on public.stores;
+create trigger protect_store_write_trigger
+before insert or update on public.stores
+for each row execute function public.protect_store_write();
+
+create or replace function public.protect_reel_write()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare
+  v_moderation_required boolean;
+  v_allowed_owner_statuses text[];
+begin
+  if pg_trigger_depth() > 1 then
+    return new;
+  end if;
+
+  if public.is_admin() then
+    return new;
+  end if;
+
+  select coalesce(reel_moderation_required, true) into v_moderation_required
+  from public.platform_settings where id = 'main';
+  v_moderation_required := coalesce(v_moderation_required, true);
+
+  v_allowed_owner_statuses := case when v_moderation_required
+    then array['draft','pending']
+    else array['draft','pending','approved']
+  end;
+
+  if not (new.status = any(v_allowed_owner_statuses)) then
+    raise exception 'Only an administrator can approve or reject a reel';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_reel_write_trigger on public.reels;
+create trigger protect_reel_write_trigger
+before insert or update on public.reels
+for each row execute function public.protect_reel_write();
+
+commit;
