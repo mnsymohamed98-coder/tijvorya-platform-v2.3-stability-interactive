@@ -67,6 +67,8 @@ type AppContextValue = PersistedState & {
   locale: Locale;
   ready: boolean;
   workspaceLoading: boolean;
+  loadError: boolean;
+  retryHydrate: () => void;
   productionMode: boolean;
   toasts: ToastMessage[];
   setCurrentUser: (user: AppUser | null) => void;
@@ -189,46 +191,63 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
   const [state, setState] = useState<PersistedState>(() => productionMode ? emptyState() : initialLocalState());
   const [ready, setReady] = useState(false);
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const loadedWorkspaceKey = useRef<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   useEffect(() => {
     let active = true;
     async function hydrate() {
-      try {
-        if (productionMode) {
-          const user = await getCurrentUser();
-          const remote = user?.role === "admin"
-            ? await loadAdminWorkspace()
-            : user?.role === "merchant" || user?.role === "influencer"
-              ? await loadMerchantWorkspace(user.id)
-              : await loadCustomerWorkspace(user?.id);
-          if (active) {
-            loadedWorkspaceKey.current = user ? `${user.id}:${user.role}` : null;
-            setState((previous) => ({
-              ...previous,
-              ...remote,
-              users: remote.users ?? previous.users,
-              currentUser: user,
-              cart: [],
-              favoriteIds: [],
-              likedReelIds: [],
-            }));
+      // A slow/flaky connection to the DB (most visitors are far from the
+      // hosting region) previously failed hydrate() silently: state stayed
+      // at its empty default, ready still flipped true, and the visitor saw
+      // a marketplace/storefront with no stores at all - indistinguishable
+      // from there genuinely being none. Retry transient failures a few
+      // times before giving up, and surface a real error state on the way
+      // out so the UI can tell the visitor to retry instead of going quiet.
+      const MAX_ATTEMPTS = 3;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+        try {
+          if (productionMode) {
+            const user = await getCurrentUser();
+            const remote = user?.role === "admin"
+              ? await loadAdminWorkspace()
+              : user?.role === "merchant" || user?.role === "influencer"
+                ? await loadMerchantWorkspace(user.id)
+                : await loadCustomerWorkspace(user?.id);
+            if (active) {
+              loadedWorkspaceKey.current = user ? `${user.id}:${user.role}` : null;
+              setState((previous) => ({
+                ...previous,
+                ...remote,
+                users: remote.users ?? previous.users,
+                currentUser: user,
+                cart: [],
+                favoriteIds: [],
+                likedReelIds: [],
+              }));
+              setLoadError(false);
+            }
+          } else {
+            const raw = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY);
+            if (raw && active) {
+              const cleaned = sanitizePersisted(JSON.parse(raw) as Partial<PersistedState>);
+              setState(cleaned);
+              window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+              window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+            }
           }
-        } else {
-          const raw = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY);
-          if (raw && active) {
-            const cleaned = sanitizePersisted(JSON.parse(raw) as Partial<PersistedState>);
-            setState(cleaned);
-            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
-            window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+          break;
+        } catch (error) {
+          console.error(error);
+          if (attempt === MAX_ATTEMPTS) {
+            if (active) setLoadError(true);
+          } else if (active) {
+            await new Promise((resolve) => window.setTimeout(resolve, attempt * 800));
           }
         }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        if (active) setReady(true);
       }
+      if (active) setReady(true);
     }
     hydrate();
 
@@ -818,6 +837,10 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     toast(locale === "ar" ? "تم حفظ إعدادات المنصة" : "Platform settings saved");
   }, [productionMode, appendAudit, state.currentUser?.id, toast, locale]);
 
+  const retryHydrate = useCallback(() => {
+    window.location.reload();
+  }, []);
+
   const resetDemo = useCallback(() => {
     const fresh = initialLocalState();
     setState(fresh);
@@ -831,6 +854,8 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     locale,
     ready,
     workspaceLoading,
+    loadError,
+    retryHydrate,
     productionMode,
     toasts,
     setCurrentUser,
@@ -860,7 +885,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     updatePlatformSettings,
     toast,
     resetDemo,
-  }), [state, locale, ready, workspaceLoading, productionMode, toasts, setCurrentUser, updateAccountProfile, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, updatePlatformSettings, toast, resetDemo]);
+  }), [state, locale, ready, workspaceLoading, loadError, retryHydrate, productionMode, toasts, setCurrentUser, updateAccountProfile, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, updatePlatformSettings, toast, resetDemo]);
 
   return <AppContext.Provider value={value}>{children}<ToastViewport messages={toasts} /></AppContext.Provider>;
 }
