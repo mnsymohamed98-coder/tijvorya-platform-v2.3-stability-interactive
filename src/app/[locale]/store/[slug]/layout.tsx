@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { absoluteUrl } from "@/lib/site";
+
 import {
   getPublicStoreSeo,
   shortDescription,
@@ -11,17 +13,15 @@ import {
   safeExternalUrl,
 } from "@/lib/store-website";
 
-const SITE_URL = "https://www.tijvorya.com";
-
 function absoluteImageUrl(value?: string | null) {
   if (!value) {
-    return `${SITE_URL}/og-default.jpg`;
+    return absoluteUrl("/assets/ai-commerce-dashboard.webp");
   }
 
   try {
-    return new URL(value, SITE_URL).toString();
+    return new URL(value, absoluteUrl("/")).toString();
   } catch {
-    return `${SITE_URL}/og-default.jpg`;
+    return absoluteUrl("/assets/ai-commerce-dashboard.webp");
   }
 }
 

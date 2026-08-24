@@ -26,7 +26,7 @@ export const initialAuditLog: AuditEntry[] = [];
 
 export const defaultPlatformSettings: PlatformSettings = {
   platformName: "Tijvorya",
-  supportEmail: "support@tijvorya.com",
+  supportEmail: "mnsymohamed98@gmail.com",
   maintenanceMode: false,
   merchantRegistrationEnabled: true,
   reelModerationRequired: true,
