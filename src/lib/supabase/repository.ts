@@ -42,6 +42,39 @@ export async function loadPublicData(): Promise<Pick<WorkspaceData, "stores" | "
   };
 }
 
+// Scoped product lookups used to fall back a single store/product/id-list
+// instead of assuming the shared client-side product cache is complete.
+// See docs/performance-roadmap-AR.md for why loadPublicData() can't keep
+// being the only source of truth for `products` as the catalog grows.
+export async function loadStoreCatalog(storeId: string): Promise<Product[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("products").select(PRODUCT_COLUMNS)
+    .eq("store_id", storeId).eq("status", "active").order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(mapProduct);
+}
+
+export async function getProductById(id: string): Promise<Product | null> {
+  const supabase = createClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("products").select(PRODUCT_COLUMNS)
+    .eq("id", id).eq("status", "active").maybeSingle();
+  if (error) throw error;
+  return data ? mapProduct(data) : null;
+}
+
+export async function getProductsByIds(ids: string[]): Promise<Product[]> {
+  const uniqueIds = Array.from(new Set(ids));
+  if (uniqueIds.length === 0) return [];
+  const supabase = createClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("products").select(PRODUCT_COLUMNS)
+    .in("id", uniqueIds).eq("status", "active");
+  if (error) throw error;
+  return (data ?? []).map(mapProduct);
+}
+
 export async function loadCustomerWorkspace(customerId?: string): Promise<WorkspaceData> {
   const publicData = await loadPublicData();
   if (!customerId) return { ...publicData, orders: [], conversations: [], messages: [] };

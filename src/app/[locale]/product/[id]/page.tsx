@@ -3,20 +3,36 @@
 import Link from "next/link";
 import { Heart, MessageCircle, Minus, Plus, ShieldCheck, ShoppingBag, Star, Store as StoreIcon, Truck } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductCard } from "@/components/commerce/product-card";
 import { PublicShell } from "@/components/layout/public-shell";
 import { PersistentImage } from "@/components/ui/persistent-media";
 import { useApp } from "@/providers/app-provider";
 import { formatMoney } from "@/lib/utils";
 import { merchantStoreHref } from "@/lib/store-website";
+import { loadStoreCatalog } from "@/lib/supabase/repository";
 
 export default function ProductPage() {
   const params = useParams<{ id: string }>();
-  const { locale, products, stores, addToCart, favoriteIds, toggleFavorite, platformSettings } = useApp();
+  const { locale, products, stores, addToCart, favoriteIds, toggleFavorite, platformSettings, productionMode, resolveProduct, mergeProducts } = useApp();
   const product = products.find((item) => item.id === params.id && item.status === "active");
   const [qty, setQty] = useState(1);
   const [variant, setVariant] = useState("");
+
+  // Deep link to a product outside the currently-cached slice: resolve it
+  // directly instead of assuming a cache miss means it doesn't exist.
+  useEffect(() => {
+    if (product || !productionMode) return;
+    void resolveProduct(params.id);
+  }, [product, params.id, productionMode, resolveProduct]);
+
+  const productStoreId = product?.storeId;
+  useEffect(() => {
+    if (!productStoreId || !productionMode) return;
+    let active = true;
+    loadStoreCatalog(productStoreId).then((catalog) => { if (active) mergeProducts(catalog); }).catch(console.error);
+    return () => { active = false; };
+  }, [productStoreId, productionMode, mergeProducts]);
 
   if (!product) return <PublicShell locale={locale}><main className="centered-page"><div className="empty-state"><h1>{locale === "ar" ? "المنتج غير موجود" : "Product not found"}</h1><Link className="button button-dark" href={`/${locale}/marketplace`}>{locale === "ar" ? "العودة للسوق" : "Back to marketplace"}</Link></div></main></PublicShell>;
   const store = stores.find((item) => item.id === product.storeId && (item.status ?? "active") === "active");
