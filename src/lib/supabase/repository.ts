@@ -407,7 +407,7 @@ function mapStoreTheme(value: unknown, fallbackAccent: string): StoreTheme {
 function mapPlatformSettings(row: Record<string, unknown>): PlatformSettings {
   return {
     platformName: String(row.platform_name ?? "Tijvorya"),
-    supportEmail: String(row.support_email ?? "support@tijvorya.com"),
+    supportEmail: String(row.support_email ?? "mnsymohamed98@gmail.com"),
     maintenanceMode: Boolean(row.maintenance_mode),
     merchantRegistrationEnabled: row.merchant_registration_enabled !== false,
     reelModerationRequired: row.reel_moderation_required !== false,
