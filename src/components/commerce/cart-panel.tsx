@@ -2,13 +2,29 @@
 
 import Link from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
+import { useEffect } from "react";
 import { useApp } from "@/providers/app-provider";
 import { formatMoney } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PersistentImage } from "@/components/ui/persistent-media";
+import { getProductsByIds } from "@/lib/supabase/repository";
 
 export function CartPanel() {
-  const { locale, cart, products, stores, updateCartQuantity, removeFromCart } = useApp();
+  const { locale, cart, products, stores, updateCartQuantity, removeFromCart, productionMode, mergeProducts } = useApp();
+
+  // The cart persists across sessions and can reference a product that
+  // isn't in the currently-cached slice - resolve any such lines directly
+  // instead of silently dropping them (see the `.filter(entry => entry.product)` below).
+  useEffect(() => {
+    if (!productionMode) return;
+    const knownIds = new Set(products.map((product) => product.id));
+    const missingIds = cart.map((item) => item.productId).filter((id) => !knownIds.has(id));
+    if (missingIds.length === 0) return;
+    let active = true;
+    getProductsByIds(missingIds).then((resolved) => { if (active) mergeProducts(resolved); }).catch(console.error);
+    return () => { active = false; };
+  }, [cart, products, productionMode, mergeProducts]);
+
   const detailed = cart.map((item) => ({ item, product: products.find((product) => product.id === item.productId) })).filter((entry) => entry.product);
   if (detailed.length === 0) return <EmptyState title={locale === "ar" ? "السلة فارغة" : "Your cart is empty"} text={locale === "ar" ? "أضف منتجًا من السوق أو مباشرة من الريلز." : "Add a product from the marketplace or reels."} action={<Link className="button button-dark" href={`/${locale}/marketplace`}>{locale === "ar" ? "اذهب للسوق" : "Explore marketplace"}</Link>} />;
 

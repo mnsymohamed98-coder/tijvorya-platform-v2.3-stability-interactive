@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { ArrowUpRight, BadgeCheck, Clock3, MapPin, MessageCircle, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useEffect } from "react";
 import { ProductCard } from "@/components/commerce/product-card";
 import { StorefrontFrame } from "@/components/storefront/storefront-frame";
 import { StorefrontNotFound } from "@/components/storefront/storefront-not-found";
 import { StorefrontLoading } from "@/components/storefront/storefront-loading";
 import { PersistentImage } from "@/components/ui/persistent-media";
 import { businessCategoryLabel, merchantStoreHref, normalizeStoreWebsiteProfile } from "@/lib/store-website";
+import { loadStoreCatalog } from "@/lib/supabase/repository";
 import { useApp } from "@/providers/app-provider";
 
 function decodeSlug(value: string) {
@@ -18,9 +20,20 @@ function decodeSlug(value: string) {
 
 export default function StorePage() {
   const params = useParams<{ slug: string }>();
-  const { locale, stores, products, reels, platformSettings, ready } = useApp();
+  const { locale, stores, products, reels, platformSettings, ready, productionMode, mergeProducts } = useApp();
   const requestedSlug = decodeSlug(params.slug);
   const store = stores.find((item) => item.slug.trim().toLocaleLowerCase() === requestedSlug && (item.status ?? "active") === "active");
+
+  // The shared `products` cache no longer holds every store's catalog - a
+  // storefront fetches and merges its own, instead of filtering a global
+  // array that may not contain this store's products at all.
+  useEffect(() => {
+    if (!store || !productionMode) return;
+    let active = true;
+    loadStoreCatalog(store.id).then((catalog) => { if (active) mergeProducts(catalog); }).catch(console.error);
+    return () => { active = false; };
+  }, [store, productionMode, mergeProducts]);
+
   if (!ready) return <StorefrontLoading />;
   if (!store) return <StorefrontNotFound />;
 

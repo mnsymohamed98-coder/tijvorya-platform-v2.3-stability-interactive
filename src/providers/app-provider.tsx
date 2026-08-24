@@ -7,6 +7,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   changeOrderStatus,
   changeReelStatus,
+  getProductById,
   insertConversation,
   insertMessage,
   insertOrder,
@@ -73,7 +74,9 @@ type AppContextValue = PersistedState & {
   toasts: ToastMessage[];
   setCurrentUser: (user: AppUser | null) => void;
   updateAccountProfile: (changes: { fullName: string; phone?: string }) => Promise<void>;
-  addToCart: (productId: string, quantity?: number, variant?: string) => void;
+  mergeProducts: (products: Product[]) => void;
+  resolveProduct: (id: string) => Promise<Product | undefined>;
+  addToCart: (productId: string, quantity?: number, variant?: string) => Promise<void>;
   updateCartQuantity: (productId: string, quantity: number, variant?: string) => void;
   removeFromCart: (productId: string, variant?: string) => void;
   clearCart: () => void;
@@ -407,8 +410,28 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     toast(locale === "ar" ? "تم تحديث بيانات الحساب" : "Account profile updated");
   }, [state.currentUser, productionMode, locale, toast]);
 
-  const addToCart = useCallback((productId: string, quantity = 1, variant?: string) => {
-    const target = state.products.find((product) => product.id === productId);
+  // `state.products` is a lazily-grown cache, not the full catalog - anything
+  // that needs a specific product by id should go through resolveProduct()
+  // instead of assuming a `state.products.find()` miss means "unavailable".
+  const mergeProducts = useCallback((incoming: Product[]) => {
+    if (incoming.length === 0) return;
+    setState((previous) => {
+      const byId = new Map(previous.products.map((product) => [product.id, product]));
+      for (const product of incoming) byId.set(product.id, product);
+      return { ...previous, products: Array.from(byId.values()) };
+    });
+  }, []);
+
+  const resolveProduct = useCallback(async (id: string): Promise<Product | undefined> => {
+    const local = state.products.find((product) => product.id === id);
+    if (local || !productionMode) return local;
+    const remote = await getProductById(id);
+    if (remote) mergeProducts([remote]);
+    return remote ?? undefined;
+  }, [state.products, productionMode, mergeProducts]);
+
+  const addToCart = useCallback(async (productId: string, quantity = 1, variant?: string) => {
+    const target = await resolveProduct(productId);
     if (!target || target.stock < 1) { toast(locale === "ar" ? "المنتج غير متوفر" : "Product is unavailable", "error"); return; }
     const existingStore = state.cart.length ? state.products.find((product) => product.id === state.cart[0].productId)?.storeId : undefined;
     if (existingStore && existingStore !== target.storeId) {
@@ -423,7 +446,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
       return { ...previous, cart };
     });
     toast(locale === "ar" ? "تمت إضافة المنتج إلى السلة" : "Product added to cart");
-  }, [state.products, state.cart, locale, toast]);
+  }, [state.products, state.cart, locale, toast, resolveProduct]);
 
   const updateCartQuantity = useCallback((productId: string, quantity: number, variant?: string) => {
     setState((previous) => ({
@@ -489,8 +512,8 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     const targetStore = state.stores.find((store) => store.id === input.storeId && (store.status ?? "active") === "active");
     if (!targetStore) throw new Error(locale === "ar" ? "المتجر غير متاح للمراسلة" : "This store is not available for messaging");
     if (input.productId) {
-      const targetProduct = state.products.find((product) => product.id === input.productId && product.storeId === input.storeId && product.status === "active");
-      if (!targetProduct) throw new Error(locale === "ar" ? "المنتج المحدد غير متاح في هذا المتجر" : "The selected product is not available in this store");
+      const targetProduct = await resolveProduct(input.productId);
+      if (!targetProduct || targetProduct.storeId !== input.storeId) throw new Error(locale === "ar" ? "المنتج المحدد غير متاح في هذا المتجر" : "The selected product is not available in this store");
     }
     if (input.orderId) {
       const targetOrder = state.orders.find((order) => order.id === input.orderId && order.storeId === input.storeId && order.customerId === state.currentUser?.id);
@@ -544,7 +567,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     appendAudit("message_sent", conversation.id, `رسالة جديدة في المحادثة ${conversation.id}`, state.currentUser.id);
     toast(locale === "ar" ? "تم إرسال رسالتك إلى المتجر" : "Your message was sent to the store");
     return updatedConversation;
-  }, [state.platformSettings.messagingEnabled, state.currentUser, state.conversations, state.stores, state.products, state.orders, productionMode, appendAudit, toast, locale]);
+  }, [state.platformSettings.messagingEnabled, state.currentUser, state.conversations, state.stores, state.orders, productionMode, appendAudit, toast, locale, resolveProduct]);
 
   const sendMessage = useCallback(async (conversationId: string, textInput: string) => {
     if (!state.platformSettings.messagingEnabled) throw new Error(locale === "ar" ? "الرسائل متوقفة حاليًا" : "Messaging is currently disabled");
@@ -614,15 +637,16 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
   const createOrder = useCallback(async (input: Pick<Order, "customerName" | "phone" | "address" | "notes">) => {
     if (state.cart.length === 0) throw new Error(locale === "ar" ? "السلة فارغة" : "Cart is empty");
     const storeIds = new Set<string>();
-    const items = state.cart.map((cartItem) => {
-      const product = state.products.find((item) => item.id === cartItem.productId);
+    const items: Array<{ productId: string; name: string; quantity: number; unitPrice: number; variant?: string }> = [];
+    for (const cartItem of state.cart) {
+      const product = await resolveProduct(cartItem.productId);
       if (!product || product.status !== "active") throw new Error(locale === "ar" ? "أحد المنتجات لم يعد متاحًا." : "One of the products is no longer available.");
       if (!Number.isInteger(cartItem.quantity) || cartItem.quantity < 1 || cartItem.quantity > product.stock) {
         throw new Error(locale === "ar" ? `الكمية المطلوبة من ${product.name} غير متوفرة.` : `The requested quantity of ${product.nameEn} is unavailable.`);
       }
       storeIds.add(product.storeId);
-      return { productId: product.id, name: locale === "ar" ? product.name : product.nameEn, quantity: cartItem.quantity, unitPrice: product.price, variant: cartItem.variant };
-    });
+      items.push({ productId: product.id, name: locale === "ar" ? product.name : product.nameEn, quantity: cartItem.quantity, unitPrice: product.price, variant: cartItem.variant });
+    }
     if (storeIds.size !== 1) throw new Error(locale === "ar" ? "يجب أن يحتوي الطلب على منتجات من متجر واحد فقط." : "An order can contain products from one store only.");
     const storeId = [...storeIds][0] ?? "";
     const store = state.stores.find((item) => item.id === storeId);
@@ -645,7 +669,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     }));
     toast(locale === "ar" ? `تم إنشاء الطلب ${order.id}` : `Order ${order.id} created`);
     return order;
-  }, [state.cart, state.products, state.stores, state.currentUser, locale, productionMode, toast]);
+  }, [state.cart, state.stores, state.currentUser, locale, productionMode, toast, resolveProduct]);
 
   const updateOrderStatus = useCallback(async (id: string, status: Order["status"]) => {
     if (productionMode) await changeOrderStatus(id, status);
@@ -860,6 +884,8 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     toasts,
     setCurrentUser,
     updateAccountProfile,
+    mergeProducts,
+    resolveProduct,
     addToCart,
     updateCartQuantity,
     removeFromCart,
@@ -885,7 +911,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     updatePlatformSettings,
     toast,
     resetDemo,
-  }), [state, locale, ready, workspaceLoading, loadError, retryHydrate, productionMode, toasts, setCurrentUser, updateAccountProfile, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, updatePlatformSettings, toast, resetDemo]);
+  }), [state, locale, ready, workspaceLoading, loadError, retryHydrate, productionMode, toasts, setCurrentUser, updateAccountProfile, mergeProducts, resolveProduct, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, updatePlatformSettings, toast, resetDemo]);
 
   return <AppContext.Provider value={value}>{children}<ToastViewport messages={toasts} /></AppContext.Provider>;
 }

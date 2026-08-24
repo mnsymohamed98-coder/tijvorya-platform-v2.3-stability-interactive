@@ -28,6 +28,7 @@ import { PersistentImage, PersistentVideo } from "@/components/ui/persistent-med
 import { formatCompact, formatMoney, uid } from "@/lib/utils";
 import { EMPTY_REEL_PROFILE, rankReels, recordPreference, type ReelPreferenceProfile } from "@/lib/reels/recommendation";
 import { merchantStoreHref } from "@/lib/store-website";
+import { getProductsByIds } from "@/lib/supabase/repository";
 import type { Reel } from "@/types";
 
 type ReelComment = {
@@ -357,8 +358,21 @@ function CommentsSheet({
 }
 
 export function ReelFeed({ reels }: { reels: Reel[] }) {
-  const { locale, products } = useApp();
+  const { locale, products, productionMode, mergeProducts } = useApp();
   const { social, toggleSave, toggleFollow, hideReel, toggleCommentLike, addComment } = useReelSocial();
+
+  // Reels resolve their product from the shared cache (see ReelItem/recordPreference
+  // below) - batch-fetch whatever this feed's reels reference that isn't cached yet,
+  // instead of each reel silently rendering without its product.
+  useEffect(() => {
+    if (!productionMode) return;
+    const knownIds = new Set(products.map((product) => product.id));
+    const missingIds = Array.from(new Set(reels.map((reel) => reel.productId).filter((id) => !knownIds.has(id))));
+    if (missingIds.length === 0) return;
+    let active = true;
+    getProductsByIds(missingIds).then((resolved) => { if (active) mergeProducts(resolved); }).catch(console.error);
+    return () => { active = false; };
+  }, [reels, products, productionMode, mergeProducts]);
   const feedRef = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState(reels[0]?.id ?? "");
   const [soundOn, setSoundOn] = useState(false);

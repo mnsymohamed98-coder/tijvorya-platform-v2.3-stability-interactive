@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import { ProductCard } from "@/components/commerce/product-card";
 import { StorefrontFrame } from "@/components/storefront/storefront-frame";
 import { StorefrontNotFound } from "@/components/storefront/storefront-not-found";
 import { StorefrontLoading } from "@/components/storefront/storefront-loading";
+import { loadStoreCatalog } from "@/lib/supabase/repository";
 import { useApp } from "@/providers/app-provider";
 
 function decodeSlug(value: string) {
@@ -17,12 +18,19 @@ function decodeSlug(value: string) {
 function ProductsContent() {
   const params = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
-  const { locale, stores, products, ready } = useApp();
+  const { locale, stores, products, ready, productionMode, mergeProducts } = useApp();
   const store = stores.find((item) => item.slug.trim().toLocaleLowerCase() === decodeSlug(params.slug) && (item.status ?? "active") === "active");
   const initialCategory = searchParams.get("category") ?? "all";
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState(initialCategory);
   const [sort, setSort] = useState("featured");
+
+  useEffect(() => {
+    if (!store || !productionMode) return;
+    let active = true;
+    loadStoreCatalog(store.id).then((catalog) => { if (active) mergeProducts(catalog); }).catch(console.error);
+    return () => { active = false; };
+  }, [store, productionMode, mergeProducts]);
 
   const storeProducts = useMemo(() => products.filter((item) => item.storeId === store?.id && item.status === "active"), [products, store?.id]);
   const categories = useMemo(() => Array.from(new Set(storeProducts.map((item) => item.category).filter(Boolean))), [storeProducts]);
