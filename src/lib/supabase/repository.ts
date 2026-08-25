@@ -25,67 +25,21 @@ type WorkspaceData = {
   platformSettings?: PlatformSettings;
 };
 
-// products is deliberately NOT fetched here anymore - it used to be the
-// entire active catalog, unbounded, on every visitor's first paint. Every
-// consumer that needs specific products now fetches its own scoped slice
-// (loadStoreCatalog, searchPublicProducts) or
-// resolves on demand (resolveProduct/getProductsByIds), all merging into
-// the shared cache. See docs/performance-roadmap-AR.md.
-export async function loadPublicData(): Promise<Pick<WorkspaceData, "stores" | "reels">> {
-  if (!isSupabaseConfigured()) return { stores: [], reels: [] };
+export async function loadPublicData(): Promise<Pick<WorkspaceData, "stores" | "products" | "reels">> {
+  if (!isSupabaseConfigured()) return { stores: [], products: [], reels: [] };
   const supabase = createClient();
-  if (!supabase) return { stores: [], reels: [] };
-  const [storesResult, reelsResult] = await Promise.all([
+  if (!supabase) return { stores: [], products: [], reels: [] };
+  const [storesResult, productsResult, reelsResult] = await Promise.all([
     supabase.from("stores").select(STORE_COLUMNS).eq("status", "active").order("created_at", { ascending: false }),
+    supabase.from("products").select(PRODUCT_COLUMNS).eq("status", "active").order("created_at", { ascending: false }),
     supabase.from("reels").select(REEL_COLUMNS).eq("status", "approved").order("created_at", { ascending: false }),
   ]);
-  if (storesResult.error || reelsResult.error) throw new Error("تعذر تحميل بيانات المنصة من قاعدة البيانات.");
+  if (storesResult.error || productsResult.error || reelsResult.error) throw new Error("تعذر تحميل بيانات المنصة من قاعدة البيانات.");
   return {
     stores: (storesResult.data ?? []).map(mapStore),
+    products: (productsResult.data ?? []).map(mapProduct),
     reels: (reelsResult.data ?? []).map(mapReel),
   };
-}
-
-export type PublicProductSort = "featured" | "rating" | "price-low" | "price-high";
-
-export async function searchPublicProducts(input: {
-  query?: string;
-  category?: string;
-  sort?: PublicProductSort;
-  page: number;
-  pageSize: number;
-}): Promise<{ products: Product[]; total: number }> {
-  const supabase = createClient();
-  if (!supabase) return { products: [], total: 0 };
-  let builder = supabase.from("products").select(PRODUCT_COLUMNS, { count: "exact" }).eq("status", "active");
-  if (input.category && input.category !== "all") builder = builder.eq("category", input.category);
-  const term = input.query?.trim();
-  if (term) {
-    const pattern = `%${term.replace(/[%,]/g, "")}%`;
-    builder = builder.or(`name.ilike.${pattern},name_en.ilike.${pattern},description.ilike.${pattern},description_en.ilike.${pattern},category.ilike.${pattern}`);
-  }
-  if (input.sort === "rating") builder = builder.order("rating", { ascending: false });
-  else if (input.sort === "price-low") builder = builder.order("price", { ascending: true });
-  else if (input.sort === "price-high") builder = builder.order("price", { ascending: false });
-  else builder = builder.order("featured", { ascending: false }).order("created_at", { ascending: false });
-  const from = input.page * input.pageSize;
-  const to = from + input.pageSize - 1;
-  const { data, error, count } = await builder.range(from, to);
-  if (error) throw error;
-  return { products: (data ?? []).map(mapProduct), total: count ?? 0 };
-}
-
-export async function loadPublicCategories(): Promise<string[]> {
-  const supabase = createClient();
-  if (!supabase) return [];
-  const { data, error } = await supabase.from("products").select("category").eq("status", "active");
-  if (error) throw error;
-  const categories = new Set<string>();
-  for (const row of (data ?? []) as Array<{ category: string | null }>) {
-    const value = row.category?.trim();
-    if (value) categories.add(value);
-  }
-  return Array.from(categories).sort();
 }
 
 // Scoped product lookups used to fall back a single store/product/id-list
@@ -123,12 +77,9 @@ export async function getProductsByIds(ids: string[]): Promise<Product[]> {
 
 export async function loadCustomerWorkspace(customerId?: string): Promise<WorkspaceData> {
   const publicData = await loadPublicData();
-  // products stays empty here too - the customer's cart/order-history pages
-  // resolve their own product references on demand (see AppProvider's
-  // resolveProduct/getProductsByIds), same as the anonymous-visitor path.
-  if (!customerId) return { ...publicData, products: [], orders: [], conversations: [], messages: [] };
+  if (!customerId) return { ...publicData, orders: [], conversations: [], messages: [] };
   const supabase = createClient();
-  if (!supabase) return { ...publicData, products: [], orders: [], conversations: [], messages: [] };
+  if (!supabase) return { ...publicData, orders: [], conversations: [], messages: [] };
   const [ordersResult, communication] = await Promise.all([
     supabase.from("orders").select(ORDER_COLUMNS).eq("customer_id", customerId).order("created_at", { ascending: false }),
     loadConversationWorkspace({ customerId }),
@@ -136,7 +87,6 @@ export async function loadCustomerWorkspace(customerId?: string): Promise<Worksp
   if (ordersResult.error) throw ordersResult.error;
   return {
     ...publicData,
-    products: [],
     orders: (ordersResult.data ?? []).map(mapOrder),
     conversations: communication.conversations,
     messages: communication.messages,
