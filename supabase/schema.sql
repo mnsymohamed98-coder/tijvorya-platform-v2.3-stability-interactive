@@ -767,3 +767,10 @@ before insert or update on public.reels
 for each row execute function public.protect_reel_write();
 
 commit;
+
+-- v2.5 Product cache decoupling, increment 3: the marketplace page now
+-- queries products directly (status + created_at desc, optionally filtered
+-- by category and paginated) instead of loading the full catalog client-side.
+-- Composite index to keep that query - and its "load more" pagination -
+-- efficient as the catalog grows.
+create index if not exists products_public_recent_idx on public.products(status, created_at desc);
