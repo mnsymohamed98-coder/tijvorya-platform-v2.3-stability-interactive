@@ -100,9 +100,9 @@ export function StoreThemeEditor({
         <div className="theme-preview-label"><Sparkles />{locale === "ar" ? "معاينة مباشرة" : "Live preview"}</div>
         <div className={`theme-preview-store hero-${value.heroStyle}`}>
           {value.announcement && <div className="theme-preview-announcement">{value.announcement}</div>}
-          <div className="theme-preview-cover"><PersistentImage src={store?.cover ?? "/assets/cover-urban.svg"} alt="" className="media-fill" /></div>
+          <div className="theme-preview-cover"><PersistentImage src={store?.cover ?? "/assets/cover-urban.svg"} alt="" className="media-fill" optimized sizes="400px" /></div>
           <div className="theme-preview-profile">
-            <div className="theme-preview-logo"><PersistentImage src={store?.logo ?? "/assets/logo.svg"} alt="" className="media-cover" /></div>
+            <div className="theme-preview-logo"><PersistentImage src={store?.logo ?? "/assets/logo.svg"} alt="" className="media-cover" optimized width={56} height={56} /></div>
             <div><small>TIJVORYA STORE</small><strong>{locale === "ar" ? store?.name ?? "متجرك" : store?.nameEn ?? "Your store"}</strong><span>{locale === "ar" ? "واجهة تعكس هوية علامتك" : "A storefront that reflects your brand"}</span></div>
             <button type="button">{locale === "ar" ? "تسوّق الآن" : "Shop now"}</button>
           </div>

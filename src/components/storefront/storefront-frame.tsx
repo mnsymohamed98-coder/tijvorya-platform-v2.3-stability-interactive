@@ -312,6 +312,8 @@ export function StorefrontFrame({
                 className="media-cover"
                 src={store.logo}
                 alt={name}
+                optimized
+                sizes="48px"
               />
             </span>
 
@@ -463,6 +465,8 @@ export function StorefrontFrame({
                   className="media-cover"
                   src={store.logo}
                   alt={name}
+                  optimized
+                  sizes="48px"
                 />
               </span>
 
