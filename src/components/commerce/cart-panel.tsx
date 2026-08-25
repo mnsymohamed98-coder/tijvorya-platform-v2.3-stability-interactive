@@ -34,7 +34,7 @@ export function CartPanel() {
 
   return <div className="cart-layout">
     <div className="cart-items">{detailed.map(({ item, product }) => product && <article key={`${item.productId}-${item.variant ?? ""}`} className="cart-item">
-      <div className="cart-image"><PersistentImage className="media-fill" src={product.image} alt={locale === "ar" ? product.name : product.nameEn} /></div>
+      <div className="cart-image"><PersistentImage className="media-fill" src={product.image} alt={locale === "ar" ? product.name : product.nameEn} optimized sizes="80px" /></div>
       <div className="cart-info"><Link href={`/${locale}/product/${product.id}`}>{locale === "ar" ? product.name : product.nameEn}</Link>{item.variant && <span>{item.variant}</span>}<strong>{formatMoney(product.price, locale)}</strong></div>
       <div className="quantity-control" aria-label={locale === "ar" ? `كمية ${product.name}` : `${product.nameEn} quantity`}><button type="button" aria-label={locale === "ar" ? "تقليل الكمية" : "Decrease quantity"} onClick={() => updateCartQuantity(item.productId, item.quantity - 1, item.variant)}><Minus /></button><span aria-live="polite">{item.quantity}</span><button type="button" aria-label={locale === "ar" ? "زيادة الكمية" : "Increase quantity"} disabled={item.quantity >= product.stock} onClick={() => updateCartQuantity(item.productId, Math.min(product.stock, item.quantity + 1), item.variant)}><Plus /></button></div>
       <button type="button" className="icon-button danger" aria-label={locale === "ar" ? `حذف ${product.name} من السلة` : `Remove ${product.nameEn} from cart`} onClick={() => removeFromCart(item.productId, item.variant)}><Trash2 /></button>

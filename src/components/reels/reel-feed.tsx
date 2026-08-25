@@ -247,7 +247,7 @@ function ReelItem({
     <div className="reel-actions" onPointerUp={(event) => event.stopPropagation()}>
       <div className="reel-avatar-action">
         <Link href={merchantStoreHref(store.slug, locale)} className="reel-action-avatar">
-          <PersistentImage className="media-cover" src={store.logo} alt={locale === "ar" ? store.name : store.nameEn} />
+          <PersistentImage className="media-cover" src={store.logo} alt={locale === "ar" ? store.name : store.nameEn} optimized width={48} height={48} />
         </Link>
         <button className={`reel-follow-mini ${following ? "is-following" : ""}`} onClick={onToggleFollow} aria-label={following ? "unfollow" : "follow"}>
           {following ? "✓" : <Plus />}
@@ -292,7 +292,7 @@ function ReelItem({
       <div className="reel-audio-line"><Music2 /><span>{locale === "ar" ? `الصوت الأصلي · ${store.name}` : `Original audio · ${store.nameEn}`}</span></div>
       <div className="reel-product-panel">
         <Link href={`/${locale}/product/${product.id}`}>
-          <div className="reel-product-image"><PersistentImage className="media-fill" src={product.image} alt="" /></div>
+          <div className="reel-product-image"><PersistentImage className="media-fill" src={product.image} alt="" optimized sizes="44px" /></div>
           <div><small>{locale === "ar" ? "تسوّق هذا المنتج" : "Shop this product"}</small><strong>{locale === "ar" ? product.name : product.nameEn}</strong><span>{formatMoney(product.price, locale)}</span></div>
         </Link>
         <button className="reel-shop-button" onClick={() => addToCart(product.id)}><ShoppingBag />{locale === "ar" ? "إضافة" : "Add"}</button>
@@ -443,7 +443,7 @@ export function ReelFeed({ reels }: { reels: Reel[] }) {
 
   return <div className="instagram-reels-shell">
     <div className="reels-topbar">
-      <Link className="reels-top-logo" href={`/${locale}`}><PersistentImage src="/assets/tijvorya-mark-official.png" alt="Tijvorya" /></Link>
+      <Link className="reels-top-logo" href={`/${locale}`}><PersistentImage src="/assets/tijvorya-mark-official.png" alt="Tijvorya" optimized width={38} height={38} /></Link>
       <div className="reels-tabs" role="tablist">
         <button className={tab === "for-you" ? "is-active" : ""} onClick={() => setTab("for-you")}>{locale === "ar" ? "لك" : "For you"}</button>
         <button className={tab === "following" ? "is-active" : ""} onClick={() => setTab("following")}>{locale === "ar" ? "المتابَعة" : "Following"}</button>

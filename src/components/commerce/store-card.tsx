@@ -13,7 +13,7 @@ export function StoreCard({ store, locale }: { store: Store; locale: Locale }) {
   return <Link className="store-card store-card-logo" href={merchantStoreHref(store.slug, locale)} aria-label={locale === "ar" ? `زيارة متجر ${storeName}` : `Visit ${storeName}`}>
     <div className="store-card-icon-shell">
       <div className="store-logo store-logo-large">
-        <PersistentImage className="media-cover" src={store.logo} alt={locale === "ar" ? `شعار ${storeName}` : `${storeName} logo`} />
+        <PersistentImage className="media-cover" src={store.logo} alt={locale === "ar" ? `شعار ${storeName}` : `${storeName} logo`} optimized width={68} height={68} />
       </div>
       {store.verified && <span className="store-verified-badge" title={locale === "ar" ? "متجر موثّق" : "Verified store"}>✓</span>}
     </div>

@@ -18,7 +18,7 @@ export function ProductCard({ product, store }: { product: Product; store?: Stor
 
   return <article className="product-card">
     <div className="product-media">
-      <Link href={`/${locale}/product/${product.id}`} aria-label={labels.view}><PersistentImage className="media-fill" src={product.image} alt={productName} /></Link>
+      <Link href={`/${locale}/product/${product.id}`} aria-label={labels.view}><PersistentImage className="media-fill" src={product.image} alt={productName} optimized sizes="(max-width: 560px) 100vw, (max-width: 850px) 50vw, (max-width: 1100px) 33vw, 25vw" /></Link>
       {product.compareAtPrice && product.compareAtPrice > product.price && <span className="discount-tag">-{Math.round((1 - product.price / product.compareAtPrice) * 100)}%</span>}
       <button type="button" className={`favorite-button ${isFavorite ? "is-active" : ""}`} onClick={() => toggleFavorite(product.id)} aria-label={labels.favorite} aria-pressed={isFavorite}><Heart fill={isFavorite ? "currentColor" : "none"} /></button>
     </div>
