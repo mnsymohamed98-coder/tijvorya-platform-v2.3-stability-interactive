@@ -70,7 +70,7 @@ export async function updateSession(request: NextRequest) {
     return redirectWithCookies(request, response, loginPath);
   }
 
-  const { data: profileData } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+  const { data: profileData } = await supabase.from("profiles").select("role,status,admin_role").eq("id", userId).maybeSingle();
   const profile = (profileData ?? {}) as Record<string, unknown>;
   const role = String(profile.role ?? "customer") as UserRole;
   if (profile.status === "suspended") {
