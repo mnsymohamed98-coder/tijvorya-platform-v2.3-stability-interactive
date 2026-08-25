@@ -55,6 +55,15 @@ export async function loadStoreCatalog(storeId: string): Promise<Product[]> {
   return (data ?? []).map(mapProduct);
 }
 
+export async function loadHomepagePreviewProducts(limit: number): Promise<Product[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("products").select(PRODUCT_COLUMNS)
+    .eq("status", "active").order("created_at", { ascending: false }).limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(mapProduct);
+}
+
 export async function getProductById(id: string): Promise<Product | null> {
   const supabase = createClient();
   if (!supabase) return null;
