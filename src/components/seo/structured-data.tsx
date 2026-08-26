@@ -10,6 +10,10 @@ export function HomeStructuredData({ locale }: { locale: Locale }) {
       url: siteConfig.url,
       logo: absoluteUrl("/assets/tijvorya-mark-official.png"),
       description: localeSeo[locale].description,
+      founder: {
+        "@type": "Person",
+        name: "Mohammed Mansy",
+      },
     },
     {
       "@context": "https://schema.org",
