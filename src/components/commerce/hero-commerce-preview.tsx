@@ -8,7 +8,7 @@ import type { Locale, Product, Reel, Store } from "@/types";
 
 type PreviewMode = "products" | "stores" | "reels";
 
-export function HeroCommercePreview({ locale, products, stores, reels }: { locale: Locale; products: Product[]; stores: Store[]; reels: Reel[] }) {
+export function HeroCommercePreview({ locale, products, stores, reels, stats }: { locale: Locale; products: Product[]; stores: Store[]; reels: Reel[]; stats: { stores: number; products: number; reels: number } }) {
   const [mode, setMode] = useState<PreviewMode>("products");
   const tabs = locale === "ar"
     ? [{ id: "products" as const, label: "المنتجات" }, { id: "stores" as const, label: "المتاجر" }, { id: "reels" as const, label: "الريلز" }]
@@ -34,9 +34,9 @@ export function HeroCommercePreview({ locale, products, stores, reels }: { local
 
       <div className="hero-live-content">
         <div className="hero-live-summary">
-          <div><small>{locale === "ar" ? "متاجر جاهزة" : "Ready stores"}</small><strong>{stores.length}</strong></div>
-          <div><small>{locale === "ar" ? "منتجات منشورة" : "Published products"}</small><strong>{products.length}</strong></div>
-          <div><small>{locale === "ar" ? "ريلز منشورة" : "Published reels"}</small><strong>{reels.length}</strong></div>
+          <div><small>{locale === "ar" ? "متاجر جاهزة" : "Ready stores"}</small><strong>{stats.stores}</strong></div>
+          <div><small>{locale === "ar" ? "منتجات منشورة" : "Published products"}</small><strong>{stats.products}</strong></div>
+          <div><small>{locale === "ar" ? "ريلز منشورة" : "Published reels"}</small><strong>{stats.reels}</strong></div>
         </div>
 
         {mode === "products" && <section className="hero-live-panel" role="tabpanel">
