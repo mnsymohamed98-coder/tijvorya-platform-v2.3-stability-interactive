@@ -132,6 +132,30 @@ export async function loadHomepagePreviewProducts(limit: number): Promise<Produc
   return (data ?? []).map(mapProduct);
 }
 
+// Same reasoning as loadHomepagePreviewProducts/loadPublicStats: the
+// homepage's "ready stores" grid and hero preview tabs must always show the
+// true public snapshot, not state.stores/reels - those are scoped to
+// whatever the current viewer's role loaded (a merchant only ever sees
+// their own store's rows).
+export async function loadHomepageReadyStores(limit: number): Promise<Store[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("stores").select(STORE_COLUMNS)
+    .eq("status", "active").not("logo_url", "is", null).eq("website->>onboardingCompleted", "true")
+    .order("created_at", { ascending: false }).limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(mapStore);
+}
+
+export async function loadHomepagePreviewReels(limit: number): Promise<Reel[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("reels").select(REEL_COLUMNS)
+    .eq("status", "approved").order("created_at", { ascending: false }).limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(mapReel);
+}
+
 export async function getProductById(id: string): Promise<Product | null> {
   const supabase = createClient();
   if (!supabase) return null;
