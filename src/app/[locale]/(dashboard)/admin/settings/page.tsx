@@ -7,17 +7,29 @@ import { useApp } from "@/providers/app-provider";
 import type { AIStatusResponse } from "@/types/ai";
 
 export default function Page() {
-  const { locale, platformSettings, updatePlatformSettings, resetDemo, productionMode } = useApp();
+  const { locale, platformSettings, updatePlatformSettings, resetDemo, productionMode, toast } = useApp();
   const [settings, setSettings] = useState(platformSettings);
   const [status, setStatus] = useState<AIStatusResponse | null>(null);
   const [checking, setChecking] = useState(true);
+  const [saving, setSaving] = useState(false);
   useEffect(() => {
     fetch("/api/ai/status", { cache: "no-store" })
       .then((response) => response.json())
       .then((data: AIStatusResponse) => setStatus(data))
       .finally(() => setChecking(false));
   }, []);
-  async function submit(event: FormEvent) { event.preventDefault(); await updatePlatformSettings(settings); }
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await updatePlatformSettings(settings);
+    } catch (error) {
+      toast(locale === "ar" ? "تعذر حفظ إعدادات المنصة. حاول مرة أخرى." : "Unable to save platform settings. Please try again.", "error");
+      console.error(error);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return <>
     <PageHeader eyebrow="PLATFORM OPERATIONS" title={locale === "ar" ? "إعدادات المنصة" : "Platform settings"} text={locale === "ar" ? "تحكم مركزي في المراجعة والتسجيل والعمولة والرسائل وحدود الفيديو وتشغيل أدوات الذكاء الاصطناعي." : "Central control for moderation, registration, commission, messaging, video limits and AI tools."} />
@@ -29,7 +41,7 @@ export default function Page() {
         <div className="admin-toggle-list"><label><input type="checkbox" checked={settings.aiEnabled} onChange={(event) => setSettings({ ...settings, aiEnabled: event.target.checked })} /><div><strong>{locale === "ar" ? "تشغيل Tijvorya AI" : "Enable Tijvorya AI"}</strong><span>{locale === "ar" ? "المفتاح الرئيسي لجميع الأدوات الذكية." : "Master switch for all AI tools."}</span></div></label><label><input type="checkbox" disabled={!settings.aiEnabled} checked={settings.aiProductWriterEnabled} onChange={(event) => setSettings({ ...settings, aiProductWriterEnabled: event.target.checked })} /><div><strong>{locale === "ar" ? "كاتب وصف المنتجات" : "Product copy writer"}</strong><span>{locale === "ar" ? "إنشاء وصف عربي وإنجليزي داخل نموذج المنتج." : "Generate Arabic and English copy in the product form."}</span></div></label><label><input type="checkbox" disabled={!settings.aiEnabled} checked={settings.aiReelWriterEnabled} onChange={(event) => setSettings({ ...settings, aiReelWriterEnabled: event.target.checked })} /><div><strong>{locale === "ar" ? "كاتب كابشن الريلز" : "Reel caption writer"}</strong><span>{locale === "ar" ? "إنشاء Hook وكابشن وهاشتاقات من بيانات المنتج." : "Generate hooks, captions and hashtags from product data."}</span></div></label><label><input type="checkbox" disabled={!settings.aiEnabled} checked={settings.aiModerationEnabled} onChange={(event) => setSettings({ ...settings, aiModerationEnabled: event.target.checked })} /><div><strong>{locale === "ar" ? "فحص سلامة ومساعدة المراجعة" : "Safety and review assistance"}</strong><span>{locale === "ar" ? "فحص النص والغلاف وتقديم توصية مساعدة لإدارة الريلز." : "Check captions and covers and assist the admin moderation queue."}</span></div></label></div>
         <label className="field ai-limit-field"><span>{locale === "ar" ? "الحد اليومي المقترح لكل مستخدم" : "Suggested daily limit per user"}</span><input type="number" min={1} max={1000} value={settings.aiDailyRequestLimit} onChange={(event) => setSettings({ ...settings, aiDailyRequestLimit: Number(event.target.value) })} /><small>{locale === "ar" ? "يُستخدم كسياسة تشغيلية، بينما يطبق الخادم أيضًا حدًا مؤقتًا للحماية." : "Used as an operating policy; the server also applies a temporary protection limit."}</small></label>
       </section>
-      <div className="sticky-form-actions"><button className="button button-dark"><Bot />{locale === "ar" ? "حفظ إعدادات المنصة" : "Save platform settings"}</button>{!productionMode && <button type="button" className="button button-ghost" onClick={resetDemo}>{locale === "ar" ? "مسح البيانات المحلية" : "Clear local data"}</button>}</div>
+      <div className="sticky-form-actions"><button className="button button-dark" disabled={saving} aria-busy={saving}>{saving ? <LoaderCircle className="spin" /> : <Bot />}{locale === "ar" ? "حفظ إعدادات المنصة" : "Save platform settings"}</button>{!productionMode && <button type="button" className="button button-ghost" onClick={resetDemo}>{locale === "ar" ? "مسح البيانات المحلية" : "Clear local data"}</button>}</div>
     </form>
   </>;
 }
