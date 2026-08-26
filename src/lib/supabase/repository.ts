@@ -46,6 +46,28 @@ export async function loadPublicData(): Promise<Pick<WorkspaceData, "stores" | "
   };
 }
 
+// Role-independent public totals for the homepage hero widget. Deliberately
+// separate from state.stores/products/reels, which are scoped to whatever
+// workspace the current viewer's role loaded (a merchant only ever sees
+// their own store's rows, an admin sees everything including inactive
+// rows) - neither reflects the true public platform-wide count. head:true
+// count-only queries so this stays cheap regardless of catalog size.
+export async function loadPublicStats(): Promise<{ stores: number; products: number; reels: number }> {
+  const supabase = createClient();
+  if (!supabase) return { stores: 0, products: 0, reels: 0 };
+  const [storesResult, productsResult, reelsResult] = await Promise.all([
+    supabase.from("stores").select("id", { count: "exact", head: true }).eq("status", "active"),
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("status", "active"),
+    supabase.from("reels").select("id", { count: "exact", head: true }).eq("status", "approved"),
+  ]);
+  if (storesResult.error || productsResult.error || reelsResult.error) throw new Error("تعذر تحميل إحصاءات المنصة.");
+  return {
+    stores: storesResult.count ?? 0,
+    products: productsResult.count ?? 0,
+    reels: reelsResult.count ?? 0,
+  };
+}
+
 export type PublicProductSort = "featured" | "rating" | "price-low" | "price-high";
 
 export async function searchPublicProducts(input: {

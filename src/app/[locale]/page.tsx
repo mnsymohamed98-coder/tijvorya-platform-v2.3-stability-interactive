@@ -30,7 +30,7 @@ import { PersistentVideo } from "@/components/ui/persistent-media";
 import { HomeStructuredData } from "@/components/seo/structured-data";
 import { useApp } from "@/providers/app-provider";
 import { copy } from "@/lib/i18n";
-import { loadHomepagePreviewProducts } from "@/lib/supabase/repository";
+import { loadHomepagePreviewProducts, loadPublicStats } from "@/lib/supabase/repository";
 import type { Product } from "@/types";
 
 export default function HomePage() {
@@ -68,6 +68,19 @@ export default function HomePage() {
     return () => { active = false; };
   }, [productionMode, mergeProducts]);
   const discoverProducts = productionMode ? homepageProducts : publicProducts;
+
+  // Role-independent public totals for the hero widget - state.stores/
+  // products/reels are scoped to whatever the current viewer's role loaded
+  // (a merchant only sees their own store, an admin sees everything
+  // including inactive rows), so neither is the true platform-wide count.
+  const [heroStats, setHeroStats] = useState({ stores: 0, products: 0, reels: 0 });
+  useEffect(() => {
+    if (!productionMode) return;
+    let active = true;
+    loadPublicStats().then((result) => { if (active) setHeroStats(result); }).catch(console.error);
+    return () => { active = false; };
+  }, [productionMode]);
+  const previewStats = productionMode ? heroStats : { stores: activeStores.length, products: publicProducts.length, reels: approvedReels.length };
 
   const metrics = locale === "ar" ? [
     { icon: Film, label: "ريلز قابلة للشراء" },
@@ -134,7 +147,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="hero-dashboard-stage">
-            <HeroCommercePreview locale={locale} products={publicProducts} stores={launchReadyStores} reels={approvedReels} />
+            <HeroCommercePreview locale={locale} products={publicProducts} stores={launchReadyStores} reels={approvedReels} stats={previewStats} />
           </div>
           <div className="hero-visual-panel hero-visual-panel-bottom"><ShoppingBag />
             <div>
