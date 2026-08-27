@@ -8,6 +8,8 @@ import {
   changeOrderStatus,
   changeReelStatus,
   getProductById,
+  getStoreById,
+  getStoreBySlug,
   insertConversation,
   insertMessage,
   insertOrder,
@@ -76,6 +78,9 @@ type AppContextValue = PersistedState & {
   updateAccountProfile: (changes: { fullName: string; phone?: string }) => Promise<void>;
   mergeProducts: (products: Product[]) => void;
   resolveProduct: (id: string) => Promise<Product | undefined>;
+  mergeStores: (stores: Store[]) => void;
+  resolveStoreBySlug: (slug: string) => Promise<Store | undefined>;
+  resolveStoreById: (id: string) => Promise<Store | undefined>;
   addToCart: (productId: string, quantity?: number, variant?: string) => Promise<void>;
   updateCartQuantity: (productId: string, quantity: number, variant?: string) => void;
   removeFromCart: (productId: string, variant?: string) => void;
@@ -429,6 +434,37 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     if (remote) mergeProducts([remote]);
     return remote ?? undefined;
   }, [state.products, productionMode, mergeProducts]);
+
+  // Same reasoning as mergeProducts/resolveProduct above: state.stores is a
+  // role-scoped workspace slice (loadMerchantWorkspace only returns that
+  // merchant's own store), not a full public directory. Any public-facing
+  // page looking up a specific store by slug or id must go through one of
+  // these instead of assuming a state.stores.find() miss means "not found".
+  const mergeStores = useCallback((incoming: Store[]) => {
+    if (incoming.length === 0) return;
+    setState((previous) => {
+      const byId = new Map(previous.stores.map((store) => [store.id, store]));
+      for (const store of incoming) byId.set(store.id, store);
+      return { ...previous, stores: Array.from(byId.values()) };
+    });
+  }, []);
+
+  const resolveStoreBySlug = useCallback(async (slug: string): Promise<Store | undefined> => {
+    const normalized = slug.trim().toLocaleLowerCase();
+    const local = state.stores.find((store) => store.slug.trim().toLocaleLowerCase() === normalized);
+    if (local || !productionMode) return local;
+    const remote = await getStoreBySlug(normalized);
+    if (remote) mergeStores([remote]);
+    return remote ?? undefined;
+  }, [state.stores, productionMode, mergeStores]);
+
+  const resolveStoreById = useCallback(async (id: string): Promise<Store | undefined> => {
+    const local = state.stores.find((store) => store.id === id);
+    if (local || !productionMode) return local;
+    const remote = await getStoreById(id);
+    if (remote) mergeStores([remote]);
+    return remote ?? undefined;
+  }, [state.stores, productionMode, mergeStores]);
 
   const addToCart = useCallback(async (productId: string, quantity = 1, variant?: string) => {
     const target = await resolveProduct(productId);
@@ -886,6 +922,9 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     updateAccountProfile,
     mergeProducts,
     resolveProduct,
+    mergeStores,
+    resolveStoreBySlug,
+    resolveStoreById,
     addToCart,
     updateCartQuantity,
     removeFromCart,
@@ -911,7 +950,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     updatePlatformSettings,
     toast,
     resetDemo,
-  }), [state, locale, ready, workspaceLoading, loadError, retryHydrate, productionMode, toasts, setCurrentUser, updateAccountProfile, mergeProducts, resolveProduct, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, updatePlatformSettings, toast, resetDemo]);
+  }), [state, locale, ready, workspaceLoading, loadError, retryHydrate, productionMode, toasts, setCurrentUser, updateAccountProfile, mergeProducts, resolveProduct, mergeStores, resolveStoreBySlug, resolveStoreById, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, updatePlatformSettings, toast, resetDemo]);
 
   return <AppContext.Provider value={value}>{children}<ToastViewport messages={toasts} /></AppContext.Provider>;
 }

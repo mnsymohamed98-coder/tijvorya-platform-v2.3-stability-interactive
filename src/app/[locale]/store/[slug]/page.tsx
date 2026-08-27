@@ -20,9 +20,18 @@ function decodeSlug(value: string) {
 
 export default function StorePage() {
   const params = useParams<{ slug: string }>();
-  const { locale, stores, products, reels, platformSettings, ready, productionMode, mergeProducts } = useApp();
+  const { locale, stores, products, reels, platformSettings, ready, productionMode, mergeProducts, resolveStoreBySlug } = useApp();
   const requestedSlug = decodeSlug(params.slug);
   const store = stores.find((item) => item.slug.trim().toLocaleLowerCase() === requestedSlug && (item.status ?? "active") === "active");
+
+  // state.stores is a role-scoped workspace slice (a merchant only ever
+  // sees their own store), not a full public directory - a miss here
+  // doesn't mean the store doesn't exist, just that it's not in whatever
+  // this viewer's role happened to load. Resolve it directly instead.
+  useEffect(() => {
+    if (store || !productionMode) return;
+    void resolveStoreBySlug(requestedSlug);
+  }, [store, requestedSlug, productionMode, resolveStoreBySlug]);
 
   // The shared `products` cache no longer holds every store's catalog - a
   // storefront fetches and merges its own, instead of filtering a global

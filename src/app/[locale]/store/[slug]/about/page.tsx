@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BadgeCheck, Clock3, Mail, MapPin, MessageCircle, Music2, PackageCheck, Phone, ShieldCheck, Truck } from "lucide-react";
 import { FacebookBrandIcon, InstagramBrandIcon } from "@/components/ui/social-brand-icons";
 import { useParams } from "next/navigation";
+import { useEffect } from "react";
 import { StorefrontFrame } from "@/components/storefront/storefront-frame";
 import { StorefrontNotFound } from "@/components/storefront/storefront-not-found";
 import { StorefrontLoading } from "@/components/storefront/storefront-loading";
@@ -20,8 +21,18 @@ function cleanWhatsapp(value?: string) { return value?.replace(/\D/g, ""); }
 
 export default function AboutPage() {
   const params = useParams<{ slug: string }>();
-  const { locale, stores, platformSettings, ready } = useApp();
-  const store = stores.find((item) => item.slug.trim().toLocaleLowerCase() === decodeSlug(params.slug) && (item.status ?? "active") === "active");
+  const { locale, stores, platformSettings, ready, productionMode, resolveStoreBySlug } = useApp();
+  const requestedSlug = decodeSlug(params.slug);
+  const store = stores.find((item) => item.slug.trim().toLocaleLowerCase() === requestedSlug && (item.status ?? "active") === "active");
+
+  // state.stores is role-scoped (a merchant only sees their own store), not
+  // a full public directory - resolve directly on a miss instead of
+  // assuming the store doesn't exist.
+  useEffect(() => {
+    if (store || !productionMode) return;
+    void resolveStoreBySlug(requestedSlug);
+  }, [store, requestedSlug, productionMode, resolveStoreBySlug]);
+
   if (!ready) return <StorefrontLoading />;
   if (!store) return <StorefrontNotFound />;
 

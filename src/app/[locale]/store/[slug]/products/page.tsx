@@ -18,12 +18,21 @@ function decodeSlug(value: string) {
 function ProductsContent() {
   const params = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
-  const { locale, stores, products, ready, productionMode, mergeProducts } = useApp();
-  const store = stores.find((item) => item.slug.trim().toLocaleLowerCase() === decodeSlug(params.slug) && (item.status ?? "active") === "active");
+  const { locale, stores, products, ready, productionMode, mergeProducts, resolveStoreBySlug } = useApp();
+  const requestedSlug = decodeSlug(params.slug);
+  const store = stores.find((item) => item.slug.trim().toLocaleLowerCase() === requestedSlug && (item.status ?? "active") === "active");
   const initialCategory = searchParams.get("category") ?? "all";
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState(initialCategory);
   const [sort, setSort] = useState("featured");
+
+  // state.stores is role-scoped (a merchant only sees their own store), not
+  // a full public directory - resolve directly on a miss instead of
+  // assuming the store doesn't exist.
+  useEffect(() => {
+    if (store || !productionMode) return;
+    void resolveStoreBySlug(requestedSlug);
+  }, [store, requestedSlug, productionMode, resolveStoreBySlug]);
 
   useEffect(() => {
     if (!store || !productionMode) return;

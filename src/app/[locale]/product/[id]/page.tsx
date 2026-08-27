@@ -14,7 +14,7 @@ import { loadStoreCatalog } from "@/lib/supabase/repository";
 
 export default function ProductPage() {
   const params = useParams<{ id: string }>();
-  const { locale, products, stores, addToCart, favoriteIds, toggleFavorite, platformSettings, productionMode, resolveProduct, mergeProducts } = useApp();
+  const { locale, products, stores, addToCart, favoriteIds, toggleFavorite, platformSettings, productionMode, resolveProduct, resolveStoreById, mergeProducts } = useApp();
   const product = products.find((item) => item.id === params.id && item.status === "active");
   const [qty, setQty] = useState(1);
   const [variant, setVariant] = useState("");
@@ -34,8 +34,17 @@ export default function ProductPage() {
     return () => { active = false; };
   }, [productStoreId, productionMode, mergeProducts]);
 
+  // state.stores is role-scoped (a merchant only sees their own store), not
+  // a full public directory - the product's own store can be missing from
+  // it even once the product itself has resolved. Resolve directly instead
+  // of showing "store unavailable" for a perfectly fine store.
+  const store = stores.find((item) => item.id === productStoreId && (item.status ?? "active") === "active");
+  useEffect(() => {
+    if (!productStoreId || store || !productionMode) return;
+    void resolveStoreById(productStoreId);
+  }, [productStoreId, store, productionMode, resolveStoreById]);
+
   if (!product) return <PublicShell locale={locale}><main className="centered-page"><div className="empty-state"><h1>{locale === "ar" ? "المنتج غير موجود" : "Product not found"}</h1><Link className="button button-dark" href={`/${locale}/marketplace`}>{locale === "ar" ? "العودة للسوق" : "Back to marketplace"}</Link></div></main></PublicShell>;
-  const store = stores.find((item) => item.id === product.storeId && (item.status ?? "active") === "active");
   if (!store) return <PublicShell locale={locale}><main className="centered-page"><div className="empty-state"><h1>{locale === "ar" ? "المتجر غير متاح" : "Store unavailable"}</h1><Link className="button button-dark" href={`/${locale}/marketplace`}>{locale === "ar" ? "العودة للسوق" : "Back to marketplace"}</Link></div></main></PublicShell>;
   const related = products.filter((item) => item.storeId === product.storeId && item.id !== product.id && item.status === "active").slice(0, 4);
   const fav = favoriteIds.includes(product.id);

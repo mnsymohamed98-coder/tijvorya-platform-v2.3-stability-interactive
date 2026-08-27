@@ -165,6 +165,29 @@ export async function getProductById(id: string): Promise<Product | null> {
   return data ? mapProduct(data) : null;
 }
 
+// Scoped store lookups, same reasoning as getProductById above: state.stores
+// is a role-scoped workspace slice (a merchant only sees their own store),
+// not a full public directory - any public-facing page that looks up a
+// specific store must fall back to one of these instead of assuming a
+// state.stores.find() miss means the store doesn't exist.
+export async function getStoreBySlug(slug: string): Promise<Store | null> {
+  const supabase = createClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("stores").select(STORE_COLUMNS)
+    .eq("slug", slug.trim().toLocaleLowerCase()).eq("status", "active").maybeSingle();
+  if (error) throw error;
+  return data ? mapStore(data) : null;
+}
+
+export async function getStoreById(id: string): Promise<Store | null> {
+  const supabase = createClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("stores").select(STORE_COLUMNS)
+    .eq("id", id).eq("status", "active").maybeSingle();
+  if (error) throw error;
+  return data ? mapStore(data) : null;
+}
+
 export async function getProductsByIds(ids: string[]): Promise<Product[]> {
   const uniqueIds = Array.from(new Set(ids));
   if (uniqueIds.length === 0) return [];
