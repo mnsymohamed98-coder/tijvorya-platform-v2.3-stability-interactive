@@ -5,7 +5,7 @@ const FALLBACK_SITE_URL = "https://tijvorya.com";
 export const siteConfig = {
   name: "Tijvorya",
   url: normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL),
-  defaultLocale: "ar" as Locale,
+  defaultLocale: "en" as Locale,
   locales: ["ar", "en"] as Locale[],
   social: {
     twitter: process.env.NEXT_PUBLIC_TWITTER_HANDLE?.trim() || undefined,
