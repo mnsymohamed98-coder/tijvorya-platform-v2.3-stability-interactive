@@ -125,19 +125,29 @@ export default function PricingPage() {
               ? "ابدأ مجانًا، وطوّر باقتك عندما يحتاج متجرك إلى أدوات وحدود أكبر."
               : "Start free and upgrade as your store needs more tools and higher limits."}
           </p>
+
+          <p className="pricing-paid-plans-note">
+            {locale === "ar"
+              ? "التسجيل في الباقات المدفوعة موقوف مؤقتًا لحين استكمال بوابة الدفع الآمنة — الباقة المجانية متاحة بالكامل."
+              : "Paid plan sign-ups are temporarily paused while we finalize secure payment integration — the Free plan remains fully available."}
+          </p>
         </div>
       </section>
 
       <section className="section container">
         <div className="pricing-grid">
-          {plans.map((p) => (
+          {plans.map((p) => {
+            const disabled = p.id !== "free";
+            return (
             <article
               key={p.id}
-              className={`pricing-card ${p.featured ? "featured" : ""}`}
+              className={`pricing-card ${p.featured ? "featured" : ""} ${disabled ? "is-coming-soon" : ""}`}
             >
               {p.featured && (
                 <span className="plan-badge">
-                  {locale === "ar" ? "الأكثر اختيارًا" : "Most popular"}
+                  {disabled
+                    ? locale === "ar" ? "قريبًا" : "Coming soon"
+                    : locale === "ar" ? "الأكثر اختيارًا" : "Most popular"}
                 </span>
               )}
 
@@ -165,22 +175,23 @@ export default function PricingPage() {
                 )}
               </ul>
 
-              <Link
-                className={`button button-block ${
-                  p.featured ? "button-dark" : "button-ghost"
-                }`}
-                href={`/${locale}/register?plan=${p.id}`}
-              >
-                {p.id === "free"
-                  ? locale === "ar"
-                    ? "ابدأ مجانًا"
-                    : "Start free"
-                  : locale === "ar"
-                    ? "اختر الباقة"
-                    : "Choose plan"}
-              </Link>
+              {disabled ? (
+                <button type="button" className="button button-block button-ghost" disabled>
+                  {locale === "ar" ? "قريبًا" : "Coming soon"}
+                </button>
+              ) : (
+                <Link
+                  className={`button button-block ${
+                    p.featured ? "button-dark" : "button-ghost"
+                  }`}
+                  href={`/${locale}/register?plan=${p.id}`}
+                >
+                  {locale === "ar" ? "ابدأ مجانًا" : "Start free"}
+                </Link>
+              )}
             </article>
-          ))}
+            );
+          })}
         </div>
 
         <div className="pricing-note">
