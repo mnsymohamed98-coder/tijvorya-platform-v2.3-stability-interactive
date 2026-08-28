@@ -54,6 +54,7 @@ export function DashboardShell({ children, role }: { children: React.ReactNode; 
 
   async function logout() { await signOut(); setCurrentUser(null); router.push(`/${locale}`); }
   return <div className="dashboard-layout">
+    {mobileOpen && <div className="dashboard-sidebar-backdrop" onClick={() => setMobileOpen(false)} />}
     <aside className={cn("dashboard-sidebar", mobileOpen && "is-open")}>
       <div className="sidebar-head"><Logo locale={locale} /><button className="icon-button mobile-only" onClick={() => setMobileOpen(false)}><X /></button></div>
       <nav className="dashboard-nav">{nav.map(([suffix, ar, en, Icon]) => {
