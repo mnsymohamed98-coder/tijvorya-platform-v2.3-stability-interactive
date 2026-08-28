@@ -165,23 +165,24 @@ function ReelItem({
     if (!video) return;
     video.muted = !soundOn;
     if (active) {
-      // HLS sources attach asynchronously (hls.js loads via dynamic import), so the
-      // video may have no source yet on this first attempt - retry once it's ready
-      // rather than leaving playback stuck after a silently rejected play() call.
-      // The canplay retry alone was found (via live testing) to still miss on a
-      // reel's very first mount on a fresh page load, so a short poll backs it up
-      // until playback actually starts.
-      const tryPlay = () => { video.play().then(() => setPlaying(true)).catch(() => setPlaying(false)); };
+      // HLS sources attach asynchronously (hls.js loads via dynamic import, then
+      // fetches its manifest/segments), so the video may have no source yet on this
+      // first attempt, or may simply not be buffered enough - retry rather than
+      // leaving playback stuck after a silently rejected/no-op play() call. Live
+      // testing found neither a single canplay retry nor a short bounded poll is
+      // reliable here (a slow/uncached HLS attach can outlast a fixed timeout), so
+      // this keeps retrying with no cutoff until playback actually starts or the
+      // video errors out - it only ever runs while this reel is the active one.
+      const tryPlay = () => { if (!video.paused) return; video.play().then(() => setPlaying(true)).catch(() => setPlaying(false)); };
       tryPlay();
       video.addEventListener("canplay", tryPlay);
       const poll = window.setInterval(() => {
-        if (video.paused && video.readyState >= 3) tryPlay();
+        if (!video.paused || video.error) { window.clearInterval(poll); return; }
+        tryPlay();
       }, 300);
-      const stopPoll = window.setTimeout(() => window.clearInterval(poll), 5000);
       return () => {
         video.removeEventListener("canplay", tryPlay);
         window.clearInterval(poll);
-        window.clearTimeout(stopPoll);
       };
     }
     video.pause();
