@@ -30,7 +30,7 @@ export const defaultPlatformSettings: PlatformSettings = {
   maintenanceMode: false,
   merchantRegistrationEnabled: true,
   reelModerationRequired: true,
-  maxReelSizeMB: 20,
+  maxReelSizeMB: 100,
   commissionPercent: 5,
   aiEnabled: true,
   aiProductWriterEnabled: true,

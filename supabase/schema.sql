@@ -114,7 +114,7 @@ create table if not exists public.platform_settings (
   maintenance_mode boolean not null default false,
   merchant_registration_enabled boolean not null default true,
   reel_moderation_required boolean not null default true,
-  max_reel_size_mb integer not null default 20,
+  max_reel_size_mb integer not null default 100,
   commission_percent numeric(5,2) not null default 5,
   ai_enabled boolean not null default true,
   ai_product_writer_enabled boolean not null default true,
