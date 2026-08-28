@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, Bot, Boxes, ChevronDown, CircleGauge, ClipboardList, Film, Globe2, LogOut, Menu, MessageCircle, Megaphone, PackagePlus, Settings, ShieldCheck, Store, Upload, Users, X } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "@/components/ui/logo";
+import { PersistentImage } from "@/components/ui/persistent-media";
 import { useApp } from "@/providers/app-provider";
 import { signOut } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -64,7 +65,7 @@ export function DashboardShell({ children, role }: { children: React.ReactNode; 
       <div className="sidebar-plan"><span className={`mode-dot ${productionMode ? "production" : "demo"}`} /> <strong>{productionMode ? (locale === "ar" ? "وضع الإنتاج" : "Production mode") : (locale === "ar" ? "وضع محلي" : "Local mode")}</strong><p>{productionMode ? (locale === "ar" ? "البيانات متصلة بـ Supabase." : "Data is connected to Supabase.") : (locale === "ar" ? "البيانات محفوظة محليًا على هذا الجهاز." : "Data is stored locally on this device.")}</p></div>
     </aside>
     <div className="dashboard-main">
-      <header className="dashboard-topbar"><button className="icon-button mobile-only" onClick={() => setMobileOpen(true)}><Menu /></button><div className="dashboard-search"><span>{locale === "ar" ? "بحث سريع في المنصة" : "Quick platform search"}</span></div><div className="dashboard-account"><Link className="icon-button" href={`/${locale}/cart`} aria-label="cart">{cart.length}</Link><span className="avatar">{currentUser.avatar && /^(https?:\/\/|\/|data:image\/)/i.test(currentUser.avatar) ? <img src={currentUser.avatar} alt={currentUser.fullName} /> : (currentUser.avatar || currentUser.fullName.slice(0, 2).toUpperCase())}</span><span className="account-copy"><strong>{currentUser.fullName}</strong><small>{currentUser.role}</small></span><ChevronDown size={16} /><button className="icon-button" onClick={logout} aria-label="logout"><LogOut /></button></div></header>
+      <header className="dashboard-topbar"><button className="icon-button mobile-only" onClick={() => setMobileOpen(true)}><Menu /></button><div className="dashboard-search"><span>{locale === "ar" ? "بحث سريع في المنصة" : "Quick platform search"}</span></div><div className="dashboard-account"><Link className="icon-button" href={`/${locale}/cart`} aria-label="cart">{cart.length}</Link><span className="avatar">{currentUser.avatar && /^(https?:\/\/|\/|data:image\/)/i.test(currentUser.avatar) ? <PersistentImage className="media-cover" src={currentUser.avatar} alt={currentUser.fullName} optimized width={36} height={36} /> : (currentUser.avatar || currentUser.fullName.slice(0, 2).toUpperCase())}</span><span className="account-copy"><strong>{currentUser.fullName}</strong><small>{currentUser.role}</small></span><ChevronDown size={16} /><button className="icon-button" onClick={logout} aria-label="logout"><LogOut /></button></div></header>
       <main className="dashboard-content">{children}</main>
     </div>
   </div>;
