@@ -55,7 +55,6 @@ export default function StorePage() {
   const name = locale === "ar" ? store.name : store.nameEn;
   const tagline = (locale === "ar" ? website.tagline : website.taglineEn) || (locale === "ar" ? store.description : store.descriptionEn);
   const about = (locale === "ar" ? website.about : website.aboutEn) || (locale === "ar" ? store.description : store.descriptionEn);
-  const base = merchantStoreHref(store.slug, locale, "home");
   const productsHref = merchantStoreHref(store.slug, locale, "products");
   const aboutHref = merchantStoreHref(store.slug, locale, "about");
 

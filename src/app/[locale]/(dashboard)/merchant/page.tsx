@@ -9,7 +9,6 @@ import {
   Sparkles,
   Store,
   Share2,
-  Copy,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SalesChart } from "@/components/dashboard/sales-chart";
