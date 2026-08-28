@@ -572,7 +572,7 @@ function mapPlatformSettings(row: Record<string, unknown>): PlatformSettings {
     maintenanceMode: Boolean(row.maintenance_mode),
     merchantRegistrationEnabled: row.merchant_registration_enabled !== false,
     reelModerationRequired: row.reel_moderation_required !== false,
-    maxReelSizeMB: Number(row.max_reel_size_mb ?? 20),
+    maxReelSizeMB: Number(row.max_reel_size_mb ?? 100),
     commissionPercent: Number(row.commission_percent ?? 5),
     aiEnabled: row.ai_enabled !== false,
     aiProductWriterEnabled: row.ai_product_writer_enabled !== false,
