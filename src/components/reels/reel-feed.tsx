@@ -161,7 +161,9 @@ function ReelItem({
   const liked = likedReelIds.includes(reel.id);
 
   useEffect(() => {
+    const tag = `[reel-autoplay ${reel.id.slice(-6)}]`;
     const video = videoRef.current;
+    console.debug(tag, "effect run", { hasVideo: !!video, active, soundOn });
     if (!video) return;
     video.muted = !soundOn;
     if (active) {
@@ -173,20 +175,35 @@ function ReelItem({
       // reliable here (a slow/uncached HLS attach can outlast a fixed timeout), so
       // this keeps retrying with no cutoff until playback actually starts or the
       // video errors out - it only ever runs while this reel is the active one.
-      const tryPlay = () => { if (!video.paused) return; video.play().then(() => setPlaying(true)).catch(() => setPlaying(false)); };
+      const tryPlay = () => {
+        if (!video.paused) return;
+        console.debug(tag, "tryPlay", { readyState: video.readyState, networkState: video.networkState, currentSrc: video.currentSrc });
+        video.play().then(
+          () => { console.debug(tag, "play resolved"); setPlaying(true); },
+          (e) => { console.debug(tag, "play rejected", e?.name, e?.message); setPlaying(false); },
+        );
+      };
       tryPlay();
       video.addEventListener("canplay", tryPlay);
+      let ticks = 0;
       const poll = window.setInterval(() => {
-        if (!video.paused || video.error) { window.clearInterval(poll); return; }
+        ticks += 1;
+        if (!video.paused || video.error) {
+          console.debug(tag, "poll stopping", { paused: video.paused, error: video.error, ticks });
+          window.clearInterval(poll);
+          return;
+        }
+        if (ticks % 5 === 0) console.debug(tag, "poll tick", { ticks, readyState: video.readyState, paused: video.paused });
         tryPlay();
       }, 300);
       return () => {
+        console.debug(tag, "cleanup", { ticks });
         video.removeEventListener("canplay", tryPlay);
         window.clearInterval(poll);
       };
     }
     video.pause();
-  }, [active, soundOn]);
+  }, [active, soundOn, reel.id]);
 
   useEffect(() => () => {
     if (singleTapTimerRef.current) clearTimeout(singleTapTimerRef.current);
