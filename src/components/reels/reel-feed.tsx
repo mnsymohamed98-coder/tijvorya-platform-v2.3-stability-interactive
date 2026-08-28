@@ -165,10 +165,15 @@ function ReelItem({
     if (!video) return;
     video.muted = !soundOn;
     if (active) {
-      video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
-    } else {
-      video.pause();
+      // HLS sources attach asynchronously (hls.js loads via dynamic import), so the
+      // video may have no source yet on this first attempt - retry once it's ready
+      // rather than leaving playback stuck after a silently rejected play() call.
+      const tryPlay = () => { video.play().then(() => setPlaying(true)).catch(() => setPlaying(false)); };
+      tryPlay();
+      video.addEventListener("canplay", tryPlay);
+      return () => video.removeEventListener("canplay", tryPlay);
     }
+    video.pause();
   }, [active, soundOn]);
 
   useEffect(() => () => {
