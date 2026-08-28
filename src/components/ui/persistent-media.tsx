@@ -59,35 +59,47 @@ export const PersistentVideo = forwardRef<HTMLVideoElement, React.VideoHTMLAttri
 
   const hlsUrl = resolved ? toCloudinaryHlsUrl(resolved) : null;
 
-  // Attaches HLS playback for Cloudinary sources only. Safari/iOS play HLS
-  // natively; everywhere else needs hls.js (MediaSource-based), loaded
-  // client-side only - this touches window/MediaSource and must never run
-  // during SSR. Any fatal hls.js error falls back to the plain mp4 so a
-  // Cloudinary edge case degrades to prior behavior instead of a dead player.
+  // Attaches HLS playback for Cloudinary sources only, loaded client-side
+  // only - this touches window/MediaSource and must never run during SSR.
+  // Checks Hls.isSupported() (MediaSource-based) FIRST, native canPlayType
+  // second - not the other way around. Chrome now ships its own native HLS
+  // demuxer and reports canPlayType('application/vnd.apple.mpegurl') as
+  // truthy, but that native path was found (live) to fail outright on some
+  // Chrome versions/streams (NotSupportedError, stuck readyState 0) - the
+  // same ordering the hls.js project itself recommends, since a browser
+  // claiming native support isn't the same as it actually working. Native
+  // playback is now only a fallback for browsers hls.js can't run on at all
+  // (legacy Safari/iOS). Any fatal hls.js error falls back to the plain mp4
+  // so a Cloudinary edge case degrades to prior behavior instead of a dead
+  // player.
   useEffect(() => {
     const video = internalRef.current;
     if (!video || !hlsUrl) return;
-
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = hlsUrl;
-      return () => { video.removeAttribute("src"); video.load(); };
-    }
 
     let cancelled = false;
     let hlsInstance: import("hls.js").default | undefined;
 
     import("hls.js").then(({ default: Hls }) => {
       if (cancelled || !video) return;
-      if (!Hls.isSupported()) { video.src = resolved; return; }
-      hlsInstance = new Hls();
-      hlsInstance.loadSource(hlsUrl);
-      hlsInstance.attachMedia(video);
-      hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) { hlsInstance?.destroy(); video.src = resolved; }
-      });
+      if (Hls.isSupported()) {
+        hlsInstance = new Hls();
+        hlsInstance.loadSource(hlsUrl);
+        hlsInstance.attachMedia(video);
+        hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
+          if (data.fatal) { hlsInstance?.destroy(); video.src = resolved; }
+        });
+        return;
+      }
+      if (video.canPlayType("application/vnd.apple.mpegurl")) { video.src = hlsUrl; return; }
+      video.src = resolved;
     }).catch(() => { if (!cancelled) video.src = resolved; });
 
-    return () => { cancelled = true; hlsInstance?.destroy(); };
+    return () => {
+      cancelled = true;
+      hlsInstance?.destroy();
+      video.removeAttribute("src");
+      video.load();
+    };
   }, [hlsUrl, resolved]);
 
   return <video ref={setRefs} {...props} src={hlsUrl ? undefined : (resolved || undefined)} poster={resolvedPoster || undefined} />;
