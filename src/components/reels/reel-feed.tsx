@@ -150,6 +150,13 @@ function ReelItem({
   const { locale, products, stores, addToCart, likedReelIds, toggleLikeReel, toast } = useApp();
   const product = products.find((item) => item.id === reel.productId && item.status === "active");
   const store = stores.find((item) => item.id === reel.storeId && (item.status ?? "active") === "active");
+  // This component still renders (and its hooks still run) on the render where
+  // product/store haven't loaded yet - it just returns null below instead of the
+  // real <video>. mediaReady lets the autoplay effect re-run once that <video>
+  // actually mounts; without it, a ref going from null to a real node isn't a
+  // dependency change, so an effect gated only on [active, soundOn] never gets a
+  // second chance to attach once the element exists.
+  const mediaReady = Boolean(product && store);
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastTapRef = useRef(0);
   const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -161,49 +168,31 @@ function ReelItem({
   const liked = likedReelIds.includes(reel.id);
 
   useEffect(() => {
-    const tag = `[reel-autoplay ${reel.id.slice(-6)}]`;
     const video = videoRef.current;
-    console.debug(tag, "effect run", { hasVideo: !!video, active, soundOn });
     if (!video) return;
     video.muted = !soundOn;
     if (active) {
       // HLS sources attach asynchronously (hls.js loads via dynamic import, then
       // fetches its manifest/segments), so the video may have no source yet on this
       // first attempt, or may simply not be buffered enough - retry rather than
-      // leaving playback stuck after a silently rejected/no-op play() call. Live
-      // testing found neither a single canplay retry nor a short bounded poll is
-      // reliable here (a slow/uncached HLS attach can outlast a fixed timeout), so
-      // this keeps retrying with no cutoff until playback actually starts or the
-      // video errors out - it only ever runs while this reel is the active one.
-      const tryPlay = () => {
-        if (!video.paused) return;
-        console.debug(tag, "tryPlay", { readyState: video.readyState, networkState: video.networkState, currentSrc: video.currentSrc });
-        video.play().then(
-          () => { console.debug(tag, "play resolved"); setPlaying(true); },
-          (e) => { console.debug(tag, "play rejected", e?.name, e?.message); setPlaying(false); },
-        );
-      };
+      // leaving playback stuck after a silently rejected/no-op play() call. Kept
+      // as defense-in-depth alongside the mediaReady dependency below, which fixes
+      // the actual root cause (this effect getting no second chance to run once
+      // the video element itself first becomes available).
+      const tryPlay = () => { if (!video.paused) return; video.play().then(() => setPlaying(true)).catch(() => setPlaying(false)); };
       tryPlay();
       video.addEventListener("canplay", tryPlay);
-      let ticks = 0;
       const poll = window.setInterval(() => {
-        ticks += 1;
-        if (!video.paused || video.error) {
-          console.debug(tag, "poll stopping", { paused: video.paused, error: video.error, ticks });
-          window.clearInterval(poll);
-          return;
-        }
-        if (ticks % 5 === 0) console.debug(tag, "poll tick", { ticks, readyState: video.readyState, paused: video.paused });
+        if (!video.paused || video.error) { window.clearInterval(poll); return; }
         tryPlay();
       }, 300);
       return () => {
-        console.debug(tag, "cleanup", { ticks });
         video.removeEventListener("canplay", tryPlay);
         window.clearInterval(poll);
       };
     }
     video.pause();
-  }, [active, soundOn, reel.id]);
+  }, [active, soundOn, mediaReady]);
 
   useEffect(() => () => {
     if (singleTapTimerRef.current) clearTimeout(singleTapTimerRef.current);
