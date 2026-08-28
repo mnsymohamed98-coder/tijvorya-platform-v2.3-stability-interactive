@@ -12,11 +12,16 @@ import type { NextConfig } from "next";
 // being locked down, even without a fully strict script-src.
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  // static.cloudflareinsights.com serves the Cloudflare Web Analytics beacon,
+  // injected at the CDN/infrastructure level (not present anywhere in this
+  // app's own source) - confirmed via live post-deploy testing that it was
+  // being silently blocked without this. cloudflareinsights.com in
+  // connect-src is where that beacon actually reports its collected data.
+  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://res.cloudinary.com",
   "media-src 'self' blob: https://res.cloudinary.com",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com https://res.cloudinary.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com https://res.cloudinary.com https://cloudflareinsights.com",
   "font-src 'self' data:",
   "object-src 'none'",
   "base-uri 'self'",
