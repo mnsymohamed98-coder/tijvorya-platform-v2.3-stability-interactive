@@ -168,10 +168,21 @@ function ReelItem({
       // HLS sources attach asynchronously (hls.js loads via dynamic import), so the
       // video may have no source yet on this first attempt - retry once it's ready
       // rather than leaving playback stuck after a silently rejected play() call.
+      // The canplay retry alone was found (via live testing) to still miss on a
+      // reel's very first mount on a fresh page load, so a short poll backs it up
+      // until playback actually starts.
       const tryPlay = () => { video.play().then(() => setPlaying(true)).catch(() => setPlaying(false)); };
       tryPlay();
       video.addEventListener("canplay", tryPlay);
-      return () => video.removeEventListener("canplay", tryPlay);
+      const poll = window.setInterval(() => {
+        if (video.paused && video.readyState >= 3) tryPlay();
+      }, 300);
+      const stopPoll = window.setTimeout(() => window.clearInterval(poll), 5000);
+      return () => {
+        video.removeEventListener("canplay", tryPlay);
+        window.clearInterval(poll);
+        window.clearTimeout(stopPoll);
+      };
     }
     video.pause();
   }, [active, soundOn]);
