@@ -29,7 +29,7 @@ import { formatCompact, formatMoney, uid } from "@/lib/utils";
 import { EMPTY_REEL_PROFILE, rankReels, recordPreference, type ReelPreferenceProfile } from "@/lib/reels/recommendation";
 import { getReelSessionId } from "@/lib/reels/session";
 import { merchantStoreHref } from "@/lib/store-website";
-import { getProductsByIds, recordReelView } from "@/lib/supabase/repository";
+import { getProductsByIds, insertReelComment, loadReelComments, recordReelView } from "@/lib/supabase/repository";
 import type { Reel } from "@/types";
 
 type ReelComment = {
@@ -342,6 +342,8 @@ function ReelItem({
 function CommentsSheet({
   reel,
   comments,
+  loading,
+  canComment,
   onClose,
   onAdd,
   likedCommentIds,
@@ -349,6 +351,8 @@ function CommentsSheet({
 }: {
   reel: Reel;
   comments: ReelComment[];
+  loading: boolean;
+  canComment: boolean;
   onClose: () => void;
   onAdd: (comment: ReelComment) => void;
   likedCommentIds: string[];
@@ -360,7 +364,7 @@ function CommentsSheet({
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const value = text.trim();
-    if (!value) return;
+    if (!value || !canComment) return;
     onAdd({
       id: uid("reel-comment"),
       reelId: reel.id,
@@ -380,24 +384,28 @@ function CommentsSheet({
         <button onClick={onClose} aria-label="close"><X /></button>
       </header>
       <div className="reel-comments-list">
-        {comments.length ? comments.map((comment) => <article key={comment.id} className="reel-comment">
+        {loading ? <div className="reel-comments-empty"><MessageCircle /><p>{locale === "ar" ? "جارٍ تحميل التعليقات..." : "Loading comments..."}</p></div> : comments.length ? comments.map((comment) => <article key={comment.id} className="reel-comment">
           <span className="reel-comment-avatar">{comment.avatar}</span>
           <div><strong>{comment.userName}</strong><p>{comment.text}</p><small>{timeAgo(comment.createdAt, locale)} · {locale === "ar" ? "رد" : "Reply"}</small></div>
           <button className={likedCommentIds.includes(comment.id) ? "is-active" : ""} onClick={() => onToggleCommentLike(comment.id)} aria-label={locale === "ar" ? "إعجاب بالتعليق" : "Like comment"}><Heart fill={likedCommentIds.includes(comment.id) ? "currentColor" : "none"} /><small>{comment.likes || ""}</small></button>
         </article>) : <div className="reel-comments-empty"><MessageCircle /><strong>{locale === "ar" ? "ابدأ المحادثة" : "Start the conversation"}</strong><p>{locale === "ar" ? "كن أول من يعلّق على هذا الريلز." : "Be the first to comment on this reel."}</p></div>}
       </div>
-      <form onSubmit={submit} className="reel-comment-form">
+      {canComment ? <form onSubmit={submit} className="reel-comment-form">
         <span className="reel-comment-avatar">{currentUser?.avatar ?? "TJ"}</span>
         <input value={text} onChange={(event) => setText(event.target.value)} placeholder={locale === "ar" ? "أضف تعليقًا..." : "Add a comment..."} maxLength={280} />
         <button type="submit" disabled={!text.trim()}><Send /></button>
-      </form>
+      </form> : <div className="reel-comments-empty">{locale === "ar" ? "سجّل الدخول لإضافة تعليق." : "Sign in to add a comment."}</div>}
     </aside>
   </div>;
 }
 
 export function ReelFeed({ reels }: { reels: Reel[] }) {
-  const { locale, products, productionMode, mergeProducts } = useApp();
+  const { locale, products, productionMode, currentUser, toast, mergeProducts } = useApp();
   const { social, toggleSave, toggleFollow, hideReel, toggleCommentLike, addComment } = useReelSocial();
+  // Real comments (production mode) are loaded per-reel on demand when the
+  // sheet opens, not all upfront - demo mode keeps the existing localStorage
+  // comments from useReelSocial above unchanged.
+  const [remoteComments, setRemoteComments] = useState<Record<string, ReelComment[]>>({});
 
   // Reels resolve their product from the shared cache (see ReelItem/recordPreference
   // below) - batch-fetch whatever this feed's reels reference that isn't cached yet,
@@ -479,6 +487,30 @@ export function ReelFeed({ reels }: { reels: Reel[] }) {
 
   const selectedReel = reels.find((reel) => reel.id === commentsReelId) ?? null;
 
+  useEffect(() => {
+    if (!productionMode || !commentsReelId || remoteComments[commentsReelId]) return;
+    let active = true;
+    loadReelComments(commentsReelId)
+      .then((loaded) => { if (active) setRemoteComments((previous) => ({ ...previous, [commentsReelId]: loaded })); })
+      .catch(() => { if (active) toast(locale === "ar" ? "تعذر تحميل التعليقات" : "Unable to load comments", "error"); });
+    return () => { active = false; };
+  }, [productionMode, commentsReelId, remoteComments, locale, toast]);
+
+  const canComment = !productionMode || Boolean(currentUser);
+
+  const handleAddComment = useCallback((comment: ReelComment) => {
+    if (!productionMode) { addComment(comment); return; }
+    if (!currentUser) return;
+    setRemoteComments((previous) => ({ ...previous, [comment.reelId]: [...(previous[comment.reelId] ?? []), comment] }));
+    insertReelComment({
+      id: comment.id, reelId: comment.reelId, userId: currentUser.id,
+      authorName: comment.userName, authorAvatar: typeof currentUser.avatar === "string" ? currentUser.avatar : undefined, text: comment.text,
+    }).catch(() => {
+      setRemoteComments((previous) => ({ ...previous, [comment.reelId]: (previous[comment.reelId] ?? []).filter((item) => item.id !== comment.id) }));
+      toast(locale === "ar" ? "تعذر إرسال التعليق" : "Unable to post the comment", "error");
+    });
+  }, [productionMode, currentUser, addComment, locale, toast]);
+
   return <div className="instagram-reels-shell">
     <div className="reels-topbar">
       <Link className="reels-top-logo" href={`/${locale}`}><PersistentImage src="/assets/tijvorya-mark-official.png" alt="Tijvorya" optimized width={38} height={38} /></Link>
@@ -497,7 +529,7 @@ export function ReelFeed({ reels }: { reels: Reel[] }) {
         soundOn={soundOn}
         saved={social.savedIds.includes(reel.id)}
         following={social.followedStoreIds.includes(reel.storeId)}
-        commentCount={social.comments.filter((comment) => comment.reelId === reel.id).length}
+        commentCount={productionMode ? (reel.commentsCount ?? 0) : social.comments.filter((comment) => comment.reelId === reel.id).length}
         onToggleSound={() => setSoundOn((value) => !value)}
         onToggleSave={() => { toggleSave(reel.id); setProfile((current) => recordPreference(current, { reel, product: products.find((item) => item.id === reel.productId), signal: "save" })); }}
         onToggleFollow={() => { toggleFollow(reel.storeId); setProfile((current) => recordPreference(current, { reel, product: products.find((item) => item.id === reel.productId), signal: "follow" })); }}
@@ -527,9 +559,11 @@ export function ReelFeed({ reels }: { reels: Reel[] }) {
 
     {selectedReel && <CommentsSheet
       reel={selectedReel}
-      comments={social.comments.filter((comment) => comment.reelId === selectedReel.id)}
+      comments={productionMode ? (remoteComments[selectedReel.id] ?? []) : social.comments.filter((comment) => comment.reelId === selectedReel.id)}
+      loading={productionMode && !remoteComments[selectedReel.id]}
+      canComment={canComment}
       onClose={() => setCommentsReelId(null)}
-      onAdd={addComment}
+      onAdd={handleAddComment}
       likedCommentIds={social.likedCommentIds}
       onToggleCommentLike={toggleCommentLike}
     />}

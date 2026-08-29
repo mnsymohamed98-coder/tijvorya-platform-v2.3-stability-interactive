@@ -6,7 +6,7 @@ import { createClient, isSupabaseConfigured } from "./client";
 // what the mapXxx() functions below actually read, cutting payload size.
 const STORE_COLUMNS = "id,owner_id,slug,name,name_en,description,description_en,logo_url,cover_url,rating,verified,city,completion,status,phone,whatsapp,delivery_fee,theme_color,theme,website";
 const PRODUCT_COLUMNS = "id,store_id,name,name_en,description,description_en,price,compare_at_price,stock,category,image_url,images,status,rating,variants,featured";
-const REEL_COLUMNS = "id,store_id,product_id,caption,caption_en,video_url,cover_url,status,views,likes,created_at,submitted_at,rejection_reason,reviewed_at,reviewed_by,hashtags,best_post_time,ai_score,ai_suggestions,watch_time_seconds,shares,saves,product_clicks,orders_attributed";
+const REEL_COLUMNS = "id,store_id,product_id,caption,caption_en,video_url,cover_url,status,views,likes,comments_count,created_at,submitted_at,rejection_reason,reviewed_at,reviewed_by,hashtags,best_post_time,ai_score,ai_suggestions,watch_time_seconds,shares,saves,product_clicks,orders_attributed";
 const ORDER_ITEM_COLUMNS = "product_id,product_name,quantity,unit_price,variant";
 const ORDER_COLUMNS = `id,store_id,customer_id,customer_name,phone,address,notes,status,subtotal,delivery_fee,total,created_at,order_items(${ORDER_ITEM_COLUMNS})`;
 const PROFILE_COLUMNS = "id,full_name,email,role,admin_role,status,avatar,phone,created_at";
@@ -423,6 +423,39 @@ export async function setReelLike(reelId: string, userId: string, liked: boolean
   }
 }
 
+export type ReelCommentRecord = {
+  id: string;
+  reelId: string;
+  userName: string;
+  avatar: string;
+  text: string;
+  createdAt: string;
+  likes: number;
+};
+
+export async function loadReelComments(reelId: string): Promise<ReelCommentRecord[]> {
+  const supabase = createClient(); if (!supabase) return [];
+  const { data, error } = await supabase.from("reel_comments")
+    .select("id,reel_id,author_name,author_avatar,text,created_at")
+    .eq("reel_id", reelId).order("created_at", { ascending: true });
+  if (error) throw error;
+  // reel_comments has no likes column - v1 has no comment-like tracking,
+  // this just satisfies the display shape the reel feed UI already uses.
+  return (data ?? []).map((row) => ({
+    id: String(row.id), reelId: String(row.reel_id), userName: String(row.author_name),
+    avatar: String(row.author_avatar ?? "TJ"), text: String(row.text), createdAt: String(row.created_at), likes: 0,
+  }));
+}
+
+export async function insertReelComment(input: { id: string; reelId: string; userId: string; authorName: string; authorAvatar?: string; text: string }) {
+  const supabase = createClient(); if (!supabase) return;
+  const { error } = await supabase.from("reel_comments").insert({
+    id: input.id, reel_id: input.reelId, user_id: input.userId,
+    author_name: input.authorName, author_avatar: input.authorAvatar ?? null, text: input.text,
+  });
+  if (error) throw error;
+}
+
 export async function upsertStore(store: Store) {
   const supabase = createClient(); if (!supabase) return;
   const { error } = await supabase.from("stores").upsert({
@@ -530,6 +563,7 @@ function mapReel(row: Record<string, unknown>): Reel {
     aiScore: row.ai_score == null ? undefined : Number(row.ai_score), aiSuggestions: Array.isArray(row.ai_suggestions) ? row.ai_suggestions.map(String) : [],
     watchTimeSeconds: Number(row.watch_time_seconds ?? 0), shares: Number(row.shares ?? 0), saves: Number(row.saves ?? 0),
     productClicks: Number(row.product_clicks ?? 0), ordersAttributed: Number(row.orders_attributed ?? 0),
+    commentsCount: Number(row.comments_count ?? 0),
   };
 }
 
