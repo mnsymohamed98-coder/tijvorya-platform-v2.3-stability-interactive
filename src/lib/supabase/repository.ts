@@ -456,6 +456,20 @@ export async function insertReelComment(input: { id: string; reelId: string; use
   if (error) throw error;
 }
 
+// Raw view-event timestamps for a merchant's own reels, for client-side
+// time-bucketed charting (same approach SalesChart already uses for
+// orders) - reel_events has no aggregate query surface of its own (no RPC
+// layer for ordinary reads in this codebase), so bucketing happens where
+// the data is consumed, not here.
+export async function loadReelViewEvents(reelIds: string[]): Promise<string[]> {
+  const supabase = createClient(); if (!supabase || reelIds.length === 0) return [];
+  const { data, error } = await supabase.from("reel_events")
+    .select("created_at").eq("event_type", "view").in("reel_id", reelIds)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((row) => String(row.created_at));
+}
+
 export async function upsertStore(store: Store) {
   const supabase = createClient(); if (!supabase) return;
   const { error } = await supabase.from("stores").upsert({
