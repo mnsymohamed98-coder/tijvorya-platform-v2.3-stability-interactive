@@ -405,6 +405,24 @@ export async function recordReelView(reelId: string, sessionId: string, userId?:
   if (error && error.code !== "23505") throw error;
 }
 
+export async function loadLikedReelIds(userId: string): Promise<string[]> {
+  const supabase = createClient(); if (!supabase) return [];
+  const { data, error } = await supabase.from("reel_likes").select("reel_id").eq("user_id", userId);
+  if (error) throw error;
+  return (data ?? []).map((row) => String(row.reel_id));
+}
+
+export async function setReelLike(reelId: string, userId: string, liked: boolean) {
+  const supabase = createClient(); if (!supabase) return;
+  if (liked) {
+    const { error } = await supabase.from("reel_likes").insert({ reel_id: reelId, user_id: userId });
+    if (error && error.code !== "23505") throw error;
+  } else {
+    const { error } = await supabase.from("reel_likes").delete().eq("reel_id", reelId).eq("user_id", userId);
+    if (error) throw error;
+  }
+}
+
 export async function upsertStore(store: Store) {
   const supabase = createClient(); if (!supabase) return;
   const { error } = await supabase.from("stores").upsert({

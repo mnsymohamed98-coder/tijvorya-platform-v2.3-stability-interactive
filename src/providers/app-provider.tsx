@@ -16,8 +16,10 @@ import {
   insertReel,
   loadAdminWorkspace,
   loadCustomerWorkspace,
+  loadLikedReelIds,
   loadMerchantWorkspace,
   removeProduct,
+  setReelLike,
   updateConversation,
   updateProfile,
   updateOwnProfile,
@@ -218,11 +220,14 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
         try {
           if (productionMode) {
             const user = await getCurrentUser();
-            const remote = user?.role === "admin"
-              ? await loadAdminWorkspace()
-              : user?.role === "merchant" || user?.role === "influencer"
-                ? await loadMerchantWorkspace(user.id)
-                : await loadCustomerWorkspace(user?.id);
+            const [remote, likedReelIds] = await Promise.all([
+              user?.role === "admin"
+                ? loadAdminWorkspace()
+                : user?.role === "merchant" || user?.role === "influencer"
+                  ? loadMerchantWorkspace(user.id)
+                  : loadCustomerWorkspace(user?.id),
+              user ? loadLikedReelIds(user.id) : Promise.resolve([]),
+            ]);
             if (active) {
               loadedWorkspaceKey.current = user ? `${user.id}:${user.role}` : null;
               setState((previous) => ({
@@ -232,7 +237,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
                 currentUser: user,
                 cart: [],
                 favoriteIds: [],
-                likedReelIds: [],
+                likedReelIds,
               }));
               setLoadError(false);
             }
@@ -498,11 +503,15 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
   })), []);
   const clearCart = useCallback(() => setState((previous) => ({ ...previous, cart: [] })), []);
   const toggleFavorite = useCallback((productId: string) => setState((previous) => ({ ...previous, favoriteIds: previous.favoriteIds.includes(productId) ? previous.favoriteIds.filter((id) => id !== productId) : [...previous.favoriteIds, productId] })), []);
-  const toggleLikeReel = useCallback((reelId: string) => setState((previous) => ({
-    ...previous,
-    likedReelIds: previous.likedReelIds.includes(reelId) ? previous.likedReelIds.filter((id) => id !== reelId) : [...previous.likedReelIds, reelId],
-    reels: previous.reels.map((reel) => reel.id === reelId ? { ...reel, likes: Math.max(0, reel.likes + (previous.likedReelIds.includes(reelId) ? -1 : 1)) } : reel),
-  })), []);
+  const toggleLikeReel = useCallback((reelId: string) => {
+    const nowLiked = !state.likedReelIds.includes(reelId);
+    setState((previous) => ({
+      ...previous,
+      likedReelIds: previous.likedReelIds.includes(reelId) ? previous.likedReelIds.filter((id) => id !== reelId) : [...previous.likedReelIds, reelId],
+      reels: previous.reels.map((reel) => reel.id === reelId ? { ...reel, likes: Math.max(0, reel.likes + (previous.likedReelIds.includes(reelId) ? -1 : 1)) } : reel),
+    }));
+    if (productionMode && state.currentUser) setReelLike(reelId, state.currentUser.id, nowLiked).catch(() => {});
+  }, [productionMode, state.currentUser, state.likedReelIds]);
 
   const saveProduct = useCallback(async (product: Product) => {
     if (productionMode) await upsertProduct(product);
