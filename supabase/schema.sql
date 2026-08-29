@@ -259,6 +259,21 @@ create policy "reel comments read" on public.reel_comments for select
   using (exists(select 1 from public.reels r where r.id=reel_id and (r.status='approved' or public.owns_store(r.store_id))) or public.is_admin());
 create policy "reel comments insert own" on public.reel_comments for insert
   with check (user_id = auth.uid() and exists(select 1 from public.reels r where r.id=reel_id and r.status='approved'));
+
+-- v2.9: RLS policies alone don't grant access - a table-level GRANT is a
+-- separate, additive requirement in Postgres, and reel_comments/reel_likes/
+-- reel_events were missing theirs entirely (creating a table doesn't imply
+-- any grant), causing every request against them to fail with a flat 403
+-- regardless of what the policies above say. Confirmed live: even a SELECT
+-- that RLS would have allowed returned 403, not an empty result - the
+-- signature of a missing GRANT rather than a restrictive policy.
+grant select on public.reel_comments to anon, authenticated;
+grant insert on public.reel_comments to authenticated;
+grant select on public.reel_likes to anon, authenticated;
+grant insert, delete on public.reel_likes to authenticated;
+grant insert on public.reel_events to anon, authenticated;
+grant select on public.reel_events to authenticated;
+
 create policy "orders customer or merchant read" on public.orders for select using (customer_id=auth.uid() or public.owns_store(store_id) or public.is_admin());
 create policy "orders create" on public.orders for insert with check (auth.uid() is not null or customer_id is null);
 create policy "orders merchant update" on public.orders for update using (public.owns_store(store_id) or public.is_admin()) with check (public.owns_store(store_id) or public.is_admin());
