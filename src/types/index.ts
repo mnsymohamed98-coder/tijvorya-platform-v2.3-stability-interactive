@@ -136,6 +136,7 @@ export interface Reel {
   saves?: number;
   productClicks?: number;
   ordersAttributed?: number;
+  commentsCount?: number;
 }
 
 export interface Conversation {
