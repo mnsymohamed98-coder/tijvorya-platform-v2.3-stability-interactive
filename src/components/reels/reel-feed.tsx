@@ -27,8 +27,9 @@ import { useApp } from "@/providers/app-provider";
 import { PersistentImage, PersistentVideo } from "@/components/ui/persistent-media";
 import { formatCompact, formatMoney, uid } from "@/lib/utils";
 import { EMPTY_REEL_PROFILE, rankReels, recordPreference, type ReelPreferenceProfile } from "@/lib/reels/recommendation";
+import { getReelSessionId } from "@/lib/reels/session";
 import { merchantStoreHref } from "@/lib/store-website";
-import { getProductsByIds } from "@/lib/supabase/repository";
+import { getProductsByIds, recordReelView } from "@/lib/supabase/repository";
 import type { Reel } from "@/types";
 
 type ReelComment = {
@@ -147,7 +148,7 @@ function ReelItem({
   onOpenComments: () => void;
   onHide: () => void;
 }) {
-  const { locale, products, stores, addToCart, likedReelIds, toggleLikeReel, toast } = useApp();
+  const { locale, products, stores, currentUser, productionMode, addToCart, likedReelIds, toggleLikeReel, toast } = useApp();
   const product = products.find((item) => item.id === reel.productId && item.status === "active");
   const store = stores.find((item) => item.id === reel.storeId && (item.status ?? "active") === "active");
   // This component still renders (and its hooks still run) on the render where
@@ -193,6 +194,20 @@ function ReelItem({
     }
     video.pause();
   }, [active, soundOn, mediaReady]);
+
+  // Counts a view once this reel has actually held the active slot for a
+  // couple of seconds, not the instant it scrolls into view - a quick
+  // scroll-past shouldn't count as a watch. Dedup itself lives in the
+  // database (reel_events_view_dedup_session_uidx/_user_uidx), so this only
+  // needs to fire the request; a repeat from the same session/user is a
+  // harmless no-op on the server.
+  useEffect(() => {
+    if (!active || !productionMode) return;
+    const timer = window.setTimeout(() => {
+      recordReelView(reel.id, getReelSessionId(), currentUser?.id).catch(() => {});
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [active, productionMode, reel.id, currentUser?.id]);
 
   useEffect(() => () => {
     if (singleTapTimerRef.current) clearTimeout(singleTapTimerRef.current);

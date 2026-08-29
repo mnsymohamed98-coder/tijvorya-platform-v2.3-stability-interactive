@@ -393,6 +393,18 @@ export async function changeReelStatus(id: string, status: Reel["status"], input
   if (error) throw error;
 }
 
+// Dedup happens in the database (reel_events_view_dedup_session_uidx /
+// _user_uidx, both partial unique indexes on event_type='view'), not here -
+// a repeat view from the same session/user raises a 23505 unique-violation,
+// which is the expected, silent "already counted" case, not a real error.
+export async function recordReelView(reelId: string, sessionId: string, userId?: string) {
+  const supabase = createClient(); if (!supabase) return;
+  const { error } = await supabase.from("reel_events").insert({
+    reel_id: reelId, session_id: sessionId || null, user_id: userId ?? null, event_type: "view",
+  });
+  if (error && error.code !== "23505") throw error;
+}
+
 export async function upsertStore(store: Store) {
   const supabase = createClient(); if (!supabase) return;
   const { error } = await supabase.from("stores").upsert({
