@@ -15,7 +15,7 @@ import {
   Plus,
   Search,
   Send,
-  Share2,
+  Share,
   ShoppingBag,
   UserRound,
   Volume2,
@@ -300,7 +300,7 @@ function ReelItem({
         <span>{formatCompact(commentCount, locale)}</span>
       </button>
       <button onClick={share}>
-        <span className="reel-action-icon"><Share2 /></span>
+        <span className="reel-action-icon"><Share /></span>
         <span>{locale === "ar" ? "مشاركة" : "Share"}</span>
       </button>
       <button className={saved ? "is-saved" : ""} onClick={onToggleSave}>
@@ -400,12 +400,18 @@ function CommentsSheet({
 }
 
 export function ReelFeed({ reels }: { reels: Reel[] }) {
-  const { locale, products, productionMode, currentUser, toast, mergeProducts } = useApp();
+  const { locale, products, stores, productionMode, currentUser, toast, mergeProducts } = useApp();
   const { social, toggleSave, toggleFollow, hideReel, toggleCommentLike, addComment } = useReelSocial();
+  // Only merchants/influencers can upload a reel - matches DashboardShell's
+  // own role check for the merchant area, so the nav doesn't send a
+  // customer to a route they'll just get bounced from by the auth gate.
+  const canUpload = currentUser?.role === "merchant" || currentUser?.role === "influencer";
   // Real comments (production mode) are loaded per-reel on demand when the
   // sheet opens, not all upfront - demo mode keeps the existing localStorage
   // comments from useReelSocial above unchanged.
   const [remoteComments, setRemoteComments] = useState<Record<string, ReelComment[]>>({});
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Reels resolve their product from the shared cache (see ReelItem/recordPreference
   // below) - batch-fetch whatever this feed's reels reference that isn't cached yet,
@@ -487,6 +493,25 @@ export function ReelFeed({ reels }: { reels: Reel[] }) {
 
   const selectedReel = reels.find((reel) => reel.id === commentsReelId) ?? null;
 
+  const jumpToReel = useCallback((reelId: string) => {
+    setSearchOpen(false);
+    feedRef.current?.querySelector<HTMLElement>(`[data-reel-id="${reelId}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  // Scoped to reels specifically (caption, linked product, store name) -
+  // not the marketplace product search, which is a separate surface with
+  // its own dedicated page.
+  const searchResults = useMemo(() => {
+    const term = searchQuery.trim().toLocaleLowerCase();
+    if (!term) return [];
+    return reels.filter((reel) => {
+      const product = products.find((item) => item.id === reel.productId);
+      const store = stores.find((item) => item.id === reel.storeId);
+      const haystack = [reel.caption, reel.captionEn, product?.name, product?.nameEn, store?.name, store?.nameEn].filter(Boolean).join(" ").toLocaleLowerCase();
+      return haystack.includes(term);
+    }).slice(0, 20);
+  }, [searchQuery, reels, products, stores]);
+
   useEffect(() => {
     if (!productionMode || !commentsReelId || remoteComments[commentsReelId]) return;
     let active = true;
@@ -549,10 +574,10 @@ export function ReelFeed({ reels }: { reels: Reel[] }) {
       <small>{locale === "ar" ? "استخدم ↑ ↓ للتنقل" : "Use ↑ ↓ to navigate"}</small>
     </div>
 
-    <nav className="reels-mobile-nav">
+    <nav className={`reels-mobile-nav ${canUpload ? "" : "no-create"}`}>
       <Link href={`/${locale}`}><Home /><span>{locale === "ar" ? "الرئيسية" : "Home"}</span></Link>
-      <Link href={`/${locale}/marketplace`}><Search /><span>{locale === "ar" ? "بحث" : "Search"}</span></Link>
-      <Link href={`/${locale}/merchant/reels/new`}><span className="reels-create-icon"><Plus /></span></Link>
+      <button type="button" onClick={() => setSearchOpen(true)}><Search /><span>{locale === "ar" ? "بحث" : "Search"}</span></button>
+      {canUpload && <Link href={`/${locale}/merchant/reels/new`}><span className="reels-create-icon"><Plus /></span></Link>}
       <Link className="is-active" href={`/${locale}/reels`}><Play /><span>{locale === "ar" ? "ريلز" : "Reels"}</span></Link>
       <Link href={`/${locale}/account`}><UserRound /><span>{locale === "ar" ? "حسابي" : "Profile"}</span></Link>
     </nav>
@@ -567,5 +592,27 @@ export function ReelFeed({ reels }: { reels: Reel[] }) {
       likedCommentIds={social.likedCommentIds}
       onToggleCommentLike={toggleCommentLike}
     />}
+
+    {searchOpen && <div className="reel-comments-backdrop" onMouseDown={() => setSearchOpen(false)}>
+      <aside className="reel-comments-sheet reel-search-sheet" onMouseDown={(event) => event.stopPropagation()}>
+        <header>
+          <strong>{locale === "ar" ? "بحث في الريلز" : "Search reels"}</strong>
+          <button onClick={() => setSearchOpen(false)} aria-label="close"><X /></button>
+        </header>
+        <div className="reel-search-input"><Search /><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder={locale === "ar" ? "ابحث عن منتج، متجر أو كلمة من الكابشن..." : "Search a product, store or caption word..."} /></div>
+        <div className="reel-comments-list">
+          {!searchQuery.trim() ? <div className="reel-comments-empty"><Search /><p>{locale === "ar" ? "اكتب للبحث ضمن الريلز فقط." : "Type to search within reels only."}</p></div>
+            : searchResults.length === 0 ? <div className="reel-comments-empty"><Search /><p>{locale === "ar" ? "لا توجد نتائج مطابقة." : "No matching reels."}</p></div>
+              : searchResults.map((reel) => {
+                const product = products.find((item) => item.id === reel.productId);
+                const store = stores.find((item) => item.id === reel.storeId);
+                return <button type="button" key={reel.id} className="reel-search-result" onClick={() => jumpToReel(reel.id)}>
+                  <PersistentImage className="media-cover" src={reel.cover} alt="" optimized width={48} height={64} />
+                  <div><strong>{product ? (locale === "ar" ? product.name : product.nameEn) : reel.productId}</strong><small>{store ? (locale === "ar" ? store.name : store.nameEn) : reel.storeId}</small></div>
+                </button>;
+              })}
+        </div>
+      </aside>
+    </div>}
   </div>;
 }
