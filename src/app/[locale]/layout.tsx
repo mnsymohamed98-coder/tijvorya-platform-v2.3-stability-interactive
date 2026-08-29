@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AppProvider } from "@/providers/app-provider";
-import { WorkspaceLoadBanner } from "@/components/ui/workspace-load-banner";
 import { normalizeLocale, supportedLocales } from "@/lib/i18n";
 import { absoluteUrl, localeSeo } from "@/lib/site";
 
@@ -46,5 +45,5 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   const { locale: rawLocale } = await params;
   if (!supportedLocales.includes(rawLocale as "ar" | "en")) notFound();
   const locale = normalizeLocale(rawLocale);
-  return <div lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className={`locale-${locale}`}><AppProvider locale={locale}><WorkspaceLoadBanner />{children}</AppProvider></div>;
+  return <div lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className={`locale-${locale}`}><AppProvider locale={locale}>{children}</AppProvider></div>;
 }
