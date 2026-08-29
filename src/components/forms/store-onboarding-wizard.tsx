@@ -212,10 +212,19 @@ export function StoreOnboardingWizard() {
       toast(locale === "ar" ? "تم إنشاء موقع متجرك بثلاث صفحات وهو جاهز للنشر." : "Your three-page merchant website is ready to publish.");
       router.replace(`/${locale}/merchant`);
     } catch (error) {
-      const message = error instanceof Error && error.message === "STORE_SLUG_TAKEN"
+      // Supabase/PostgREST throws the raw error object from the query
+      // (message/details/hint/code), not a real Error instance - an
+      // `error instanceof Error` check here always misses it and fell
+      // through to the generic fallback, hiding the actual database error
+      // (this masked the real "Only an administrator can verify a store"
+      // trigger message behind a useless generic one).
+      const rawMessage = error instanceof Error ? error.message
+        : error && typeof error === "object" && "message" in error && typeof error.message === "string" ? error.message
+          : undefined;
+      const message = rawMessage === "STORE_SLUG_TAKEN"
         ? (locale === "ar" ? "رابط الموقع مستخدم من متجر آخر. اختر رابطًا مختلفًا." : "This website URL is already used by another store. Choose a different one.")
-        : error instanceof Error ? error.message : (locale === "ar" ? "تعذر إنشاء موقع المتجر." : "Unable to create the store website.");
-      if (error instanceof Error && error.message === "STORE_SLUG_TAKEN") setStep(0);
+        : rawMessage ?? (locale === "ar" ? "تعذر إنشاء موقع المتجر." : "Unable to create the store website.");
+      if (rawMessage === "STORE_SLUG_TAKEN") setStep(0);
       toast(message, "error");
     } finally {
       setSaving(false);
