@@ -115,6 +115,44 @@ create table if not exists public.reel_events (
 );
 create index if not exists reel_events_reel_created_idx on public.reel_events(reel_id, created_at desc);
 create index if not exists reel_events_user_created_idx on public.reel_events(user_id, created_at desc);
+-- v2.7: partial unique indexes so a repeat 'view' from the same session or
+-- the same logged-in user is a DB-enforced no-op (insert-and-ignore-
+-- conflict on the app side) instead of needing a check-then-insert.
+create unique index if not exists reel_events_view_dedup_session_uidx
+  on public.reel_events(reel_id, session_id) where event_type = 'view' and session_id is not null;
+create unique index if not exists reel_events_view_dedup_user_uidx
+  on public.reel_events(reel_id, user_id) where event_type = 'view' and user_id is not null;
+
+-- v2.7: likes are a dedicated join table, not a reel_events row - that log
+-- has no 'unlike' counterpart, so it can't reliably drive a toggle button's
+-- current state. (reel_id, user_id) as the primary key makes "like" exactly
+-- once per user; the UI's toggle is insert-to-like, delete-to-unlike.
+create table if not exists public.reel_likes (
+  reel_id text not null references public.reels(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (reel_id, user_id)
+);
+
+-- v2.7: comments get their own table, modeled on messages (same
+-- participant-scoped RLS shape) rather than reel_events, since comments
+-- must be publicly readable on approved reels while reel_events' read
+-- policy is intentionally owner/admin-only for analytics privacy.
+-- author_name/author_avatar are denormalized at insert time, same as
+-- conversations.customer_name/customer_avatar, avoiding a profiles join on
+-- every comment list load. No update/delete policy in v1 - no moderation
+-- tooling yet, a deliberate fast-follow boundary, not an oversight.
+create table if not exists public.reel_comments (
+  id text primary key,
+  reel_id text not null references public.reels(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  author_name text not null,
+  author_avatar text,
+  text text not null check (char_length(text) between 1 and 280),
+  created_at timestamptz not null default now()
+);
+create index if not exists reel_comments_reel_created_idx on public.reel_comments(reel_id, created_at);
+alter table public.reels add column if not exists comments_count bigint not null default 0;
 
 create table if not exists public.orders (
   id text primary key,
@@ -192,6 +230,8 @@ alter table public.stores enable row level security;
 alter table public.products enable row level security;
 alter table public.reels enable row level security;
 alter table public.reel_events enable row level security;
+alter table public.reel_likes enable row level security;
+alter table public.reel_comments enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
 alter table public.platform_settings enable row level security;
@@ -211,6 +251,14 @@ create policy "reel events insert" on public.reel_events for insert with check (
 create policy "reel events owner read" on public.reel_events for select using (
   exists(select 1 from public.reels r join public.stores s on s.id=r.store_id where r.id=reel_id and s.owner_id=auth.uid()) or public.is_admin()
 );
+create policy "reel likes read" on public.reel_likes for select
+  using (auth.uid() = user_id or exists(select 1 from public.reels r where r.id=reel_id and (r.status='approved' or public.owns_store(r.store_id))) or public.is_admin());
+create policy "reel likes insert own" on public.reel_likes for insert with check (auth.uid() = user_id);
+create policy "reel likes delete own" on public.reel_likes for delete using (auth.uid() = user_id);
+create policy "reel comments read" on public.reel_comments for select
+  using (exists(select 1 from public.reels r where r.id=reel_id and (r.status='approved' or public.owns_store(r.store_id))) or public.is_admin());
+create policy "reel comments insert own" on public.reel_comments for insert
+  with check (user_id = auth.uid() and exists(select 1 from public.reels r where r.id=reel_id and r.status='approved'));
 create policy "orders customer or merchant read" on public.orders for select using (customer_id=auth.uid() or public.owns_store(store_id) or public.is_admin());
 create policy "orders create" on public.orders for insert with check (auth.uid() is not null or customer_id is null);
 create policy "orders merchant update" on public.orders for update using (public.owns_store(store_id) or public.is_admin()) with check (public.owns_store(store_id) or public.is_admin());
@@ -820,3 +868,56 @@ create index if not exists products_public_recent_idx on public.products(status,
 -- update was widened to include 'approved' so a merchant can edit a live
 -- reel (protect_reel_write_trigger already allows the resulting resubmit-
 -- to-pending transition for non-admin owners, so it needs no change here).
+
+-- v2.7: real view/like/comment counters on reels, maintained by triggers
+-- rather than aggregated at read time - every existing reader of reels.
+-- views/likes (and the new comments_count) keeps working unchanged, since
+-- these are the same plain columns, just finally kept accurate.
+begin;
+
+create or replace function public.sync_reel_view_count()
+returns trigger language plpgsql security definer set search_path=public as $$
+begin
+  if new.event_type = 'view' then
+    update public.reels set views = views + 1 where id = new.reel_id;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists sync_reel_view_count_trigger on public.reel_events;
+create trigger sync_reel_view_count_trigger
+after insert on public.reel_events
+for each row execute function public.sync_reel_view_count();
+
+create or replace function public.sync_reel_like_count()
+returns trigger language plpgsql security definer set search_path=public as $$
+begin
+  if tg_op = 'INSERT' then
+    update public.reels set likes = likes + 1 where id = new.reel_id;
+    return new;
+  else
+    update public.reels set likes = greatest(0, likes - 1) where id = old.reel_id;
+    return old;
+  end if;
+end;
+$$;
+drop trigger if exists sync_reel_like_count_insert on public.reel_likes;
+create trigger sync_reel_like_count_insert after insert on public.reel_likes
+for each row execute function public.sync_reel_like_count();
+drop trigger if exists sync_reel_like_count_delete on public.reel_likes;
+create trigger sync_reel_like_count_delete after delete on public.reel_likes
+for each row execute function public.sync_reel_like_count();
+
+create or replace function public.sync_reel_comment_count()
+returns trigger language plpgsql security definer set search_path=public as $$
+begin
+  update public.reels set comments_count = comments_count + 1 where id = new.reel_id;
+  return new;
+end;
+$$;
+drop trigger if exists sync_reel_comment_count_trigger on public.reel_comments;
+create trigger sync_reel_comment_count_trigger
+after insert on public.reel_comments
+for each row execute function public.sync_reel_comment_count();
+
+commit;
