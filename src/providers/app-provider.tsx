@@ -72,8 +72,6 @@ type AppContextValue = PersistedState & {
   locale: Locale;
   ready: boolean;
   workspaceLoading: boolean;
-  loadError: boolean;
-  retryHydrate: () => void;
   productionMode: boolean;
   toasts: ToastMessage[];
   setCurrentUser: (user: AppUser | null) => void;
@@ -201,64 +199,80 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
   const [state, setState] = useState<PersistedState>(() => productionMode ? emptyState() : initialLocalState());
   const [ready, setReady] = useState(false);
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
-  const [loadError, setLoadError] = useState(false);
   const loadedWorkspaceKey = useRef<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   useEffect(() => {
     let active = true;
-    async function hydrate() {
-      // A slow/flaky connection to the DB (most visitors are far from the
-      // hosting region) previously failed hydrate() silently: state stayed
-      // at its empty default, ready still flipped true, and the visitor saw
-      // a marketplace/storefront with no stores at all - indistinguishable
-      // from there genuinely being none. Retry transient failures a few
-      // times before giving up, and surface a real error state on the way
-      // out so the UI can tell the visitor to retry instead of going quiet.
-      const MAX_ATTEMPTS = 3;
-      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
-        try {
-          if (productionMode) {
-            const user = await getCurrentUser();
-            const [remote, likedReelIds] = await Promise.all([
-              user?.role === "admin"
-                ? loadAdminWorkspace()
-                : user?.role === "merchant" || user?.role === "influencer"
-                  ? loadMerchantWorkspace(user.id)
-                  : loadCustomerWorkspace(user?.id),
-              user ? loadLikedReelIds(user.id) : Promise.resolve([]),
-            ]);
-            if (active) {
-              loadedWorkspaceKey.current = user ? `${user.id}:${user.role}` : null;
-              setState((previous) => ({
-                ...previous,
-                ...remote,
-                users: remote.users ?? previous.users,
-                currentUser: user,
-                cart: [],
-                favoriteIds: [],
-                likedReelIds,
-              }));
-              setLoadError(false);
-            }
-          } else {
-            const raw = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY);
-            if (raw && active) {
-              const cleaned = sanitizePersisted(JSON.parse(raw) as Partial<PersistedState>);
-              setState(cleaned);
-              window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
-              window.localStorage.removeItem(LEGACY_STORAGE_KEY);
-            }
+    let backgroundRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // A slow/flaky connection to the DB (most visitors are far from the
+    // hosting region) previously failed silently: state stayed at its empty
+    // default, ready still flipped true, and the visitor saw a marketplace/
+    // storefront with no stores at all - indistinguishable from there
+    // genuinely being none. Reports of a visible "connection issue" banner
+    // being alarming/unprofessional-looking to real visitors led to
+    // dropping the banner - but the underlying problem it existed for is
+    // still real, so this keeps retrying silently in the background
+    // instead of just giving up: a few quick attempts first, then slow,
+    // indefinite retries until it actually succeeds, with no user-visible
+    // failure state at any point.
+    async function attemptLoad(): Promise<boolean> {
+      try {
+        if (productionMode) {
+          const user = await getCurrentUser();
+          const [remote, likedReelIds] = await Promise.all([
+            user?.role === "admin"
+              ? loadAdminWorkspace()
+              : user?.role === "merchant" || user?.role === "influencer"
+                ? loadMerchantWorkspace(user.id)
+                : loadCustomerWorkspace(user?.id),
+            user ? loadLikedReelIds(user.id) : Promise.resolve([]),
+          ]);
+          if (active) {
+            loadedWorkspaceKey.current = user ? `${user.id}:${user.role}` : null;
+            setState((previous) => ({
+              ...previous,
+              ...remote,
+              users: remote.users ?? previous.users,
+              currentUser: user,
+              cart: [],
+              favoriteIds: [],
+              likedReelIds,
+            }));
           }
-          break;
-        } catch (error) {
-          console.error(error);
-          if (attempt === MAX_ATTEMPTS) {
-            if (active) setLoadError(true);
-          } else if (active) {
-            await new Promise((resolve) => window.setTimeout(resolve, attempt * 800));
+        } else {
+          const raw = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY);
+          if (raw && active) {
+            const cleaned = sanitizePersisted(JSON.parse(raw) as Partial<PersistedState>);
+            setState(cleaned);
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+            window.localStorage.removeItem(LEGACY_STORAGE_KEY);
           }
         }
+        return true;
+      } catch (error) {
+        console.error(error);
+        return false;
+      }
+    }
+
+    function scheduleBackgroundRetry() {
+      if (!active) return;
+      backgroundRetryTimer = setTimeout(async () => {
+        if (!active) return;
+        const succeeded = await attemptLoad();
+        if (!succeeded) scheduleBackgroundRetry();
+      }, 20000);
+    }
+
+    async function hydrate() {
+      const MAX_ATTEMPTS = 3;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+        const succeeded = await attemptLoad();
+        if (succeeded || !active) break;
+        if (attempt < MAX_ATTEMPTS) await new Promise((resolve) => window.setTimeout(resolve, attempt * 800));
+        else scheduleBackgroundRetry();
       }
       if (active) setReady(true);
     }
@@ -286,7 +300,11 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
       }, 0);
     }).data.subscription;
 
-    return () => { active = false; subscription?.unsubscribe(); };
+    return () => {
+      active = false;
+      if (backgroundRetryTimer) clearTimeout(backgroundRetryTimer);
+      subscription?.unsubscribe();
+    };
   }, [productionMode]);
 
   useEffect(() => {
@@ -906,10 +924,6 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     toast(locale === "ar" ? "تم حفظ إعدادات المنصة" : "Platform settings saved");
   }, [productionMode, appendAudit, state.currentUser?.id, toast, locale]);
 
-  const retryHydrate = useCallback(() => {
-    window.location.reload();
-  }, []);
-
   const resetDemo = useCallback(() => {
     const fresh = initialLocalState();
     setState(fresh);
@@ -923,8 +937,6 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     locale,
     ready,
     workspaceLoading,
-    loadError,
-    retryHydrate,
     productionMode,
     toasts,
     setCurrentUser,
@@ -959,7 +971,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     updatePlatformSettings,
     toast,
     resetDemo,
-  }), [state, locale, ready, workspaceLoading, loadError, retryHydrate, productionMode, toasts, setCurrentUser, updateAccountProfile, mergeProducts, resolveProduct, mergeStores, resolveStoreBySlug, resolveStoreById, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, updatePlatformSettings, toast, resetDemo]);
+  }), [state, locale, ready, workspaceLoading, productionMode, toasts, setCurrentUser, updateAccountProfile, mergeProducts, resolveProduct, mergeStores, resolveStoreBySlug, resolveStoreById, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, updatePlatformSettings, toast, resetDemo]);
 
   return <AppContext.Provider value={value}>{children}<ToastViewport messages={toasts} /></AppContext.Provider>;
 }
