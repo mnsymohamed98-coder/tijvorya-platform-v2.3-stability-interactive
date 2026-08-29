@@ -79,8 +79,42 @@ create table if not exists public.reels (
   submitted_at timestamptz,
   reviewed_at timestamptz,
   reviewed_by uuid references public.profiles(id),
+  created_at timestamptz not null default now(),
+  hashtags text[] not null default '{}',
+  best_post_time text,
+  ai_score integer check (ai_score between 0 and 100),
+  ai_suggestions text[] not null default '{}',
+  watch_time_seconds numeric not null default 0,
+  shares bigint not null default 0,
+  saves bigint not null default 0,
+  product_clicks bigint not null default 0,
+  orders_attributed bigint not null default 0
+);
+-- v1.8 smart reels columns (migrations/20260724_v1_8_smart_reels.sql) - kept
+-- here too so a fresh install matches an existing one that already ran that
+-- migration; harmless no-ops either way.
+alter table public.reels add column if not exists hashtags text[] not null default '{}';
+alter table public.reels add column if not exists best_post_time text;
+alter table public.reels add column if not exists ai_score integer check (ai_score between 0 and 100);
+alter table public.reels add column if not exists ai_suggestions text[] not null default '{}';
+alter table public.reels add column if not exists watch_time_seconds numeric not null default 0;
+alter table public.reels add column if not exists shares bigint not null default 0;
+alter table public.reels add column if not exists saves bigint not null default 0;
+alter table public.reels add column if not exists product_clicks bigint not null default 0;
+alter table public.reels add column if not exists orders_attributed bigint not null default 0;
+
+create table if not exists public.reel_events (
+  id bigint generated always as identity primary key,
+  reel_id text not null references public.reels(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete set null,
+  session_id text,
+  event_type text not null check (event_type in ('impression','view','complete','like','save','share','product_click','add_to_cart','order')),
+  watch_seconds numeric not null default 0,
+  metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+create index if not exists reel_events_reel_created_idx on public.reel_events(reel_id, created_at desc);
+create index if not exists reel_events_user_created_idx on public.reel_events(user_id, created_at desc);
 
 create table if not exists public.orders (
   id text primary key,
@@ -157,6 +191,7 @@ alter table public.profiles enable row level security;
 alter table public.stores enable row level security;
 alter table public.products enable row level security;
 alter table public.reels enable row level security;
+alter table public.reel_events enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
 alter table public.platform_settings enable row level security;
@@ -170,8 +205,12 @@ create policy "products public active" on public.products for select using (stat
 create policy "products owner write" on public.products for all using (public.owns_store(store_id) or public.is_admin()) with check (public.owns_store(store_id) or public.is_admin());
 create policy "reels public approved" on public.reels for select using (status='approved' or public.owns_store(store_id) or public.is_admin());
 create policy "reels owner insert" on public.reels for insert with check (public.owns_store(store_id));
-create policy "reels owner draft update" on public.reels for update using (public.owns_store(store_id) and status in ('draft','rejected')) with check (public.owns_store(store_id));
+create policy "reels owner update" on public.reels for update using (public.owns_store(store_id) and status in ('draft','rejected','approved')) with check (public.owns_store(store_id));
 create policy "reels admin moderate" on public.reels for update using (public.is_admin()) with check (public.is_admin());
+create policy "reel events insert" on public.reel_events for insert with check (auth.uid() = user_id or user_id is null);
+create policy "reel events owner read" on public.reel_events for select using (
+  exists(select 1 from public.reels r join public.stores s on s.id=r.store_id where r.id=reel_id and s.owner_id=auth.uid()) or public.is_admin()
+);
 create policy "orders customer or merchant read" on public.orders for select using (customer_id=auth.uid() or public.owns_store(store_id) or public.is_admin());
 create policy "orders create" on public.orders for insert with check (auth.uid() is not null or customer_id is null);
 create policy "orders merchant update" on public.orders for update using (public.owns_store(store_id) or public.is_admin()) with check (public.owns_store(store_id) or public.is_admin());
@@ -774,3 +813,10 @@ commit;
 -- Composite index to keep that query - and its "load more" pagination -
 -- efficient as the catalog grows.
 create index if not exists products_public_recent_idx on public.products(status, created_at desc);
+
+-- v2.6: closes the drift called out in the previous TODO here - the reels
+-- table's v1.8 columns and the reel_events table (both from migrations/
+-- 20260724_v1_8_smart_reels.sql) are now defined above, and reels owner
+-- update was widened to include 'approved' so a merchant can edit a live
+-- reel (protect_reel_write_trigger already allows the resulting resubmit-
+-- to-pending transition for non-admin owners, so it needs no change here).
