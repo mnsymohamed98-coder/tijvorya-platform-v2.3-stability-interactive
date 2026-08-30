@@ -147,12 +147,12 @@ export default function HomePage() {
   return <PublicShell locale={locale}>
     <HomeStructuredData locale={locale} />
 
-    <section className="hero-section hero-global"><div className="container hero-grid hero-grid-enhanced">
+    <section className="hero-section hero-global"><span className="hero-ambient hero-ambient-a" aria-hidden="true" /><span className="hero-ambient hero-ambient-b" aria-hidden="true" /><span className="hero-ambient hero-ambient-c" aria-hidden="true" /><div className="container hero-grid hero-grid-enhanced">
       <div className="hero-copy">
         <span className="hero-badge"><Zap /> {locale === "ar" ? "منصة تجارة اجتماعية قابلة للتوسع" : "A scalable social-commerce platform"}</span>
         <h1>{locale === "ar" ? "حوّل كل مشاهدة إلى فرصة شراء." : "Turn every view into a buying opportunity."}</h1>
         <p>{locale === "ar" ? "Tijvorya تجمع المتجر، المنتجات، الريلز القابلة للشراء، الطلبات والتحليلات في تجربة واحدة مصممة للتاجر والمتسوّق." : "Tijvorya unifies storefronts, products, shoppable reels, orders and analytics in one experience built for merchants and shoppers."}</p>
-        <div className="hero-actions"><Link className="button button-dark button-large" href={`/${locale}/register`}>{t.start}<Arrow /></Link><Link className="button button-ghost button-large" href={`/${locale}/marketplace`}>{t.explore}</Link></div>
+        <div className="hero-actions"><Link className="button button-dark button-large hero-cta-primary" href={`/${locale}/register`}>{t.start}<Arrow /></Link><Link className="button button-ghost button-large hero-cta-secondary" href={`/${locale}/marketplace`}>{t.explore}</Link></div>
         <div className="trust-row"><span><CheckCircle2 />{locale === "ar" ? "عربية وإنجليزية أصلية" : "Native Arabic and English"}</span><span><CheckCircle2 />{locale === "ar" ? "شراء مباشر من الريلز" : "Direct shopping from reels"}</span><span><CheckCircle2 />{locale === "ar" ? "صلاحيات ومراجعة محتوى" : "Permissions and moderation"}</span></div>
         <div className="hero-proof"><div><BadgeCheck /><strong>{locale === "ar" ? "تجربة موثوقة" : "Trusted experience"}</strong><span>{locale === "ar" ? "متاجر ومحتوى تحت المراجعة" : "Stores and content under review"}</span></div><div><PackageCheck /><strong>{locale === "ar" ? "رحلة طلب واضحة" : "Clear order journey"}</strong><span>{locale === "ar" ? "من الاكتشاف حتى متابعة الطلب" : "From discovery to order tracking"}</span></div></div>
       </div>
