@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Cairo, Inter } from "next/font/google";
 import { AppProvider } from "@/providers/app-provider";
 import { normalizeLocale, supportedLocales } from "@/lib/i18n";
 import { absoluteUrl, localeSeo } from "@/lib/site";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const cairo = Cairo({ subsets: ["arabic", "latin"], variable: "--font-cairo", display: "swap" });
 
 export function generateStaticParams() { return supportedLocales.map((locale) => ({ locale })); }
 
@@ -45,5 +49,5 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   const { locale: rawLocale } = await params;
   if (!supportedLocales.includes(rawLocale as "ar" | "en")) notFound();
   const locale = normalizeLocale(rawLocale);
-  return <div lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className={`locale-${locale}`}><AppProvider locale={locale}>{children}</AppProvider></div>;
+  return <div lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className={`locale-${locale} ${inter.variable} ${cairo.variable}`}><AppProvider locale={locale}>{children}</AppProvider></div>;
 }
