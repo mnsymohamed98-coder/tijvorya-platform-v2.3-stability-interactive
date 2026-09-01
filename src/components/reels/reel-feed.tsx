@@ -15,7 +15,6 @@ import {
   Plus,
   Search,
   Send,
-  Share,
   ShoppingBag,
   UserRound,
   Volume2,
@@ -300,7 +299,7 @@ function ReelItem({
         <span>{formatCompact(commentCount, locale)}</span>
       </button>
       <button onClick={share}>
-        <span className="reel-action-icon"><Share /></span>
+        <span className="reel-action-icon reel-share-icon"><Send /></span>
         <span>{locale === "ar" ? "مشاركة" : "Share"}</span>
       </button>
       <button className={saved ? "is-saved" : ""} onClick={onToggleSave}>
