@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useApp } from "@/providers/app-provider";
+import { Avatar } from "@/components/ui/avatar";
 import { cn, errorMessage } from "@/lib/utils";
 import type { Conversation } from "@/types";
 
@@ -171,7 +172,7 @@ function MessagingWorkspaceInner({ mode }: { mode: Mode }) {
           const latest = messages.filter((message) => message.conversationId === conversation.id).at(-1);
           const unread = unreadCount(conversation);
           return <button key={conversation.id} className={cn("conversation-row", selected?.id === conversation.id && "is-active")} onClick={() => { setSelectedId(conversation.id); setNewConversationMode(false); setMobileListOpen(false); }}>
-            <span className="avatar">{mode === "customer" ? rowStore?.name.slice(0, 2) : conversation.customerAvatar ?? conversation.customerName.slice(0, 2)}</span>
+            <Avatar className="avatar" value={mode === "customer" ? rowStore?.logo : conversation.customerAvatar} fallback={(mode === "customer" ? rowStore?.name : conversation.customerName)?.slice(0, 2) ?? ""} />
             <span className="conversation-row-copy">
               <span><strong>{mode === "customer" ? (locale === "ar" ? rowStore?.name : rowStore?.nameEn) : conversation.customerName}</strong><time>{new Date(conversation.lastMessageAt).toLocaleDateString(locale === "ar" ? "ar" : "en", { month: "short", day: "numeric" })}</time></span>
               <b>{conversation.subject}</b>
@@ -188,7 +189,7 @@ function MessagingWorkspaceInner({ mode }: { mode: Mode }) {
       {selected ? <>
         <header className="conversation-header">
           <button className="icon-button conversation-back" onClick={() => setMobileListOpen(true)}><ArrowLeft /></button>
-          <span className="avatar">{mode === "customer" ? store?.name.slice(0, 2) : selected.customerAvatar ?? selected.customerName.slice(0, 2)}</span>
+          <Avatar className="avatar" value={mode === "customer" ? store?.logo : selected.customerAvatar} fallback={(mode === "customer" ? store?.name : selected.customerName)?.slice(0, 2) ?? ""} />
           <div><strong>{mode === "customer" ? (locale === "ar" ? store?.name : store?.nameEn) : selected.customerName}</strong><small>{selected.subject}</small></div>
           <div className="conversation-context">
             {selected.productId && <Link href={`/${locale}/product/${selected.productId}`}><Package />{locale === "ar" ? "المنتج" : "Product"}</Link>}
