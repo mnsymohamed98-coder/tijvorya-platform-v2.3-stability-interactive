@@ -216,8 +216,9 @@ $$;
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path=public as $$
 begin
-  insert into public.profiles(id,email,full_name,phone,role)
+  insert into public.profiles(id,email,full_name,phone,avatar,role)
   values(new.id,coalesce(new.email,''),coalesce(new.raw_user_meta_data->>'full_name',''),new.raw_user_meta_data->>'phone',
+    coalesce(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture'),
     case when new.raw_user_meta_data->>'role' in ('customer','merchant','influencer') then new.raw_user_meta_data->>'role' else 'customer' end)
   on conflict(id) do nothing;
   return new;

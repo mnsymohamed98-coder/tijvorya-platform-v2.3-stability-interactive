@@ -60,13 +60,19 @@ function mapAuthUser(user: { id: string; email?: string | null; user_metadata?: 
   const role: UserRole = ["customer", "merchant", "influencer", "admin"].includes(metadataRole)
     ? metadataRole as UserRole
     : "customer";
+  // OAuth providers don't agree on the metadata key for the profile photo -
+  // Supabase usually normalises Google's response to avatar_url, but the
+  // raw "picture" key (what Google's userinfo endpoint actually returns)
+  // is checked too as a fallback, same reasoning as the full_name/name pair
+  // above.
+  const avatarUrl = user.user_metadata?.avatar_url ?? user.user_metadata?.picture;
   return {
     id: user.id,
     email: user.email ?? "",
     fullName: name,
     role,
     adminRole: role === "admin" ? "super_admin" : undefined,
-    avatar: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : name.slice(0, 2).toUpperCase(),
+    avatar: typeof avatarUrl === "string" ? avatarUrl : name.slice(0, 2).toUpperCase(),
     phone: typeof user.user_metadata?.phone === "string" ? user.user_metadata.phone : undefined,
   };
 }
