@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useApp } from "@/providers/app-provider";
+import { Avatar } from "@/components/ui/avatar";
 import { signOut } from "@/lib/auth";
 import { adminRoleLabel, adminSectionFromPath, canAccessAdminSection, type AdminSection } from "@/lib/admin-permissions";
 import { cn } from "@/lib/utils";
@@ -101,7 +102,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="admin-identity-card">
-        <span className="admin-avatar">{currentUser.avatar ?? currentUser.fullName.slice(0, 2)}</span>
+        <Avatar className="admin-avatar" value={currentUser.avatar} fallback={currentUser.fullName.slice(0, 2)} />
         <div><strong>{currentUser.fullName}</strong><span>{adminRoleLabel(adminRole, locale)}</span></div>
         <ShieldCheck />
       </div>
@@ -135,7 +136,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Link className="admin-language" href={localePath}>{otherLocale.toUpperCase()}</Link>
           <Link className="admin-topbar-icon" href={`/${locale}`} title={locale === "ar" ? "عرض الموقع العام" : "View public site"}><ExternalLink /></Link>
           <Link className="admin-topbar-icon" href={`${base}/audit`} title={locale === "ar" ? "التنبيهات والسجل" : "Alerts and activity"}><BellRing /><i>{pendingReels + openSupport}</i></Link>
-          <div className="admin-account-menu"><span className="admin-avatar small">{currentUser.avatar ?? currentUser.fullName.slice(0, 2)}</span><div><strong>{currentUser.fullName}</strong><span>{adminRoleLabel(adminRole, locale)}</span></div><ChevronDown /></div>
+          <div className="admin-account-menu"><Avatar className="admin-avatar small" value={currentUser.avatar} fallback={currentUser.fullName.slice(0, 2)} /><div><strong>{currentUser.fullName}</strong><span>{adminRoleLabel(adminRole, locale)}</span></div><ChevronDown /></div>
           <button className="admin-topbar-icon" type="button" onClick={logout} title={locale === "ar" ? "تسجيل الخروج" : "Sign out"}><LogOut /></button>
         </div>
       </header>
