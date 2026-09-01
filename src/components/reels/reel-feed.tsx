@@ -25,6 +25,7 @@ import {
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/providers/app-provider";
 import { PersistentImage, PersistentVideo } from "@/components/ui/persistent-media";
+import { Avatar } from "@/components/ui/avatar";
 import { formatCompact, formatMoney, uid } from "@/lib/utils";
 import { EMPTY_REEL_PROFILE, rankReels, recordPreference, type ReelPreferenceProfile } from "@/lib/reels/recommendation";
 import { getReelSessionId } from "@/lib/reels/session";
@@ -385,13 +386,13 @@ function CommentsSheet({
       </header>
       <div className="reel-comments-list">
         {loading ? <div className="reel-comments-empty"><MessageCircle /><p>{locale === "ar" ? "جارٍ تحميل التعليقات..." : "Loading comments..."}</p></div> : comments.length ? comments.map((comment) => <article key={comment.id} className="reel-comment">
-          <span className="reel-comment-avatar">{comment.avatar}</span>
+          <span className="reel-comment-avatar"><Avatar src={comment.avatar} name={comment.userName} size={32} /></span>
           <div><strong>{comment.userName}</strong><p>{comment.text}</p><small>{timeAgo(comment.createdAt, locale)} · {locale === "ar" ? "رد" : "Reply"}</small></div>
           <button className={likedCommentIds.includes(comment.id) ? "is-active" : ""} onClick={() => onToggleCommentLike(comment.id)} aria-label={locale === "ar" ? "إعجاب بالتعليق" : "Like comment"}><Heart fill={likedCommentIds.includes(comment.id) ? "currentColor" : "none"} /><small>{comment.likes || ""}</small></button>
         </article>) : <div className="reel-comments-empty"><MessageCircle /><strong>{locale === "ar" ? "ابدأ المحادثة" : "Start the conversation"}</strong><p>{locale === "ar" ? "كن أول من يعلّق على هذا الريلز." : "Be the first to comment on this reel."}</p></div>}
       </div>
       {canComment ? <form onSubmit={submit} className="reel-comment-form">
-        <span className="reel-comment-avatar">{currentUser?.avatar ?? "TJ"}</span>
+        <span className="reel-comment-avatar"><Avatar src={currentUser?.avatar} name={currentUser?.fullName ?? "TJ"} size={32} /></span>
         <input value={text} onChange={(event) => setText(event.target.value)} placeholder={locale === "ar" ? "أضف تعليقًا..." : "Add a comment..."} maxLength={280} />
         <button type="submit" disabled={!text.trim()}><Send /></button>
       </form> : <div className="reel-comments-empty">{locale === "ar" ? "سجّل الدخول لإضافة تعليق." : "Sign in to add a comment."}</div>}
