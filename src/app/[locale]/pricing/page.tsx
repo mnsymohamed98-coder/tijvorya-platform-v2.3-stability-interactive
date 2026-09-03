@@ -64,7 +64,8 @@ export default function PricingPage() {
 
   return (
     <PublicShell locale={locale}>
-      <section className="page-hero">
+      <div className="pricing-backdrop">
+      <section className="page-hero compact pricing-hero">
         <div className="container">
           <span className="eyebrow">PRICING</span>
 
@@ -88,7 +89,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="section container">
+      <section className="section pricing-grid-section container">
         <div className="pricing-grid">
           {plans.map((p) => {
             const disabled = p.id !== "free";
@@ -160,6 +161,7 @@ export default function PricingPage() {
             : "Commission is charged only on completed orders. Online payment availability may vary by country and payment provider."}
         </div>
       </section>
+      </div>
     </PublicShell>
   );
 }
