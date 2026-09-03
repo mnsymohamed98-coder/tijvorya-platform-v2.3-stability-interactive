@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, CircleCheck, Crown } from "lucide-react";
 import { PublicShell } from "@/components/layout/public-shell";
 import { useApp } from "@/providers/app-provider";
 
@@ -30,77 +30,31 @@ const plans = [
     ],
   },
   {
-    id: "basic",
-    price: "15",
-    commission: "3%",
-    ar: "أساسي",
-    en: "Basic",
-    featuresAr: [
-      "حتى 150 منتجًا",
-      "حتى 30 ريلز",
-      "تخصيص متقدم للمتجر",
-      "تحليلات المبيعات والطلبات",
-      "إدارة المخزون",
-      "دعم بأولوية أعلى",
-    ],
-    featuresEn: [
-      "Up to 150 products",
-      "Up to 30 reels",
-      "Advanced store customization",
-      "Sales & order analytics",
-      "Inventory management",
-      "Priority support",
-    ],
-  },
-  {
     id: "pro",
-    price: "40",
-    commission: "1.5%",
-    ar: "برو",
+    price: "19",
+    commission: "1%",
+    ar: "احترافي",
     en: "Pro",
     featured: true,
     featuresAr: [
-      "حتى 1,000 منتج",
-      "حتى 150 ريلز",
-      "تحليلات متقدمة للريلز والمبيعات",
-      "حملات ترويجية داخل المنصة",
-      "استيراد المنتجات عبر CSV",
-      "أدوات ذكاء اصطناعي متقدمة",
-      "شارة متجر احترافية",
-    ],
-    featuresEn: [
-      "Up to 1,000 products",
-      "Up to 150 reels",
-      "Advanced reel & sales analytics",
-      "Internal promotional campaigns",
-      "CSV product import",
-      "Advanced AI tools",
-      "Professional store badge",
-    ],
-  },
-  {
-    id: "business",
-    price: "100",
-    commission: "0.5%",
-    ar: "بزنس",
-    en: "Business",
-    featuresAr: [
+      "موقع إلكتروني خاص بمتجرك لعرض منتجاتك والتحكم الكامل بإدارته",
+      "تخصيص متقدم لهوية المتجر",
       "منتجات غير محدودة",
       "ريلز غير محدودة",
-      "حسابات متعددة لفريق المتجر",
+      "إدارة المخزون",
+      "دعم بأولوية أعلى",
       "تقارير وتحليلات متقدمة",
-      "أدوات ذكاء اصطناعي كاملة",
-      "أولوية في الظهور داخل المنصة",
-      "دعم مخصص للأعمال",
+      "كل أدوات ومزايا المنصة مفتوحة بالكامل",
     ],
     featuresEn: [
+      "Your own store website to showcase products, with full management control",
+      "Advanced store customization",
       "Unlimited products",
       "Unlimited reels",
-      "Multiple store team accounts",
+      "Inventory management",
+      "Priority support",
       "Advanced reports & analytics",
-      "Full AI tools",
-      "Priority platform visibility",
-      "Dedicated business support",
+      "Every platform feature fully unlocked",
     ],
   },
 ];
@@ -143,11 +97,17 @@ export default function PricingPage() {
               key={p.id}
               className={`pricing-card ${p.featured ? "featured" : ""} ${disabled ? "is-coming-soon" : ""}`}
             >
-              {p.featured && (
+              {p.featured ? (
                 <span className="plan-badge">
+                  <Crown />
                   {disabled
-                    ? locale === "ar" ? "قريبًا" : "Coming soon"
+                    ? locale === "ar" ? "الأفضل قيمة · قريبًا" : "Best value · Coming soon"
                     : locale === "ar" ? "الأكثر اختيارًا" : "Most popular"}
+                </span>
+              ) : (
+                <span className="plan-badge is-live">
+                  <CircleCheck />
+                  {locale === "ar" ? "متاح الآن" : "Available now"}
                 </span>
               )}
 
