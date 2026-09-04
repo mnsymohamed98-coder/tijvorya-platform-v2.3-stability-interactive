@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { CircleAlert, CircleCheck, Info } from "lucide-react";
 import { defaultPlatformSettings, initialAuditLog, initialConversations, initialMessages, initialOrders, initialProducts, initialReels, initialStores, initialUsers, platformAdminUser } from "@/data/seed";
 import { getCurrentUser, resetLocalAuthAccounts } from "@/lib/auth";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -976,8 +977,44 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
   return <AppContext.Provider value={value}>{children}<ToastViewport messages={toasts} /></AppContext.Provider>;
 }
 
+const TOAST_ICONS = { success: CircleCheck, error: CircleAlert, info: Info } as const;
+
+// Renders its own local copy of `messages` instead of the array straight
+// from context so a toast can play an exit animation before it actually
+// unmounts - the moment a message drops out of `messages` (auto-dismiss
+// timer in the toast() callback above), this marks the local copy
+// `leaving` for one CSS transition instead of having it vanish instantly.
 function ToastViewport({ messages }: { messages: ToastMessage[] }) {
-  return <div className="toast-viewport" aria-live="polite">{messages.map((message) => <div key={message.id} className={`toast toast-${message.tone}`}>{message.text}</div>)}</div>;
+  const [items, setItems] = useState<Array<ToastMessage & { leaving?: boolean }>>([]);
+
+  useEffect(() => {
+    setItems((current) => {
+      const liveIds = new Set(messages.map((message) => message.id));
+      const next = current
+        .filter((item) => liveIds.has(item.id) || item.leaving)
+        .map((item) => (liveIds.has(item.id) ? item : { ...item, leaving: true }));
+      messages.forEach((message) => { if (!next.some((item) => item.id === message.id)) next.push(message); });
+      return next;
+    });
+  }, [messages]);
+
+  useEffect(() => {
+    const leavingIds = items.filter((item) => item.leaving).map((item) => item.id);
+    if (!leavingIds.length) return;
+    const timer = window.setTimeout(() => setItems((current) => current.filter((item) => !leavingIds.includes(item.id))), 280);
+    return () => window.clearTimeout(timer);
+  }, [items]);
+
+  return <div className="toast-viewport" aria-live="polite">
+    {items.map((item) => {
+      const Icon = TOAST_ICONS[item.tone];
+      return <div key={item.id} className={`toast toast-${item.tone} ${item.leaving ? "is-leaving" : ""}`}>
+        <Icon className="toast-icon" />
+        <span>{item.text}</span>
+        <span className="toast-progress" aria-hidden="true" />
+      </div>;
+    })}
+  </div>;
 }
 
 export function useApp() {
