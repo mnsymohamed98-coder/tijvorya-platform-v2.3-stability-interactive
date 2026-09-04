@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUp } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const REVEAL_SELECTOR = [
@@ -37,6 +38,22 @@ export function SiteInteractions() {
   const [progress, setProgress] = useState(0);
   const [showTop, setShowTop] = useState(false);
   const ticking = useRef(false);
+  const pathname = usePathname();
+
+  // The root <html> tag is shared by every route and can't read the [locale]
+  // segment server-side (see suppressHydrationWarning on it in
+  // src/app/layout.tsx), so it's hardcoded to lang="ar" dir="rtl". The
+  // [locale] layout below it correctly sets dir on its own wrapper div, but
+  // that only fixes text flow *inside* that div - the root direction (and
+  // therefore the browser's own scrollable-overflow/scrollbar model) stays
+  // RTL, which is exactly what produces sideways-shifted layout and phantom
+  // horizontal scroll on /en pages. Correct it here once the real locale is
+  // known from the URL.
+  useEffect(() => {
+    const locale = pathname?.startsWith("/en") ? "en" : "ar";
+    document.documentElement.lang = locale;
+    document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
+  }, [pathname]);
 
   useEffect(() => {
     const body = document.body;
