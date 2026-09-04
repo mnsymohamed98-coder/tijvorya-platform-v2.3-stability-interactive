@@ -33,6 +33,7 @@ export function SiteHeader() {
     [`/${locale}/reels`, t.nav.reels],
     [`/${locale}/pricing`, t.nav.pricing],
     [`/${locale}/about`, t.nav.about],
+    [`/${locale}/contact`, t.nav.contact],
   ] as const;
 
   return <header className="site-header">
