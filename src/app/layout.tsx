@@ -1,7 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { localeSeo, siteConfig } from "@/lib/site";
 import { SiteInteractions } from "@/components/ui/site-interactions";
 import "./globals.css";
+
+// Runs before Next hydrates (strategy="beforeInteractive"), so the very
+// first paint already has the right dir/lang instead of flashing rtl on
+// English routes until SiteInteractions' effect corrects it client-side.
+const SET_LOCALE_DIR_SCRIPT = `(function(){try{var m=location.pathname.match(/^\\/(en|ar)(?=\\/|$)/);var l=m?m[1]:"ar";document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";}catch(e){}})();`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -36,5 +42,8 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ar" dir="rtl" suppressHydrationWarning><body>{children}<SiteInteractions /></body></html>;
+  return <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <head><Script id="set-locale-dir" strategy="beforeInteractive">{SET_LOCALE_DIR_SCRIPT}</Script></head>
+    <body>{children}<SiteInteractions /></body>
+  </html>;
 }
