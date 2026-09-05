@@ -31,6 +31,7 @@ const REVEAL_SELECTOR = [
   ".category-link",
   ".feature-editorial",
   ".cta-panel",
+  ".theme-preset",
 ].join(",");
 
 export function SiteInteractions() {
