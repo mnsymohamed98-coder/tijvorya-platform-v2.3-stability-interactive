@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Bookmark,
   ChevronDown,
@@ -497,6 +498,20 @@ export function ReelFeed({ reels }: { reels: Reel[] }) {
     setSearchOpen(false);
     feedRef.current?.querySelector<HTMLElement>(`[data-reel-id="${reelId}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  // Deep link from outside the feed (e.g. a storefront's reel thumbnail, or
+  // the share() link below, both of which point at ?reel=<id>) - jump to it
+  // once it's actually present among the ranked/filtered reels, and only
+  // once per page load so it doesn't fight the user's own scrolling.
+  const deepLinkedReelId = useSearchParams().get("reel");
+  const deepLinkHandled = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandled.current || !deepLinkedReelId) return;
+    if (!visibleReels.some((reel) => reel.id === deepLinkedReelId)) return;
+    deepLinkHandled.current = true;
+    setActiveId(deepLinkedReelId);
+    jumpToReel(deepLinkedReelId);
+  }, [deepLinkedReelId, visibleReels, jumpToReel]);
 
   // Scoped to reels specifically (caption, linked product, store name) -
   // not the marketplace product search, which is a separate surface with
