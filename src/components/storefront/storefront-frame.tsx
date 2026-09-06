@@ -10,7 +10,6 @@ import {
   Mail,
   MapPin,
   MessageCircle,
-  Music2,
   Phone,
   Share2,
   ShoppingBag,
@@ -20,6 +19,7 @@ import {
 import {
   FacebookBrandIcon,
   InstagramBrandIcon,
+  TikTokBrandIcon,
   WhatsAppBrandIcon,
 } from "@/components/ui/social-brand-icons";
 
@@ -129,7 +129,7 @@ export function StorefrontFrame({
         website.tiktok
       ),
       label: "TikTok",
-      Icon: Music2,
+      Icon: TikTokBrandIcon,
     },
   ].filter((item) =>
     Boolean(item.href)

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { BadgeCheck, Clock3, Mail, MapPin, MessageCircle, Music2, PackageCheck, Phone, ShieldCheck, Truck } from "lucide-react";
-import { FacebookBrandIcon, InstagramBrandIcon } from "@/components/ui/social-brand-icons";
+import { BadgeCheck, Clock3, Mail, MapPin, MessageCircle, PackageCheck, Phone, ShieldCheck, Truck } from "lucide-react";
+import { FacebookBrandIcon, InstagramBrandIcon, TikTokBrandIcon } from "@/components/ui/social-brand-icons";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { StorefrontFrame } from "@/components/storefront/storefront-frame";
@@ -83,7 +83,7 @@ export default function AboutPage() {
           {platformSettings.messagingEnabled && <Link href={`/${locale}/messages?store=${encodeURIComponent(store.slug)}`}><ShieldCheck /><div><span>Tijvorya</span><strong>{locale === "ar" ? "مراسلة آمنة داخل المنصة" : "Message securely on platform"}</strong></div></Link>}
         </div>
       </div>
-      {(instagram || facebook || tiktok) && <div className="merchant-social-row"><span>{locale === "ar" ? "تابع المتجر" : "Follow the store"}</span>{instagram && <a href={instagram} target="_blank" rel="noopener noreferrer"><InstagramBrandIcon />Instagram</a>}{facebook && <a href={facebook} target="_blank" rel="noopener noreferrer"><FacebookBrandIcon />Facebook</a>}{tiktok && <a href={tiktok} target="_blank" rel="noopener noreferrer"><Music2 />TikTok</a>}</div>}
+      {(instagram || facebook || tiktok) && <div className="merchant-social-row"><span>{locale === "ar" ? "تابع المتجر" : "Follow the store"}</span>{instagram && <a href={instagram} target="_blank" rel="noopener noreferrer"><InstagramBrandIcon />Instagram</a>}{facebook && <a href={facebook} target="_blank" rel="noopener noreferrer"><FacebookBrandIcon />Facebook</a>}{tiktok && <a href={tiktok} target="_blank" rel="noopener noreferrer"><TikTokBrandIcon />TikTok</a>}</div>}
     </section>
   </StorefrontFrame>;
 }

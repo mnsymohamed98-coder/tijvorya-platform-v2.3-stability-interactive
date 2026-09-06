@@ -1,33 +1,44 @@
-import type { SVGProps } from "react";
+import { useId, type SVGProps } from "react";
 
 type BrandIconProps = SVGProps<SVGSVGElement>;
 
-const sharedProps = {
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 2,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-  "aria-hidden": true,
-  focusable: false,
-};
-
 export function InstagramBrandIcon(props: BrandIconProps) {
+  const gradientId = useId();
   return (
-    <svg {...sharedProps} {...props}>
-      <rect x="3" y="3" width="18" height="18" rx="5" />
-      <circle cx="12" cy="12" r="4.25" />
-      <circle cx="17.4" cy="6.7" r="0.85" fill="currentColor" stroke="none" />
+    <svg viewBox="0 0 24 24" aria-hidden focusable={false} {...props}>
+      <defs>
+        <radialGradient id={gradientId} cx="30%" cy="107%" r="150%">
+          <stop offset="0%" stopColor="#FED576" />
+          <stop offset="26%" stopColor="#F47133" />
+          <stop offset="61%" stopColor="#BC3081" />
+          <stop offset="100%" stopColor="#4C63D2" />
+        </radialGradient>
+      </defs>
+      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill={`url(#${gradientId})`} />
+      <rect x="6.2" y="6.2" width="11.6" height="11.6" rx="3.6" fill="none" stroke="#fff" strokeWidth="1.6" />
+      <circle cx="12" cy="12" r="3.4" fill="none" stroke="#fff" strokeWidth="1.6" />
+      <circle cx="16.1" cy="7.9" r="1" fill="#fff" />
     </svg>
   );
 }
 
 export function FacebookBrandIcon(props: BrandIconProps) {
   return (
-    <svg {...sharedProps} {...props}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M13.2 20v-7h2.35l.35-2.75h-2.7V8.5c0-.8.22-1.35 1.38-1.35H16V4.7c-.62-.08-1.25-.12-1.88-.12-2.35 0-3.95 1.44-3.95 4.08v1.59H8V13h2.17v7" />
+    <svg viewBox="0 0 24 24" aria-hidden focusable={false} {...props}>
+      <circle cx="12" cy="12" r="10.5" fill="#1877F2" />
+      <path d="M13.6 21v-7.6h2.55l.38-2.96h-2.93v-1.9c0-.86.24-1.44 1.47-1.44h1.57V4.46A21 21 0 0 0 14.9 4.3c-2.32 0-3.9 1.42-3.9 4.02v2.12H8.4v2.96h2.6V21Z" fill="#fff" />
+    </svg>
+  );
+}
+
+export function TikTokBrandIcon(props: BrandIconProps) {
+  const note = "M14.6 5h2.02c.12 1.06.58 1.98 1.35 2.63.69.58 1.56.93 2.53.98v2.06a5.9 5.9 0 0 1-3.34-1.06v4.9c0 2.49-2.03 4.5-4.54 4.5A4.52 4.52 0 0 1 8.1 14.5c0-2.42 1.9-4.4 4.28-4.5v2.1a2.42 2.42 0 0 0-1.94 2.4 2.42 2.42 0 0 0 2.44 2.4 2.42 2.42 0 0 0 2.43-2.4V5Z";
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden focusable={false} {...props}>
+      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="#000" />
+      <path d={note} fill="#25F4EE" transform="translate(-0.35,-0.2)" />
+      <path d={note} fill="#FE2C55" transform="translate(0.35,0.2)" />
+      <path d={note} fill="#fff" />
     </svg>
   );
 }
