@@ -141,7 +141,7 @@ export default function StorePage() {
     <section className="merchant-story-section">
       <div className="merchant-site-shell merchant-story-grid">
         <div><span className="merchant-store-category">{locale === "ar" ? "قصتنا" : "Our story"}</span><h2>{locale === "ar" ? `تعرف أكثر على ${name}` : `Get to know ${name}`}</h2><p>{about}</p><Link className="merchant-secondary-button" href={aboutHref}>{locale === "ar" ? "المزيد عن المتجر" : "More about us"}<ArrowUpRight /></Link></div>
-        <div className="merchant-story-card"><span>{locale === "ar" ? "من موقعنا" : "Based in"}</span><strong>{[website.address, store.city, website.country].filter(Boolean).join(" · ")}</strong>{platformSettings.messagingEnabled ? <Link href={`/${locale}/messages?store=${encodeURIComponent(store.slug)}`}><MessageCircle />{locale === "ar" ? "اسأل المتجر مباشرة" : "Ask the store directly"}</Link> : store.whatsapp ? <a href={whatsappHref(store.whatsapp)} target="_blank" rel="noopener noreferrer"><WhatsAppBrandIcon />{locale === "ar" ? "اسأل المتجر عبر واتساب" : "Ask the store on WhatsApp"}</a> : null}</div>
+        <div className="merchant-story-card"><span>{locale === "ar" ? "من موقعنا" : "Based in"}</span><strong>{[website.address, store.city, website.country].filter(Boolean).join(" · ")}</strong>{store.whatsapp ? <a href={whatsappHref(store.whatsapp)} target="_blank" rel="noopener noreferrer"><WhatsAppBrandIcon />{locale === "ar" ? "اسأل المتجر عبر واتساب" : "Ask the store on WhatsApp"}</a> : platformSettings.messagingEnabled ? <Link href={`/${locale}/messages?store=${encodeURIComponent(store.slug)}`}><MessageCircle />{locale === "ar" ? "اسأل المتجر مباشرة" : "Ask the store directly"}</Link> : null}</div>
       </div>
     </section>
   </StorefrontFrame>;
