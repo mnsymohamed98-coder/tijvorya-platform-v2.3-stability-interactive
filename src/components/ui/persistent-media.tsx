@@ -26,24 +26,28 @@ export function usePersistentMediaUrl(value?: string) {
 }
 
 // Cloudinary-hosted URLs only - demo-mode blob: URLs and local /assets/...
-// paths pass through untouched. f_auto/q_auto let Cloudinary pick the best
-// format (webp/avif) and compression for the requesting browser instead of
-// serving the raw uploaded file at original size/quality forever.
+// paths pass through untouched. f_auto picks the best format (webp/avif) for
+// the requesting browser; q_auto:best biases Cloudinary's quality algorithm
+// toward maximum visual fidelity (larger files, still format-optimized)
+// instead of the default q_auto balance point, since product/reel imagery
+// is the platform's core sales surface.
 function toCloudinaryImageUrl(url: string, widthPx?: number): string {
   const match = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.*)$/);
   if (!match) return url;
-  const transform = widthPx ? `f_auto,q_auto,w_${widthPx}` : "f_auto,q_auto";
+  const transform = widthPx ? `f_auto,q_auto:best,w_${widthPx}` : "f_auto,q_auto:best";
   return `${match[1]}${transform}/${match[2]}`;
 }
 
 // sp_auto (streaming profile: auto) generates adaptive-bitrate HLS renditions
 // from the original upload on the fly - no separate encode step needed.
-// Returns null for anything that isn't a genuine Cloudinary video URL, so
-// demo-mode blobs and any other source keep playing exactly as before.
+// q_auto:best raises the target quality of every rung in that ladder (same
+// reasoning as the image transform above). Returns null for anything that
+// isn't a genuine Cloudinary video URL, so demo-mode blobs and any other
+// source keep playing exactly as before.
 function toCloudinaryHlsUrl(url: string): string | null {
   const match = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/)(.*)\.[a-zA-Z0-9]+$/);
   if (!match) return null;
-  return `${match[1]}sp_auto/${match[2]}.m3u8`;
+  return `${match[1]}sp_auto,q_auto:best/${match[2]}.m3u8`;
 }
 
 export const PersistentVideo = forwardRef<HTMLVideoElement, React.VideoHTMLAttributes<HTMLVideoElement> & { src?: string }>(function PersistentVideo({ src, poster, ...props }, forwardedRef) {

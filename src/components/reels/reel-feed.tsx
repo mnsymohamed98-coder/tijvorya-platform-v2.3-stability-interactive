@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Bookmark,
   ChevronDown,
@@ -15,7 +16,6 @@ import {
   Plus,
   Search,
   Send,
-  Share,
   ShoppingBag,
   UserRound,
   Volume2,
@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/providers/app-provider";
+import { Avatar } from "@/components/ui/avatar";
 import { PersistentImage, PersistentVideo } from "@/components/ui/persistent-media";
 import { Avatar } from "@/components/ui/avatar";
 import { formatCompact, formatMoney, uid } from "@/lib/utils";
@@ -301,7 +302,7 @@ function ReelItem({
         <span>{formatCompact(commentCount, locale)}</span>
       </button>
       <button onClick={share}>
-        <span className="reel-action-icon"><Share /></span>
+        <span className="reel-action-icon reel-share-icon"><Send /></span>
         <span>{locale === "ar" ? "مشاركة" : "Share"}</span>
       </button>
       <button className={saved ? "is-saved" : ""} onClick={onToggleSave}>
@@ -386,13 +387,13 @@ function CommentsSheet({
       </header>
       <div className="reel-comments-list">
         {loading ? <div className="reel-comments-empty"><MessageCircle /><p>{locale === "ar" ? "جارٍ تحميل التعليقات..." : "Loading comments..."}</p></div> : comments.length ? comments.map((comment) => <article key={comment.id} className="reel-comment">
-          <span className="reel-comment-avatar"><Avatar src={comment.avatar} name={comment.userName} size={32} /></span>
+          <Avatar className="reel-comment-avatar" value={comment.avatar} fallback={comment.userName.slice(0, 2)} />
           <div><strong>{comment.userName}</strong><p>{comment.text}</p><small>{timeAgo(comment.createdAt, locale)} · {locale === "ar" ? "رد" : "Reply"}</small></div>
           <button className={likedCommentIds.includes(comment.id) ? "is-active" : ""} onClick={() => onToggleCommentLike(comment.id)} aria-label={locale === "ar" ? "إعجاب بالتعليق" : "Like comment"}><Heart fill={likedCommentIds.includes(comment.id) ? "currentColor" : "none"} /><small>{comment.likes || ""}</small></button>
         </article>) : <div className="reel-comments-empty"><MessageCircle /><strong>{locale === "ar" ? "ابدأ المحادثة" : "Start the conversation"}</strong><p>{locale === "ar" ? "كن أول من يعلّق على هذا الريلز." : "Be the first to comment on this reel."}</p></div>}
       </div>
       {canComment ? <form onSubmit={submit} className="reel-comment-form">
-        <span className="reel-comment-avatar"><Avatar src={currentUser?.avatar} name={currentUser?.fullName ?? "TJ"} size={32} /></span>
+        <Avatar className="reel-comment-avatar" value={currentUser?.avatar} fallback={currentUser?.fullName.slice(0, 2) ?? "TJ"} />
         <input value={text} onChange={(event) => setText(event.target.value)} placeholder={locale === "ar" ? "أضف تعليقًا..." : "Add a comment..."} maxLength={280} />
         <button type="submit" disabled={!text.trim()}><Send /></button>
       </form> : <div className="reel-comments-empty">{locale === "ar" ? "سجّل الدخول لإضافة تعليق." : "Sign in to add a comment."}</div>}
@@ -498,6 +499,20 @@ export function ReelFeed({ reels }: { reels: Reel[] }) {
     setSearchOpen(false);
     feedRef.current?.querySelector<HTMLElement>(`[data-reel-id="${reelId}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  // Deep link from outside the feed (e.g. a storefront's reel thumbnail, or
+  // the share() link below, both of which point at ?reel=<id>) - jump to it
+  // once it's actually present among the ranked/filtered reels, and only
+  // once per page load so it doesn't fight the user's own scrolling.
+  const deepLinkedReelId = useSearchParams().get("reel");
+  const deepLinkHandled = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandled.current || !deepLinkedReelId) return;
+    if (!visibleReels.some((reel) => reel.id === deepLinkedReelId)) return;
+    deepLinkHandled.current = true;
+    setActiveId(deepLinkedReelId);
+    jumpToReel(deepLinkedReelId);
+  }, [deepLinkedReelId, visibleReels, jumpToReel]);
 
   // Scoped to reels specifically (caption, linked product, store name) -
   // not the marketplace product search, which is a separate surface with

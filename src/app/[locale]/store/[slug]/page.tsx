@@ -10,6 +10,7 @@ import { StorefrontNotFound } from "@/components/storefront/storefront-not-found
 import { StorefrontLoading } from "@/components/storefront/storefront-loading";
 import { PersistentImage } from "@/components/ui/persistent-media";
 import { businessCategoryLabel, merchantStoreHref, normalizeStoreWebsiteProfile } from "@/lib/store-website";
+import { normalizeStoreTheme } from "@/lib/store-theme";
 import { loadStoreCatalog } from "@/lib/supabase/repository";
 import { useApp } from "@/providers/app-provider";
 
@@ -47,6 +48,7 @@ export default function StorePage() {
   if (!store) return <StorefrontNotFound />;
 
   const website = normalizeStoreWebsiteProfile(store.website);
+  const theme = normalizeStoreTheme(store.theme, store.themeColor);
   const items = products.filter((item) => item.storeId === store.id && item.status === "active");
   const featured = [...items.filter((item) => item.featured), ...items.filter((item) => !item.featured)].slice(0, 4);
   const itemIds = new Set(items.map((item) => item.id));
@@ -58,32 +60,61 @@ export default function StorePage() {
   const productsHref = merchantStoreHref(store.slug, locale, "products");
   const aboutHref = merchantStoreHref(store.slug, locale, "about");
 
+  const heroCategory = <span className="merchant-store-category">{businessCategoryLabel(website.businessCategory, locale)}</span>;
+  const heroDescription = locale === "ar" ? store.description : store.descriptionEn;
+  const heroActions = <div className="merchant-home-actions">
+    <Link className="merchant-primary-button" href={productsHref}>{locale === "ar" ? "تصفح المنتجات" : "Shop products"}<ArrowUpRight /></Link>
+    <Link className="merchant-secondary-button" href={aboutHref}>{locale === "ar" ? "تعرف علينا" : "Our story"}</Link>
+  </div>;
+  const heroTrust = <div className="merchant-home-trust">
+    {store.verified && <span><BadgeCheck />{locale === "ar" ? "متجر موثوق" : "Verified store"}</span>}
+    {store.rating > 0 && <span><Star fill="currentColor" />{store.rating.toFixed(1)}</span>}
+    {store.city && <span><MapPin />{store.city}</span>}
+  </div>;
+
   return <StorefrontFrame store={store} active="home">
-    <section className="merchant-home-hero">
-      <div className="merchant-site-shell merchant-home-hero-grid">
-        <div className="merchant-home-copy">
-          <span className="merchant-store-category">{businessCategoryLabel(website.businessCategory, locale)}</span>
+    {theme.heroStyle === "cover" ? (
+      <section className="merchant-home-hero merchant-home-hero-cover">
+        <div className="merchant-home-hero-cover-media"><PersistentImage className="media-fill" src={store.cover} alt={name} optimized sizes="100vw" /><div className="merchant-home-hero-cover-shade" /></div>
+        <div className="merchant-site-shell merchant-home-hero-cover-content">
+          {heroCategory}
           <h1>{tagline || name}</h1>
-          <p>{locale === "ar" ? store.description : store.descriptionEn}</p>
-          <div className="merchant-home-actions">
-            <Link className="merchant-primary-button" href={productsHref}>{locale === "ar" ? "تصفح المنتجات" : "Shop products"}<ArrowUpRight /></Link>
-            <Link className="merchant-secondary-button" href={aboutHref}>{locale === "ar" ? "تعرف علينا" : "Our story"}</Link>
+          <p>{heroDescription}</p>
+          {heroActions}
+          {heroTrust}
+        </div>
+      </section>
+    ) : theme.heroStyle === "minimal" ? (
+      <section className="merchant-home-hero merchant-home-hero-minimal">
+        <div className="merchant-site-shell merchant-home-hero-minimal-content">
+          <span className="merchant-home-brand-logo standalone"><PersistentImage className="media-cover" src={store.logo} alt={name} optimized sizes="64px" /></span>
+          {heroCategory}
+          <h1>{tagline || name}</h1>
+          <p>{heroDescription}</p>
+          {heroActions}
+          {heroTrust}
+        </div>
+      </section>
+    ) : (
+      <section className="merchant-home-hero">
+        <div className="merchant-site-shell merchant-home-hero-grid">
+          <div className="merchant-home-copy">
+            {heroCategory}
+            <h1>{tagline || name}</h1>
+            <p>{heroDescription}</p>
+            {heroActions}
+            {heroTrust}
           </div>
-          <div className="merchant-home-trust">
-            {store.verified && <span><BadgeCheck />{locale === "ar" ? "متجر موثوق" : "Verified store"}</span>}
-            {store.rating > 0 && <span><Star fill="currentColor" />{store.rating.toFixed(1)}</span>}
-            {store.city && <span><MapPin />{store.city}</span>}
+          <div className="merchant-home-cover">
+            <PersistentImage className="media-fill" src={store.cover} alt={name} optimized sizes="(max-width: 780px) 100vw, 50vw" />
+            <div className="merchant-home-brand-card">
+              <span className="merchant-home-brand-logo"><PersistentImage className="media-cover" src={store.logo} alt={name} optimized sizes="46px" /></span>
+              <div><small>{locale === "ar" ? "تسوق مباشرة من" : "Shop directly from"}</small><strong>{name}</strong></div>
+            </div>
           </div>
         </div>
-        <div className="merchant-home-cover">
-          <PersistentImage className="media-fill" src={store.cover} alt={name} optimized sizes="(max-width: 780px) 100vw, 50vw" />
-          <div className="merchant-home-brand-card">
-            <span className="merchant-home-brand-logo"><PersistentImage className="media-cover" src={store.logo} alt={name} optimized sizes="46px" /></span>
-            <div><small>{locale === "ar" ? "تسوق مباشرة من" : "Shop directly from"}</small><strong>{name}</strong></div>
-          </div>
-        </div>
-      </div>
-    </section>
+      </section>
+    )}
 
     <section className="merchant-site-benefits">
       <div className="merchant-site-shell merchant-benefit-grid">
@@ -96,14 +127,14 @@ export default function StorePage() {
 
     <section className="merchant-site-section merchant-site-shell">
       <div className="merchant-section-heading"><div><span>{locale === "ar" ? "مختارات المتجر" : "Store picks"}</span><h2>{locale === "ar" ? "منتجات تستحق الاكتشاف" : "Products worth discovering"}</h2></div><Link href={productsHref}>{locale === "ar" ? "عرض الكل" : "View all"}<ArrowUpRight /></Link></div>
-      {featured.length > 0 ? <div className="product-grid merchant-featured-grid">{featured.map((item) => <ProductCard key={item.id} product={item} />)}</div> : <div className="merchant-site-empty"><PackageCheck /><h3>{locale === "ar" ? "المنتجات قادمة قريبًا" : "Products are coming soon"}</h3><p>{locale === "ar" ? "يعمل المتجر حاليًا على تجهيز مجموعته الأولى." : "The store is preparing its first collection."}</p></div>}
+      {featured.length > 0 ? <div className="product-grid merchant-featured-grid store-product-grid">{featured.map((item) => <ProductCard key={item.id} product={item} />)}</div> : <div className="merchant-site-empty"><PackageCheck /><h3>{locale === "ar" ? "المنتجات قادمة قريبًا" : "Products are coming soon"}</h3><p>{locale === "ar" ? "يعمل المتجر حاليًا على تجهيز مجموعته الأولى." : "The store is preparing its first collection."}</p></div>}
     </section>
 
-    {categories.length > 0 && <section className="merchant-category-band"><div className="merchant-site-shell"><div className="merchant-section-heading compact"><div><span>{locale === "ar" ? "الأقسام" : "Categories"}</span><h2>{locale === "ar" ? "تسوق حسب القسم" : "Shop by category"}</h2></div></div><div className="merchant-category-grid">{categories.map((category, index) => <Link href={`${productsHref}?category=${encodeURIComponent(category)}`} key={category}><small>{String(index + 1).padStart(2, "0")}</small><strong>{category}</strong><ArrowUpRight /></Link>)}</div></div></section>}
+    {categories.length > 0 && <section className="merchant-category-band"><div className="merchant-site-shell"><div className="merchant-section-heading compact"><div><span>{locale === "ar" ? "الأقسام" : "Categories"}</span><h2>{locale === "ar" ? "تسوق حسب القسم" : "Shop by category"}</h2></div></div><div className="merchant-category-grid">{categories.map((category, index) => <Link href={`${productsHref}?category=${encodeURIComponent(category)}`} key={category}><div className="merchant-category-top"><small>{String(index + 1).padStart(2, "0")}</small><ArrowUpRight /></div><strong>{category}</strong></Link>)}</div></div></section>}
 
     {storeReels.length > 0 && <section className="merchant-site-section merchant-site-shell">
       <div className="merchant-section-heading"><div><span>REELS</span><h2>{locale === "ar" ? "شاهد المنتجات أثناء الاستخدام" : "See products in motion"}</h2></div><Link href={`/${locale}/reels`}>{locale === "ar" ? "مشاهدة الريلز" : "Watch reels"}<ArrowUpRight /></Link></div>
-      <div className="merchant-reel-grid">{storeReels.map((item) => <Link key={item.id} href={`/${locale}/product/${encodeURIComponent(item.productId)}`}><div><PersistentImage className="media-fill" src={item.cover} alt={locale === "ar" ? item.caption : item.captionEn} optimized sizes="(max-width: 780px) 100vw, (max-width: 1050px) 50vw, 25vw" /><span>{item.views.toLocaleString()} {locale === "ar" ? "مشاهدة" : "views"}</span></div><strong>{locale === "ar" ? item.caption : item.captionEn}</strong></Link>)}</div>
+      <div className="merchant-reel-grid">{storeReels.map((item) => <Link key={item.id} href={`/${locale}/reels?reel=${encodeURIComponent(item.id)}`}><div><PersistentImage className="media-fill" src={item.cover} alt={locale === "ar" ? item.caption : item.captionEn} optimized sizes="(max-width: 780px) 100vw, (max-width: 1050px) 50vw, 25vw" /><span>{item.views.toLocaleString()} {locale === "ar" ? "مشاهدة" : "views"}</span></div><strong>{locale === "ar" ? item.caption : item.captionEn}</strong></Link>)}</div>
     </section>}
 
     <section className="merchant-story-section">

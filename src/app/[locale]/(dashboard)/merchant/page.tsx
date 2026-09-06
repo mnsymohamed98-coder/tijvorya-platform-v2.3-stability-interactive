@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import {
   Boxes,
   Film,
@@ -560,7 +561,7 @@ export default function MerchantDashboard() {
             <Store />
           </div>
 
-          <div className="progress-ring">
+          <div className="progress-ring" style={{ "--pct": readiness } as CSSProperties}>
             <strong>{readiness}%</strong>
           </div>
 

@@ -1,9 +1,19 @@
-import { PersistentImage } from "@/components/ui/persistent-media";
+/* eslint-disable @next/next/no-img-element */
+"use client";
 
-const IMAGE_SRC_PATTERN = /^(https?:\/\/|\/|data:image\/)/i;
+import { useState } from "react";
 
-export function Avatar({ src, name, size = 36 }: { src?: string | null; name: string; size?: number }) {
-  const isImage = typeof src === "string" && IMAGE_SRC_PATTERN.test(src);
-  if (isImage) return <PersistentImage className="media-cover" src={src} alt={name} optimized width={size} height={size} />;
-  return <>{(src && src.trim()) || name.slice(0, 2).toUpperCase()}</>;
+// Matches a real image reference (URL or data URI) as opposed to the 2-letter
+// initials string auth.ts falls back to for accounts without a photo (e.g.
+// email/password sign-ups, which never get a Google avatar_url).
+const AVATAR_IMAGE_RE = /^(https?:\/\/|\/|data:image\/)/i;
+
+export function Avatar({ value, fallback, className }: { value?: string; fallback: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  const isImage = Boolean(value) && AVATAR_IMAGE_RE.test(value!);
+  return <span className={className}>
+    {isImage && !failed
+      ? <img src={value} alt={fallback} onError={() => setFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+      : (isImage ? fallback : (value || fallback))}
+  </span>;
 }
