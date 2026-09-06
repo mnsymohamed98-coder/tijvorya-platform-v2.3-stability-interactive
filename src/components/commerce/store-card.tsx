@@ -11,19 +11,18 @@ export function StoreCard({ store, locale }: { store: Store; locale: Locale }) {
   const isReady = store.website?.onboardingCompleted === true;
 
   return <Link className="store-card store-card-logo" href={merchantStoreHref(store.slug, locale)} aria-label={locale === "ar" ? `زيارة متجر ${storeName}` : `Visit ${storeName}`}>
-    <div className="store-card-icon-shell">
-      <div className="store-logo store-logo-large">
-        <PersistentImage className="media-cover" src={store.logo} alt={locale === "ar" ? `شعار ${storeName}` : `${storeName} logo`} optimized width={68} height={68} />
+    <div className="store-card-top">
+      <div className="store-card-icon-shell">
+        <div className="store-logo store-logo-large">
+          <PersistentImage className="media-cover" src={store.logo} alt={locale === "ar" ? `شعار ${storeName}` : `${storeName} logo`} optimized width={68} height={68} />
+        </div>
+        {store.verified && <span className="store-verified-badge" title={locale === "ar" ? "متجر موثّق" : "Verified store"}>✓</span>}
       </div>
-      {store.verified && <span className="store-verified-badge" title={locale === "ar" ? "متجر موثّق" : "Verified store"}>✓</span>}
+      {isReady && <span className="store-ready-pill">{locale === "ar" ? "جاهز" : "Ready"}</span>}
     </div>
 
     <div className="store-card-copy">
-      <div className="store-card-topline">
-        <h3>{storeName}</h3>
-        {isReady && <span className="store-ready-pill">{locale === "ar" ? "جاهز" : "Ready"}</span>}
-      </div>
-
+      <h3>{storeName}</h3>
       <p className="store-card-domain"><Globe2 size={14} />{domain}</p>
 
       <div className="store-meta store-meta-compact">
@@ -32,6 +31,6 @@ export function StoreCard({ store, locale }: { store: Store; locale: Locale }) {
       </div>
     </div>
 
-    <span className="store-card-cta">{locale === "ar" ? "زيارة" : "Visit"}<ArrowUpLeft size={15} /></span>
+    <span className="store-card-cta">{locale === "ar" ? "زيارة المتجر" : "Visit store"}<ArrowUpLeft size={15} /></span>
   </Link>;
 }
