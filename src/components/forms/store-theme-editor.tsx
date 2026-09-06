@@ -10,6 +10,11 @@ const presetLabels: Record<StoreThemePreset, { ar: string; en: string; descripti
   boutique: { ar: "بوتيك", en: "Boutique", descriptionAr: "طابع تحريري دافئ للموضة والجمال.", descriptionEn: "Warm editorial style for fashion and beauty." },
   minimal: { ar: "بسيط", en: "Minimal", descriptionAr: "مساحات بيضاء وتركيز كامل على المنتج.", descriptionEn: "White space with full product focus." },
   bold: { ar: "جريء", en: "Bold", descriptionAr: "تباين قوي مناسب للتقنية والعلامات الشبابية.", descriptionEn: "High contrast for tech and youth brands." },
+  luxury: { ar: "فاخر", en: "Luxury", descriptionAr: "أسود وذهبي بلمسة تحريرية راقية.", descriptionEn: "Black and gold with an upscale editorial feel." },
+  pastel: { ar: "هادئ", en: "Pastel", descriptionAr: "ألوان ناعمة وزوايا دائرية لهوية لطيفة.", descriptionEn: "Soft tones and rounded corners for a gentle identity." },
+  tech: { ar: "تقني", en: "Tech", descriptionAr: "كحلي داكن وأزرق كهربائي بحواف حادة.", descriptionEn: "Deep navy and electric blue with sharp edges." },
+  natural: { ar: "طبيعي", en: "Natural", descriptionAr: "بيج دافئ وأخضر ترابي بروح عضوية.", descriptionEn: "Warm beige and earthy green with an organic feel." },
+  vibrant: { ar: "حيوي", en: "Vibrant", descriptionAr: "طاقة وألوان نابضة تجذب الانتباه فورًا.", descriptionEn: "Energetic, eye-catching color that grabs attention." },
 };
 
 export function StoreThemeEditor({
