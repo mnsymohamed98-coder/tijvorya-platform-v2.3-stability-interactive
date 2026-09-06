@@ -15,6 +15,11 @@ const presetLabels: Record<StoreThemePreset, { ar: string; en: string; descripti
   tech: { ar: "تقني", en: "Tech", descriptionAr: "كحلي داكن وأزرق كهربائي بحواف حادة.", descriptionEn: "Deep navy and electric blue with sharp edges." },
   natural: { ar: "طبيعي", en: "Natural", descriptionAr: "بيج دافئ وأخضر ترابي بروح عضوية.", descriptionEn: "Warm beige and earthy green with an organic feel." },
   vibrant: { ar: "حيوي", en: "Vibrant", descriptionAr: "طاقة وألوان نابضة تجذب الانتباه فورًا.", descriptionEn: "Energetic, eye-catching color that grabs attention." },
+  ocean: { ar: "محيطي", en: "Ocean", descriptionAr: "تركواز منعش وأجواء صيفية خفيفة.", descriptionEn: "Refreshing turquoise with a light, breezy feel." },
+  sunset: { ar: "غروب", en: "Sunset", descriptionAr: "برتقالي دافئ بطابع تحريري أنيق.", descriptionEn: "Warm burnt orange with an elegant editorial style." },
+  monochrome: { ar: "أحادي", en: "Monochrome", descriptionAr: "أبيض وأسود حاد بلمسة أزياء راقية.", descriptionEn: "Stark black and white with a high-fashion accent." },
+  neon: { ar: "نيون", en: "Neon", descriptionAr: "بنفسجي داكن وتوهج نيون جذاب لعلامات شبابية.", descriptionEn: "Deep purple with an eye-catching neon glow for youth brands." },
+  royal: { ar: "ملكي", en: "Royal", descriptionAr: "زمردي هادئ بلمسة تحريرية راقية.", descriptionEn: "Calm emerald with a refined editorial touch." },
 };
 
 export function StoreThemeEditor({
