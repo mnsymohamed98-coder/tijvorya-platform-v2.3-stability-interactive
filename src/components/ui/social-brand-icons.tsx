@@ -23,10 +23,13 @@ export function InstagramBrandIcon(props: BrandIconProps) {
 }
 
 export function FacebookBrandIcon(props: BrandIconProps) {
+  // Uses the same rounded-square badge as the Instagram/TikTok marks above
+  // (rather than the older plain circle) so all three sit at the same size
+  // and shape in a row instead of one looking mismatched next to the others.
   return (
     <svg viewBox="0 0 24 24" aria-hidden focusable={false} {...props}>
-      <circle cx="12" cy="12" r="10.5" fill="#1877F2" />
-      <path d="M13.6 21v-7.6h2.55l.38-2.96h-2.93v-1.9c0-.86.24-1.44 1.47-1.44h1.57V4.46A21 21 0 0 0 14.9 4.3c-2.32 0-3.9 1.42-3.9 4.02v2.12H8.4v2.96h2.6V21Z" fill="#fff" />
+      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="#1877F2" />
+      <path d="M13.6 20v-6.6h2.2l.34-2.6h-2.54v-1.65c0-.75.21-1.27 1.28-1.27h1.38V5.5c-.24-.03-1.05-.1-2-.1-1.98 0-3.33 1.21-3.33 3.43v1.92H8.4v2.6h2.53V20Z" fill="#fff" />
     </svg>
   );
 }
