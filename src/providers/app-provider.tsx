@@ -50,6 +50,14 @@ import type {
 
 const STORAGE_KEY = "tijvorya-local-v3";
 const LEGACY_STORAGE_KEY = "tijvorya-demo-v2";
+// Production mode hydrates cart/favorites from Supabase-backed workspace
+// loads, which have no concept of either (they're client-only, not stored
+// server-side) - hydration used to just hardcode both back to [] on every
+// load, silently wiping a shopper's cart on refresh. Kept in a key
+// separate from STORAGE_KEY since that one holds the *entire* local-mode
+// state (including data that in production comes from Supabase and must
+// never be persisted client-side instead).
+const CART_STORAGE_KEY = "tijvorya-cart-v1";
 
 type PersistedState = {
   users: AppUser[];
@@ -232,13 +240,19 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
           ]);
           if (active) {
             loadedWorkspaceKey.current = user ? `${user.id}:${user.role}` : null;
+            const persistedCart = (() => {
+              try {
+                const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+                return raw ? JSON.parse(raw) as { cart?: PersistedState["cart"]; favoriteIds?: PersistedState["favoriteIds"] } : null;
+              } catch { return null; }
+            })();
             setState((previous) => ({
               ...previous,
               ...remote,
               users: remote.users ?? previous.users,
               currentUser: user,
-              cart: [],
-              favoriteIds: [],
+              cart: Array.isArray(persistedCart?.cart) ? persistedCart.cart : [],
+              favoriteIds: Array.isArray(persistedCart?.favoriteIds) ? persistedCart.favoriteIds : [],
               likedReelIds,
             }));
           }
@@ -312,6 +326,11 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     if (!ready || productionMode) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state, ready, productionMode]);
+
+  useEffect(() => {
+    if (!ready || !productionMode) return;
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ cart: state.cart, favoriteIds: state.favoriteIds }));
+  }, [state.cart, state.favoriteIds, ready, productionMode]);
 
   useEffect(() => {
     if (!productionMode || !ready) return;
