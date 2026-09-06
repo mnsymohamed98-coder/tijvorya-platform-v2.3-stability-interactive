@@ -20,6 +20,7 @@ import {
 import {
   FacebookBrandIcon,
   InstagramBrandIcon,
+  WhatsAppBrandIcon,
 } from "@/components/ui/social-brand-icons";
 
 import { PersistentImage } from "@/components/ui/persistent-media";
@@ -636,6 +637,19 @@ export function StorefrontFrame({
           </span>
         </div>
       </footer>
+
+      {store.whatsapp && (
+        <a
+          className="merchant-whatsapp-float"
+          href={whatsappHref(store.whatsapp)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={locale === "ar" ? `تواصل عبر واتساب مع ${name}` : `Message ${name} on WhatsApp`}
+          title={locale === "ar" ? "تواصل عبر واتساب" : "Chat on WhatsApp"}
+        >
+          <WhatsAppBrandIcon />
+        </a>
+      )}
     </div>
   );
 }

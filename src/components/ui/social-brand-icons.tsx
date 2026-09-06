@@ -31,3 +31,16 @@ export function FacebookBrandIcon(props: BrandIconProps) {
     </svg>
   );
 }
+
+export function WhatsAppBrandIcon(props: BrandIconProps) {
+  return (
+    <svg {...sharedProps} {...props}>
+      <path d="M4 20l1.3-4.1a8 8 0 1 1 3.4 3.3L4 20Z" />
+      <path
+        d="M9.2 9.9c-.15.5.1 1.35.85 2.35 1 1.3 2 1.9 2.9 2.15.4.1.65 0 .85-.2l.4-.45c.15-.15.35-.2.55-.1l1.4.6c.2.1.3.3.25.5-.1.55-.5 1.05-1 1.1-.9.1-2.6-.2-4.35-2.05-1.5-1.55-1.9-2.85-1.95-3.65-.05-.5.3-1 .8-1.2l.4-.15c.2-.05.4 0 .5.2l.5 1.35c.05.15 0 .35-.1.5l-.1.1Z"
+        fill="currentColor"
+        stroke="none"
+      />
+    </svg>
+  );
+}
