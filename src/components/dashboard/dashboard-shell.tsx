@@ -37,12 +37,12 @@ const adminNav = [
 ] as const;
 
 export function DashboardShell({ children, role }: { children: React.ReactNode; role: "merchant" | "admin" }) {
-  const { locale, currentUser, cart, productionMode, conversations, stores, setCurrentUser } = useApp();
+  const { locale, currentUser, cart, productionMode, conversations, stores, setCurrentUser, platformSettings } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const base = `/${locale}/${role}`;
-  const nav = role === "merchant" ? merchantNav : adminNav;
+  const nav = (role === "merchant" ? merchantNav : adminNav).filter(([suffix]) => suffix !== "/messages" || platformSettings.messagingEnabled);
   const ownedStoreIds = new Set(stores.filter((store) => store.ownerId === currentUser?.id).map((store) => store.id));
   const messageBadge = role === "merchant"
     ? conversations.filter((conversation) => ownedStoreIds.has(conversation.storeId)).reduce((sum, conversation) => sum + conversation.unreadByMerchant, 0)
@@ -62,7 +62,7 @@ export function DashboardShell({ children, role }: { children: React.ReactNode; 
         const active = suffix === "" ? pathname === base : pathname.startsWith(href);
         return <Link key={href} className={cn(active && "is-active")} href={href} onClick={() => setMobileOpen(false)}><Icon /><span>{locale === "ar" ? ar : en}</span>{suffix === "/messages" && messageBadge > 0 && <b className="nav-badge">{messageBadge > 99 ? "99+" : messageBadge}</b>}</Link>;
       })}</nav>
-      {role === "merchant" && <div className="sidebar-quick"><small>{locale === "ar" ? "إنشاء سريع" : "Quick create"}</small><Link href={`${base}/products/new`}><PackagePlus />{locale === "ar" ? "منتج جديد" : "New product"}</Link><Link href={`${base}/reels/new`}><Upload />{locale === "ar" ? "رفع ريلز" : "Upload reel"}</Link><Link href={`${base}/messages`}><MessageCircle />{locale === "ar" ? "الرسائل" : "Messages"}</Link></div>}
+      {role === "merchant" && <div className="sidebar-quick"><small>{locale === "ar" ? "إنشاء سريع" : "Quick create"}</small><Link href={`${base}/products/new`}><PackagePlus />{locale === "ar" ? "منتج جديد" : "New product"}</Link><Link href={`${base}/reels/new`}><Upload />{locale === "ar" ? "رفع ريلز" : "Upload reel"}</Link>{platformSettings.messagingEnabled && <Link href={`${base}/messages`}><MessageCircle />{locale === "ar" ? "الرسائل" : "Messages"}</Link>}</div>}
       <div className="sidebar-plan"><span className={`mode-dot ${productionMode ? "production" : "demo"}`} /> <strong>{productionMode ? (locale === "ar" ? "وضع الإنتاج" : "Production mode") : (locale === "ar" ? "وضع محلي" : "Local mode")}</strong><p>{productionMode ? (locale === "ar" ? "البيانات متصلة بـ Supabase." : "Data is connected to Supabase.") : (locale === "ar" ? "البيانات محفوظة محليًا على هذا الجهاز." : "Data is stored locally on this device.")}</p></div>
     </aside>
     <div className="dashboard-main">

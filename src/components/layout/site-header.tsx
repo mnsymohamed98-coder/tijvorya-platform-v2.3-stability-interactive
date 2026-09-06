@@ -9,7 +9,7 @@ import { useApp } from "@/providers/app-provider";
 import { Logo } from "@/components/ui/logo";
 
 export function SiteHeader() {
-  const { locale, cart, favoriteIds, currentUser, conversations } = useApp();
+  const { locale, cart, favoriteIds, currentUser, conversations, platformSettings } = useApp();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const t = copy[locale];
@@ -53,7 +53,7 @@ export function SiteHeader() {
       <div className="header-actions">
         <Link className="icon-button desktop-only" href={`/${locale}/marketplace`} aria-label={labels.search}><Search /></Link>
         <Link className="icon-button desktop-only" href={`/${locale}/marketplace?favorites=1`} aria-label={`${labels.favorites}: ${favoriteIds.length}`}><Heart />{favoriteIds.length > 0 && <span className="badge-count">{favoriteIds.length}</span>}</Link>
-        {currentUser && <Link className="icon-button" href={messagesHref} aria-label={`${labels.messages}: ${unreadMessages}`}><MessageCircle />{unreadMessages > 0 && <span className="badge-count">{unreadMessages}</span>}</Link>}
+        {currentUser && platformSettings.messagingEnabled && <Link className="icon-button" href={messagesHref} aria-label={`${labels.messages}: ${unreadMessages}`}><MessageCircle />{unreadMessages > 0 && <span className="badge-count">{unreadMessages}</span>}</Link>}
         <Link className="icon-button" href={`/${locale}/cart`} aria-label={`${labels.cart}: ${cart.reduce((sum, item) => sum + item.quantity, 0)}`}><ShoppingBag />{cart.length > 0 && <span className="badge-count">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>}</Link>
         {currentUser ? <Link className="button button-ghost desktop-only header-signin-button" href={dashboardHref}><Bell size={17} />{locale === "ar" ? "لوحتي" : "Dashboard"}</Link> : <Link className="button button-ghost desktop-only header-signin-button" href={`/${locale}/login`}><UserRound size={17} />{t.nav.login}</Link>}
         <Link className="locale-switch" href={localeHref} hrefLang={nextLocale} aria-label={labels.language}>{locale === "ar" ? "EN" : "ع"}</Link>

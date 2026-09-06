@@ -37,5 +37,5 @@ export const defaultPlatformSettings: PlatformSettings = {
   aiReelWriterEnabled: true,
   aiModerationEnabled: true,
   aiDailyRequestLimit: 50,
-  messagingEnabled: true,
+  messagingEnabled: false,
 };

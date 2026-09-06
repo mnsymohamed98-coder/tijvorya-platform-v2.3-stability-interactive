@@ -30,6 +30,7 @@ import {
   merchantStoreHref,
   normalizeStoreWebsiteProfile,
   safeExternalUrl,
+  whatsappHref,
 } from "@/lib/store-website";
 import { useApp } from "@/providers/app-provider";
 import type { Store } from "@/types";
@@ -42,13 +43,6 @@ export type StorefrontPage =
 function phoneHref(value?: string) {
   const clean = value?.replace(/[^+\d]/g, "");
   return clean ? `tel:${clean}` : undefined;
-}
-
-function whatsappHref(value?: string) {
-  const clean = value?.replace(/\D/g, "");
-  return clean
-    ? `https://wa.me/${clean}`
-    : undefined;
 }
 
 export function StorefrontFrame({
@@ -397,7 +391,7 @@ export function StorefrontFrame({
               <Share2 />
             </button>
 
-            {platformSettings.messagingEnabled && (
+            {platformSettings.messagingEnabled ? (
               <Link
                 className="merchant-site-icon-link"
                 href={`/${locale}/messages?store=${encodeURIComponent(
@@ -411,7 +405,21 @@ export function StorefrontFrame({
               >
                 <MessageCircle />
               </Link>
-            )}
+            ) : store.whatsapp ? (
+              <a
+                className="merchant-site-icon-link"
+                href={whatsappHref(store.whatsapp)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={
+                  locale === "ar"
+                    ? "تواصل عبر واتساب"
+                    : "Chat on WhatsApp"
+                }
+              >
+                <WhatsAppBrandIcon />
+              </a>
+            ) : null}
 
             <Link
               className="merchant-site-icon-link"

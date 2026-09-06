@@ -7,6 +7,8 @@ import { PublicShell } from "@/components/layout/public-shell";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useApp } from "@/providers/app-provider";
 import { formatMoney } from "@/lib/utils";
+import { whatsappHref } from "@/lib/store-website";
+import { WhatsAppBrandIcon } from "@/components/ui/social-brand-icons";
 
 const sequence = ["pending", "accepted", "preparing", "ready", "out_for_delivery", "completed"] as const;
 
@@ -32,7 +34,7 @@ export default function OrderPage() {
         <div className="editor-card">
           <div className="card-head"><div><span className="eyebrow">TRACKING</span><h2>{locale === "ar" ? "مسار الطلب" : "Order journey"}</h2></div></div>
           <div className="order-timeline">{sequence.map((status, index) => <div key={status} className={index <= current ? "done" : ""}>{index <= current ? <CheckCircle2 /> : <Circle />}<span>{statusLabels[status]}</span></div>)}</div>
-          {platformSettings.messagingEnabled && store && <Link className="button button-ghost order-message-link" href={`/${locale}/messages?store=${encodeURIComponent(store.slug)}&order=${encodeURIComponent(order.id)}`}><MessageCircle />{locale === "ar" ? "مراسلة المتجر بخصوص الطلب" : "Message store about this order"}</Link>}
+          {store && (platformSettings.messagingEnabled ? <Link className="button button-ghost order-message-link" href={`/${locale}/messages?store=${encodeURIComponent(store.slug)}&order=${encodeURIComponent(order.id)}`}><MessageCircle />{locale === "ar" ? "مراسلة المتجر بخصوص الطلب" : "Message store about this order"}</Link> : store.whatsapp ? <a className="button button-ghost order-message-link" href={whatsappHref(store.whatsapp)} target="_blank" rel="noopener noreferrer"><WhatsAppBrandIcon />{locale === "ar" ? "تواصل مع المتجر عبر واتساب بخصوص الطلب" : "Message store on WhatsApp about this order"}</a> : null)}
         </div>
         <aside className="order-summary detail">
           <h3>{locale === "ar" ? "تفاصيل الطلب" : "Order details"}</h3>
