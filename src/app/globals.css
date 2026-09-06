@@ -546,12 +546,15 @@ body *:not(svg):not(path){font-family:inherit}
 .merchant-home-hero-cover .merchant-secondary-button{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.45);backdrop-filter:blur(10px)}
 .merchant-home-hero-cover .merchant-home-actions{margin-top:20px}
 .merchant-home-hero-cover .merchant-home-trust{margin-top:16px}
-.merchant-home-hero-minimal{position:relative;overflow:hidden;padding:100px 0;background:linear-gradient(180deg,var(--store-surface),var(--store-bg));text-align:center}
-.merchant-home-hero-minimal:before{content:"";position:absolute;top:-160px;left:50%;transform:translateX(-50%);width:560px;height:340px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--store-accent) 18%,transparent),transparent 72%);pointer-events:none}
+.merchant-home-hero-minimal{position:relative;overflow:hidden;padding:96px 0 84px;background:linear-gradient(180deg,var(--store-surface),var(--store-bg));text-align:center}
+.merchant-home-hero-minimal:before{content:"";position:absolute;top:-140px;left:50%;transform:translateX(-50%);width:640px;height:420px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--store-accent) 22%,transparent),transparent 70%);pointer-events:none}
+.merchant-home-hero-minimal:after{content:"";position:absolute;inset:0;background-image:radial-gradient(color-mix(in srgb,var(--store-text) 7%,transparent) 1.5px,transparent 1.5px);background-size:26px 26px;-webkit-mask-image:radial-gradient(ellipse 55% 60% at 50% 0%,#000,transparent 72%);mask-image:radial-gradient(ellipse 55% 60% at 50% 0%,#000,transparent 72%);pointer-events:none}
 .merchant-home-hero-minimal-content{position:relative;display:flex;flex-direction:column;align-items:center;max-width:660px;margin:0 auto}
-.merchant-home-hero-minimal-content .merchant-home-brand-logo.standalone{width:76px;height:76px;border-radius:calc(var(--store-radius)*.6);overflow:hidden;margin-bottom:20px;border:1px solid color-mix(in srgb,var(--store-text) 10%,transparent);box-shadow:0 16px 34px color-mix(in srgb,var(--store-text) 16%,transparent)}
-.merchant-home-hero-minimal-content h1{font-size:clamp(36px,4.5vw,58px);line-height:1.15;letter-spacing:-.03em;margin:18px 0 18px}
-.merchant-home-hero-minimal-content>p{font-size:17px;line-height:1.9;color:color-mix(in srgb,var(--store-text) 66%,transparent);max-width:520px}
+.merchant-home-hero-minimal-content .merchant-home-brand-logo.standalone{width:96px;height:96px;padding:5px;border-radius:calc(var(--store-radius)*.6 + 8px);overflow:hidden;margin-bottom:22px;background:linear-gradient(155deg,color-mix(in srgb,var(--store-accent) 55%,transparent),color-mix(in srgb,var(--store-accent) 8%,transparent));box-shadow:0 20px 44px color-mix(in srgb,var(--store-accent) 24%,transparent),0 4px 16px color-mix(in srgb,var(--store-text) 12%,transparent)}
+.merchant-home-hero-minimal-content .merchant-home-brand-logo.standalone img{border-radius:calc(var(--store-radius)*.5)}
+.merchant-home-hero-minimal-content h1{font-size:clamp(36px,4.5vw,58px);line-height:1.15;letter-spacing:-.03em;margin:20px 0 0}
+.merchant-home-hero-minimal-content h1:after{content:"";display:block;width:64px;height:3px;margin:22px auto;border-radius:99px;background:linear-gradient(90deg,transparent,var(--store-accent),transparent)}
+.merchant-home-hero-minimal-content>p{font-size:17px;line-height:1.9;color:color-mix(in srgb,var(--store-text) 66%,transparent);max-width:520px;margin:0}
 .merchant-home-hero-minimal-content .merchant-home-actions,.merchant-home-hero-minimal-content .merchant-home-trust{justify-content:center}
 @media(max-width:850px){.merchant-home-hero-cover{min-height:420px}.merchant-home-hero-cover-content{padding:28px 0 26px}.merchant-home-hero-minimal{padding:64px 0}}
 @media(max-width:560px){.merchant-home-hero-cover{min-height:380px}.merchant-home-hero-cover-content h1{font-size:clamp(22px,7.2vw,30px);margin:10px 0 8px}.merchant-home-hero-cover-content>p{font-size:13px;-webkit-line-clamp:2}.merchant-home-hero-cover .merchant-home-actions{margin-top:16px}.merchant-home-hero-cover .merchant-home-trust{margin-top:12px;gap:10px}}
