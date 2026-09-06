@@ -26,7 +26,6 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "re
 import { useApp } from "@/providers/app-provider";
 import { Avatar } from "@/components/ui/avatar";
 import { PersistentImage, PersistentVideo } from "@/components/ui/persistent-media";
-import { Avatar } from "@/components/ui/avatar";
 import { formatCompact, formatMoney, uid } from "@/lib/utils";
 import { EMPTY_REEL_PROFILE, rankReels, recordPreference, type ReelPreferenceProfile } from "@/lib/reels/recommendation";
 import { getReelSessionId } from "@/lib/reels/session";
