@@ -45,6 +45,30 @@ export default function StorePage() {
     return () => { active = false; };
   }, [store, productionMode, mergeProducts]);
 
+  // The header's Reels link points at this page's #store-reels anchor, but
+  // that section only exists once the store's reels have hydrated - the
+  // browser's own scroll-to-fragment on load fires before that, against an
+  // element that isn't in the DOM yet, and never retries. Scroll manually
+  // once the data (and therefore the section) actually shows up.
+  useEffect(() => {
+    if (!store || typeof window === "undefined" || window.location.hash !== "#store-reels") return;
+    const hasStoreReels = reels.some((item) => item.storeId === store.id && item.status === "approved");
+    if (!hasStoreReels) return;
+    document.getElementById("store-reels")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [store, reels]);
+
+  // Clicking the header's Reels link while already on this page changes the
+  // hash without a navigation/re-render, so the effect above never re-fires
+  // for that case - a hashchange listener catches it instead.
+  useEffect(() => {
+    function handleHashChange() {
+      if (window.location.hash !== "#store-reels") return;
+      document.getElementById("store-reels")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
   if (!ready) return <StorefrontLoading />;
   if (!store) return <StorefrontNotFound />;
 
@@ -133,7 +157,7 @@ export default function StorePage() {
 
     {categories.length > 0 && <section className="merchant-category-band"><div className="merchant-site-shell"><div className="merchant-section-heading compact"><div><span>{locale === "ar" ? "الأقسام" : "Categories"}</span><h2>{locale === "ar" ? "تسوق حسب القسم" : "Shop by category"}</h2></div></div><div className="merchant-category-grid">{categories.map((category, index) => <Link href={`${productsHref}?category=${encodeURIComponent(category)}`} key={category}><div className="merchant-category-top"><small>{String(index + 1).padStart(2, "0")}</small><ArrowUpRight /></div><strong>{category}</strong></Link>)}</div></div></section>}
 
-    {storeReels.length > 0 && <section className="merchant-site-section merchant-site-shell">
+    {storeReels.length > 0 && <section id="store-reels" className="merchant-site-section merchant-site-shell">
       <div className="merchant-section-heading"><div><span>REELS</span><h2>{locale === "ar" ? "شاهد المنتجات أثناء الاستخدام" : "See products in motion"}</h2></div><Link href={`/${locale}/reels`}>{locale === "ar" ? "مشاهدة الريلز" : "Watch reels"}<ArrowUpRight /></Link></div>
       <div className="merchant-reel-grid">{storeReels.map((item) => <Link key={item.id} href={`/${locale}/reels?reel=${encodeURIComponent(item.id)}`}><div><PersistentImage className="media-fill" src={item.cover} alt={locale === "ar" ? item.caption : item.captionEn} optimized sizes="(max-width: 780px) 100vw, (max-width: 1050px) 50vw, 25vw" /><span>{item.views.toLocaleString()} {locale === "ar" ? "مشاهدة" : "views"}</span></div><strong>{locale === "ar" ? item.caption : item.captionEn}</strong></Link>)}</div>
     </section>}
