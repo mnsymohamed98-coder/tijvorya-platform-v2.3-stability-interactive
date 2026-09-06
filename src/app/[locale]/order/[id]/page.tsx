@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CheckCircle2, Circle, MessageCircle, PackageCheck, Truck } from "lucide-react";
 import { useParams } from "next/navigation";
-import { PublicShell } from "@/components/layout/public-shell";
+import { CheckoutShell } from "@/components/layout/checkout-shell";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useApp } from "@/providers/app-provider";
 import { formatMoney } from "@/lib/utils";
@@ -18,7 +18,7 @@ export default function OrderPage() {
   const order = orders.find((item) => item.id === decodeURIComponent(params.id));
 
   if (!order) {
-    return <PublicShell locale={locale}><main className="centered-page"><div className="empty-state"><h1>{locale === "ar" ? "الطلب غير موجود" : "Order not found"}</h1><Link className="button button-dark" href={`/${locale}`}>{locale === "ar" ? "الرئيسية" : "Home"}</Link></div></main></PublicShell>;
+    return <CheckoutShell locale={locale}><main className="centered-page"><div className="empty-state"><h1>{locale === "ar" ? "الطلب غير موجود" : "Order not found"}</h1><Link className="button button-dark" href={`/${locale}`}>{locale === "ar" ? "الرئيسية" : "Home"}</Link></div></main></CheckoutShell>;
   }
 
   const current = sequence.indexOf(order.status as typeof sequence[number]);
@@ -27,7 +27,7 @@ export default function OrderPage() {
     ? { pending: "تم الاستلام", accepted: "قبله المتجر", preparing: "قيد التجهيز", ready: "جاهز للتوصيل", out_for_delivery: "خرج للتوصيل", completed: "تم التسليم" }
     : { pending: "Received", accepted: "Accepted", preparing: "Preparing", ready: "Ready", out_for_delivery: "Out for delivery", completed: "Delivered" };
 
-  return <PublicShell locale={locale}>
+  return <CheckoutShell locale={locale}>
     <section className="page-hero compact"><div className="container"><span className="eyebrow">ORDER {order.id}</span><h1>{locale === "ar" ? "تم استلام طلبك" : "Your order has been received"}</h1><StatusPill status={order.status} locale={locale} /></div></section>
     <section className="section container">
       <div className="order-detail-layout">
@@ -45,5 +45,5 @@ export default function OrderPage() {
         </aside>
       </div>
     </section>
-  </PublicShell>;
+  </CheckoutShell>;
 }
