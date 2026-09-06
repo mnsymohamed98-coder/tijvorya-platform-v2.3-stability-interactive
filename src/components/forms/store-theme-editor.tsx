@@ -20,6 +20,9 @@ const presetLabels: Record<StoreThemePreset, { ar: string; en: string; descripti
   monochrome: { ar: "أحادي", en: "Monochrome", descriptionAr: "أبيض وأسود حاد بلمسة أزياء راقية.", descriptionEn: "Stark black and white with a high-fashion accent." },
   neon: { ar: "نيون", en: "Neon", descriptionAr: "بنفسجي داكن وتوهج نيون جذاب لعلامات شبابية.", descriptionEn: "Deep purple with an eye-catching neon glow for youth brands." },
   royal: { ar: "ملكي", en: "Royal", descriptionAr: "زمردي هادئ بلمسة تحريرية راقية.", descriptionEn: "Calm emerald with a refined editorial touch." },
+  desert: { ar: "صحراوي", en: "Desert", descriptionAr: "طوبي دافئ وقطع مائلة بروح تحريرية.", descriptionEn: "Warm terracotta with a diagonal editorial cut." },
+  arctic: { ar: "ثلجي", en: "Arctic", descriptionAr: "أزرق جليدي هادئ وحواف نظيفة حادة.", descriptionEn: "Calm icy blue with clean, sharp edges." },
+  velvet: { ar: "مخملي", en: "Velvet", descriptionAr: "عنابي عميق بشريط ذهبي فاخر.", descriptionEn: "Deep burgundy with a luxurious gold ribbon." },
 };
 
 export function StoreThemeEditor({
