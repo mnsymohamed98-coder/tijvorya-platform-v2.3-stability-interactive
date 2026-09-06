@@ -46,14 +46,17 @@ const nav = [
 ] as const satisfies ReadonlyArray<readonly [string, AdminSection, string, string, typeof LayoutDashboard]>;
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
-  const { locale, currentUser, productionMode, conversations, reels, setCurrentUser } = useApp();
+  const { locale, currentUser, productionMode, conversations, reels, setCurrentUser, platformSettings } = useApp();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const base = `/${locale}/admin`;
   const adminRole = currentUser?.adminRole;
   const activeSection = adminSectionFromPath(pathname);
-  const allowedNav = useMemo(() => nav.filter(([, section]) => canAccessAdminSection(adminRole, section)), [adminRole]);
+  const allowedNav = useMemo(
+    () => nav.filter(([, section]) => canAccessAdminSection(adminRole, section) && (section !== "messages" || platformSettings.messagingEnabled)),
+    [adminRole, platformSettings.messagingEnabled]
+  );
   const openSupport = conversations.filter((conversation) => conversation.status === "open").length;
   const pendingReels = reels.filter((reel) => reel.status === "pending").length;
   const otherLocale = locale === "ar" ? "en" : "ar";
