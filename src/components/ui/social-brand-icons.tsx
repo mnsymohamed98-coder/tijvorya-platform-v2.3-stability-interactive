@@ -35,13 +35,25 @@ export function FacebookBrandIcon(props: BrandIconProps) {
 }
 
 export function TikTokBrandIcon(props: BrandIconProps) {
-  const note = "M14.6 5h2.02c.12 1.06.58 1.98 1.35 2.63.69.58 1.56.93 2.53.98v2.06a5.9 5.9 0 0 1-3.34-1.06v4.9c0 2.49-2.03 4.5-4.54 4.5A4.52 4.52 0 0 1 8.1 14.5c0-2.42 1.9-4.4 4.28-4.5v2.1a2.42 2.42 0 0 0-1.94 2.4 2.42 2.42 0 0 0 2.44 2.4 2.42 2.42 0 0 0 2.43-2.4V5Z";
+  // A finely-detailed note path held up fine at large preview sizes but
+  // turned into an illegible smudge at the ~15-18px this actually renders at
+  // in the footer/follow-row - swapped for a bold, simple stroke note (the
+  // same shape lucide's Music2 icon uses) that stays crisp at small sizes,
+  // with the cyan/pink offset copies kept for the recognizable TikTok look.
+  const stem = "M12.5 16.5V4l5.3 3";
   return (
     <svg viewBox="0 0 24 24" aria-hidden focusable={false} {...props}>
       <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="#000" />
-      <path d={note} fill="#25F4EE" transform="translate(-0.35,-0.2)" />
-      <path d={note} fill="#FE2C55" transform="translate(0.35,0.2)" />
-      <path d={note} fill="#fff" />
+      <g transform="translate(-0.55,-0.35)" fill="#25F4EE">
+        <circle cx="9.5" cy="16.5" r="3" />
+        <path d={stem} fill="none" stroke="#25F4EE" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+      <g transform="translate(0.55,0.35)" fill="#FE2C55">
+        <circle cx="9.5" cy="16.5" r="3" />
+        <path d={stem} fill="none" stroke="#FE2C55" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+      <circle cx="9.5" cy="16.5" r="3" fill="#fff" />
+      <path d={stem} fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
