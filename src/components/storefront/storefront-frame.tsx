@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   BadgeCheck,
+  Film,
   Globe2,
   Grid2X2,
   Home,
@@ -354,6 +355,16 @@ export function StorefrontFrame({
                 ? "المنتجات"
                 : "Products"}
             </Link>
+
+            {/* Plain anchor, not next/link: Next's client-side router
+                doesn't reliably scroll to a hash target when the link
+                points at the route the visitor is already on. */}
+            <a href={`${base}#store-reels`}>
+              <Film />
+              {locale === "ar"
+                ? "الريلز"
+                : "Reels"}
+            </a>
 
             <Link
               className={
