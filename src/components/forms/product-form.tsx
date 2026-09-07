@@ -13,7 +13,11 @@ export function ProductForm({ product }: { product?: Product }) {
   const { locale, stores, currentUser, saveProduct, toast, platformSettings } = useApp();
   const router = useRouter();
   const merchantStore = useMemo(() => stores.find((store) => store.ownerId === currentUser?.id), [stores, currentUser]);
-  const [image, setImage] = useState(product?.image ?? "");
+  const [images, setImages] = useState<string[]>(() => {
+    const initial = product?.images?.length ? product.images : product?.image ? [product.image] : [];
+    return [initial[0] ?? "", initial[1] ?? "", initial[2] ?? ""];
+  });
+  const image = images[0];
   const [name, setName] = useState(product?.name ?? "");
   const [nameEn, setNameEn] = useState(product?.nameEn ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
@@ -56,7 +60,8 @@ export function ProductForm({ product }: { product?: Product }) {
     const compareAtPrice = safeNumber(form.get("compareAtPrice"));
     if (price <= 0) { toast(locale === "ar" ? "أدخل سعرًا صحيحًا" : "Enter a valid price", "error"); return; }
     if (compareAtPrice > 0 && compareAtPrice <= price) { toast(locale === "ar" ? "السعر قبل الخصم يجب أن يكون أعلى من السعر الحالي." : "Compare-at price must be higher than the current price.", "error"); return; }
-    if (!image) { toast(locale === "ar" ? "أضف صورة المنتج" : "Add a product image", "error"); return; }
+    const finalImages = images.filter(Boolean);
+    if (!finalImages.length) { toast(locale === "ar" ? "أضف صورة المنتج" : "Add a product image", "error"); return; }
     setSaving(true);
     try {
       const item: Product = {
@@ -64,7 +69,7 @@ export function ProductForm({ product }: { product?: Product }) {
         name: name.trim(), nameEn: nameEn.trim() || name.trim(),
         description: description.trim(), descriptionEn: descriptionEn.trim() || description.trim(),
         price, compareAtPrice: compareAtPrice || undefined, stock,
-        category: category.trim(), image, images: [image],
+        category: category.trim(), image: finalImages[0], images: finalImages,
         status: String(form.get("status") ?? "active") as Product["status"], rating: product?.rating ?? 0,
         variants: String(form.get("variants") ?? "").split(",").map((value) => value.trim()).filter(Boolean), featured: form.get("featured") === "on",
       };
@@ -83,7 +88,7 @@ export function ProductForm({ product }: { product?: Product }) {
       <label className="field"><span>{locale === "ar" ? "التصنيف" : "Category"}</span><input name="category" required value={category} onChange={(event) => setCategory(event.target.value)} placeholder={locale === "ar" ? "مثال: عطور، أزياء، تقنية" : "Example: Fragrance, Fashion, Technology"} /></label>
       <div className="form-grid two"><label className="field"><span>{locale === "ar" ? "الوصف العربي" : "Arabic description"}</span><textarea name="description" rows={6} required value={description} onChange={(event) => setDescription(event.target.value)} /></label><label className="field"><span>{locale === "ar" ? "الوصف الإنجليزي" : "English description"}</span><textarea name="descriptionEn" rows={6} value={descriptionEn} onChange={(event) => setDescriptionEn(event.target.value)} /></label></div>
     </section>
-    <section className="editor-card"><div className="card-head"><div><span className="eyebrow">MEDIA</span><h3>{locale === "ar" ? "صورة المنتج" : "Product media"}</h3></div></div><MediaUploader resourceType="image" folder="tijvorya/products" value={image} onChange={setImage} maxMB={8} label={locale === "ar" ? "الصورة الرئيسية" : "Main image"} /></section>
+    <section className="editor-card"><div className="card-head"><div><span className="eyebrow">MEDIA</span><h3>{locale === "ar" ? "صور المنتج" : "Product media"}</h3></div></div><p className="field-hint">{locale === "ar" ? "أضف حتى 3 صور — الأولى تكون الصورة الرئيسية." : "Add up to 3 images — the first is used as the main image."}</p><div className="form-grid three">{images.map((value, index) => <MediaUploader key={index} resourceType="image" folder="tijvorya/products" value={value} onChange={(url) => setImages((current) => current.map((item, itemIndex) => itemIndex === index ? url : item))} maxMB={8} label={index === 0 ? (locale === "ar" ? "الصورة الرئيسية" : "Main image") : `${locale === "ar" ? "صورة إضافية" : "Additional image"} ${index + 1}`} />)}</div></section>
     <section className="editor-card"><div className="card-head"><div><span className="eyebrow">COMMERCE</span><h3>{locale === "ar" ? "السعر والمخزون" : "Price and inventory"}</h3></div></div><div className="form-grid four"><label className="field"><span>{locale === "ar" ? "السعر" : "Price"}</span><input name="price" type="number" min="1" step="0.01" required defaultValue={product?.price} /></label><label className="field"><span>{locale === "ar" ? "السعر قبل الخصم" : "Compare at price"}</span><input name="compareAtPrice" type="number" min="0" step="0.01" defaultValue={product?.compareAtPrice} /></label><label className="field"><span>{locale === "ar" ? "المخزون" : "Stock"}</span><input name="stock" type="number" min="0" required defaultValue={product?.stock ?? 1} /></label><label className="field"><span>{locale === "ar" ? "المتغيرات — افصل بفاصلة" : "Variants — comma separated"}</span><input name="variants" defaultValue={product?.variants?.join(", ")} placeholder={locale === "ar" ? "S, M, L أو أسود, ذهبي" : "S, M, L or Black, Gold"} /></label></div><div className="form-grid two"><label className="field"><span>{locale === "ar" ? "حالة المنتج" : "Product status"}</span><select name="status" defaultValue={product?.status ?? "active"}><option value="active">{locale === "ar" ? "نشط" : "Active"}</option><option value="draft">{locale === "ar" ? "مسودة" : "Draft"}</option><option value="archived">{locale === "ar" ? "مؤرشف" : "Archived"}</option></select></label><label className="check-card"><input type="checkbox" name="featured" defaultChecked={product?.featured} /><span><strong>{locale === "ar" ? "منتج مميز" : "Featured product"}</strong><small>{locale === "ar" ? "إظهاره في مناطق مختارة من المتجر" : "Show in curated store sections"}</small></span></label></div></section>
     <div className="sticky-form-actions"><button type="button" className="button button-ghost" onClick={() => router.back()}>{locale === "ar" ? "إلغاء" : "Cancel"}</button><button className="button button-dark" disabled={saving}>{saving ? <LoaderCircle className="spin" /> : <Save />}{locale === "ar" ? "حفظ المنتج" : "Save product"}</button></div>
   </form>;
