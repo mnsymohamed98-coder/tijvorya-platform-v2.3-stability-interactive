@@ -147,6 +147,46 @@ export async function loadHomepageReadyStores(limit: number): Promise<Store[]> {
   return (data ?? []).map(mapStore);
 }
 
+// Full, searchable, paginated store directory - loadHomepageReadyStores
+// above stays limit-only for the homepage preview strip.
+export async function searchPublicStores(input: {
+  query?: string;
+  category?: string;
+  page: number;
+  pageSize: number;
+}): Promise<{ stores: Store[]; total: number }> {
+  const supabase = createClient();
+  if (!supabase) return { stores: [], total: 0 };
+  let builder = supabase.from("stores").select(STORE_COLUMNS, { count: "exact" })
+    .eq("status", "active").not("logo_url", "is", null).eq("website->>onboardingCompleted", "true");
+  if (input.category && input.category !== "all") builder = builder.eq("website->>businessCategory", input.category);
+  const term = input.query?.trim();
+  if (term) {
+    const pattern = `%${term.replace(/[%,]/g, "")}%`;
+    builder = builder.or(`name.ilike.${pattern},name_en.ilike.${pattern},city.ilike.${pattern}`);
+  }
+  builder = builder.order("created_at", { ascending: false });
+  const from = input.page * input.pageSize;
+  const to = from + input.pageSize - 1;
+  const { data, error, count } = await builder.range(from, to);
+  if (error) throw error;
+  return { stores: (data ?? []).map(mapStore), total: count ?? 0 };
+}
+
+export async function loadPublicStoreCategories(): Promise<string[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("stores").select("website")
+    .eq("status", "active").not("logo_url", "is", null).eq("website->>onboardingCompleted", "true");
+  if (error) throw error;
+  const categories = new Set<string>();
+  for (const row of (data ?? []) as Array<{ website: { businessCategory?: string } | null }>) {
+    const value = row.website?.businessCategory?.trim();
+    if (value) categories.add(value);
+  }
+  return Array.from(categories).sort();
+}
+
 export async function loadHomepagePreviewReels(limit: number): Promise<Reel[]> {
   const supabase = createClient();
   if (!supabase) return [];
