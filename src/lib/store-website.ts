@@ -63,9 +63,10 @@ export function safeExternalUrl(value?: string) {
   }
 }
 
-export function whatsappHref(value?: string) {
+export function whatsappHref(value?: string, text?: string) {
   const clean = value?.replace(/\D/g, "");
-  return clean ? `https://wa.me/${clean}` : undefined;
+  if (!clean) return undefined;
+  return text ? `https://wa.me/${clean}?text=${encodeURIComponent(text)}` : `https://wa.me/${clean}`;
 }
 
 const RESERVED_SUBDOMAINS = new Set([
