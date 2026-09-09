@@ -17,7 +17,6 @@ export function ProductForm({ product }: { product?: Product }) {
     const initial = product?.images?.length ? product.images : product?.image ? [product.image] : [];
     return [initial[0] ?? "", initial[1] ?? "", initial[2] ?? ""];
   });
-  const image = images[0];
   const [name, setName] = useState(product?.name ?? "");
   const [nameEn, setNameEn] = useState(product?.nameEn ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
