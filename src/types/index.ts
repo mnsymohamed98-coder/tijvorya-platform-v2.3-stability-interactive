@@ -179,6 +179,8 @@ export interface OrderItem {
   variant?: string;
 }
 
+export type PaymentMethod = "bank_transfer" | "palpay";
+
 export interface Order {
   id: string;
   storeId: string;
@@ -192,6 +194,8 @@ export interface Order {
   deliveryFee?: number;
   total: number;
   items: OrderItem[];
+  paymentMethod?: PaymentMethod;
+  paymentProofUrl?: string;
   createdAt: string;
 }
 

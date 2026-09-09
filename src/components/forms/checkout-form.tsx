@@ -1,9 +1,14 @@
 "use client";
 
-import { LoaderCircle, ShieldCheck } from "lucide-react";
+import { Check, Copy, LoaderCircle, Landmark, Wallet } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MediaUploader } from "./media-uploader";
 import { useApp } from "@/providers/app-provider";
+import type { PaymentMethod } from "@/types";
+
+const TRANSFER_NUMBER = "0567954507";
+const TRANSFER_NAME = "محمد منسي";
 
 function checkoutErrorMessage(error: unknown, locale: "ar" | "en") {
   const value = error instanceof Error ? error.message : String(error ?? "");
@@ -12,6 +17,8 @@ function checkoutErrorMessage(error: unknown, locale: "ar" | "en") {
     INVALID_PHONE: ["تحقق من رقم الهاتف.", "Check the phone number."],
     INVALID_ADDRESS: ["أدخل عنوانًا أكثر تفصيلًا.", "Enter a more detailed address."],
     NOTES_TOO_LONG: ["الملاحظات طويلة جدًا.", "The notes are too long."],
+    INVALID_PAYMENT_METHOD: ["اختر طريقة الدفع.", "Choose a payment method."],
+    PAYMENT_PROOF_REQUIRED: ["أرفق صورة إشعار التحويل.", "Attach a screenshot of the transfer receipt."],
     INVALID_CART: ["السلة غير صالحة. حدّث الصفحة وحاول مجددًا.", "The cart is invalid. Refresh and try again."],
     PRODUCT_UNAVAILABLE: ["أحد المنتجات لم يعد متاحًا.", "One of the products is no longer available."],
     INSUFFICIENT_STOCK: ["الكمية المطلوبة لم تعد متوفرة.", "The requested quantity is no longer in stock."],
@@ -27,10 +34,25 @@ export function CheckoutForm() {
   const { locale, cart, currentUser, createOrder, toast } = useApp();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [method, setMethod] = useState<PaymentMethod | null>(null);
+  const [proofUrl, setProofUrl] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  async function copyNumber() {
+    try {
+      await navigator.clipboard.writeText(TRANSFER_NUMBER);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard access can be blocked - the number is still visible to copy manually.
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!cart.length) { router.push(`/${locale}/cart`); return; }
+    if (!method) { toast(locale === "ar" ? "اختر طريقة الدفع" : "Choose a payment method", "error"); return; }
+    if (!proofUrl) { toast(locale === "ar" ? "أرفق صورة إشعار التحويل قبل تأكيد الطلب" : "Attach a screenshot of the transfer receipt before confirming", "error"); return; }
     const form = new FormData(event.currentTarget);
     setLoading(true);
     try {
@@ -39,6 +61,8 @@ export function CheckoutForm() {
         phone: String(form.get("phone") ?? "").trim(),
         address: String(form.get("address") ?? "").trim(),
         notes: String(form.get("notes") ?? "").trim() || undefined,
+        paymentMethod: method,
+        paymentProofUrl: proofUrl,
       });
       router.push(`/${locale}/order/${order.id}`);
     } catch (error) {
@@ -59,7 +83,34 @@ export function CheckoutForm() {
       <label className="field"><span>{locale === "ar" ? "العنوان بالتفصيل" : "Full address"}</span><textarea name="address" rows={4} required minLength={8} maxLength={500} autoComplete="street-address" placeholder={locale === "ar" ? "المدينة، الحي، الشارع، أقرب نقطة دالة" : "City, area, street and nearest landmark"} /></label>
       <label className="field"><span>{locale === "ar" ? "ملاحظات اختيارية" : "Optional notes"}</span><textarea name="notes" rows={3} maxLength={1000} /></label>
     </div>
-    <div className="payment-method"><ShieldCheck /><div><strong>{locale === "ar" ? "الدفع عند الاستلام" : "Cash on delivery"}</strong><p>{locale === "ar" ? "يعاد التحقق من السعر والمخزون داخل قاعدة البيانات قبل إنشاء الطلب." : "Price and stock are revalidated in the database before the order is created."}</p></div><input type="radio" checked readOnly aria-label={locale === "ar" ? "الدفع عند الاستلام محدد" : "Cash on delivery selected"} /></div>
+
+    <div className="checkout-section">
+      <span className="eyebrow">PAYMENT</span>
+      <h2>{locale === "ar" ? "طريقة الدفع" : "Payment method"}</h2>
+      <p className="field-hint">{locale === "ar" ? "حوّل المبلغ إلى الرقم أدناه، ثم أرفق صورة إشعار التحويل لتأكيد الطلب." : "Transfer the amount to the number below, then attach a screenshot of the transfer receipt to confirm the order."}</p>
+
+      <div className="payment-option-grid">
+        <button type="button" className={`payment-option ${method === "bank_transfer" ? "is-active" : ""}`} onClick={() => setMethod("bank_transfer")}>
+          <span className="payment-option-icon"><Landmark /></span>
+          <span className="payment-option-copy"><strong>{locale === "ar" ? "تحويل بنكي" : "Bank transfer"}</strong><span>{locale === "ar" ? "بنك فلسطين" : "Bank of Palestine"}</span></span>
+          {method === "bank_transfer" && <Check className="payment-option-check" />}
+        </button>
+        <button type="button" className={`payment-option ${method === "palpay" ? "is-active" : ""}`} onClick={() => setMethod("palpay")}>
+          <span className="payment-option-icon"><Wallet /></span>
+          <span className="payment-option-copy"><strong>{locale === "ar" ? "محفظة PalPay" : "PalPay wallet"}</strong><span>{locale === "ar" ? "دفع فوري عبر المحفظة" : "Instant wallet payment"}</span></span>
+          {method === "palpay" && <Check className="payment-option-check" />}
+        </button>
+      </div>
+
+      {method && <div className="payment-transfer-details">
+        <div><span>{locale === "ar" ? "حوّل إلى" : "Transfer to"}</span><strong dir="ltr">{TRANSFER_NUMBER}</strong></div>
+        <div><span>{locale === "ar" ? "باسم" : "Account name"}</span><strong>{TRANSFER_NAME}</strong></div>
+        <button type="button" className="button button-ghost" onClick={copyNumber}><Copy />{copied ? (locale === "ar" ? "تم النسخ" : "Copied") : (locale === "ar" ? "نسخ الرقم" : "Copy number")}</button>
+      </div>}
+
+      <MediaUploader resourceType="image" folder="tijvorya/payments" value={proofUrl} onChange={setProofUrl} maxMB={8} label={locale === "ar" ? "صورة إشعار التحويل" : "Transfer receipt screenshot"} />
+    </div>
+
     <button type="submit" className="button button-dark button-block button-large" disabled={loading}>{loading && <LoaderCircle className="spin" />}{locale === "ar" ? "تأكيد الطلب" : "Place order"}</button>
   </form>;
 }
