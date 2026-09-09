@@ -166,8 +166,12 @@ create table if not exists public.orders (
   subtotal numeric(12,2) not null default 0,
   delivery_fee numeric(12,2) not null default 0,
   total numeric(12,2) not null default 0,
+  payment_method text,
+  payment_proof_url text,
   created_at timestamptz not null default now()
 );
+alter table public.orders add column if not exists payment_method text;
+alter table public.orders add column if not exists payment_proof_url text;
 
 create table if not exists public.order_items (
   id bigint generated always as identity primary key,
@@ -616,7 +620,9 @@ create or replace function public.create_checkout_order(
   p_phone text,
   p_address text,
   p_notes text,
-  p_items jsonb
+  p_items jsonb,
+  p_payment_method text default null,
+  p_payment_proof_url text default null
 ) returns jsonb
 language plpgsql
 security definer
@@ -627,6 +633,8 @@ declare
   v_phone text := btrim(coalesce(p_phone, ''));
   v_address text := btrim(coalesce(p_address, ''));
   v_notes text := nullif(btrim(coalesce(p_notes, '')), '');
+  v_payment_method text := nullif(btrim(coalesce(p_payment_method, '')), '');
+  v_payment_proof_url text := nullif(btrim(coalesce(p_payment_proof_url, '')), '');
   v_item jsonb;
   v_product record;
   v_product_id text;
@@ -644,6 +652,8 @@ begin
   if char_length(v_phone) not between 7 and 30 then raise exception 'INVALID_PHONE'; end if;
   if char_length(v_address) not between 8 and 500 then raise exception 'INVALID_ADDRESS'; end if;
   if v_notes is not null and char_length(v_notes) > 1000 then raise exception 'NOTES_TOO_LONG'; end if;
+  if v_payment_method is null or v_payment_method not in ('bank_transfer','palpay') then raise exception 'INVALID_PAYMENT_METHOD'; end if;
+  if v_payment_proof_url is null or char_length(v_payment_proof_url) > 2000 then raise exception 'PAYMENT_PROOF_REQUIRED'; end if;
   if p_items is null or jsonb_typeof(p_items) <> 'array' then raise exception 'INVALID_CART'; end if;
   if jsonb_array_length(p_items) < 1 or jsonb_array_length(p_items) > 50 then raise exception 'INVALID_CART'; end if;
 
@@ -707,8 +717,8 @@ begin
   v_total := v_subtotal + v_delivery_fee;
   v_order_id := 'TJV-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 12));
 
-  insert into public.orders(id, store_id, customer_id, customer_name, phone, address, notes, status, subtotal, delivery_fee, total, created_at)
-  values(v_order_id, v_store_id, auth.uid(), v_customer_name, v_phone, v_address, v_notes, 'pending', v_subtotal, v_delivery_fee, v_total, v_created_at);
+  insert into public.orders(id, store_id, customer_id, customer_name, phone, address, notes, status, subtotal, delivery_fee, total, payment_method, payment_proof_url, created_at)
+  values(v_order_id, v_store_id, auth.uid(), v_customer_name, v_phone, v_address, v_notes, 'pending', v_subtotal, v_delivery_fee, v_total, v_payment_method, v_payment_proof_url, v_created_at);
 
   insert into public.order_items(order_id, product_id, product_name, quantity, unit_price, variant)
   select v_order_id,
@@ -731,14 +741,16 @@ begin
     'subtotal', v_subtotal,
     'delivery_fee', v_delivery_fee,
     'total', v_total,
+    'payment_method', v_payment_method,
+    'payment_proof_url', v_payment_proof_url,
     'order_items', v_result_items,
     'created_at', v_created_at
   );
 end;
 $$;
 
-revoke all on function public.create_checkout_order(text,text,text,text,jsonb) from public;
-grant execute on function public.create_checkout_order(text,text,text,text,jsonb) to anon, authenticated;
+revoke all on function public.create_checkout_order(text,text,text,text,jsonb,text,text) from public;
+grant execute on function public.create_checkout_order(text,text,text,text,jsonb,text,text) to anon, authenticated;
 
 create table if not exists public.contact_requests (
   id uuid primary key default gen_random_uuid(),

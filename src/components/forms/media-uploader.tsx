@@ -16,7 +16,7 @@ export function MediaUploader({
   label,
 }: {
   resourceType: UploadResourceType;
-  folder: "tijvorya/products" | "tijvorya/reels" | "tijvorya/stores";
+  folder: "tijvorya/products" | "tijvorya/reels" | "tijvorya/stores" | "tijvorya/payments";
   value?: string;
   onChange: (url: string) => void;
   maxMB?: number;

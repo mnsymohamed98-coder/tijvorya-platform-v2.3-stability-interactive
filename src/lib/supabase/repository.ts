@@ -8,7 +8,7 @@ const STORE_COLUMNS = "id,owner_id,slug,name,name_en,description,description_en,
 const PRODUCT_COLUMNS = "id,store_id,name,name_en,description,description_en,price,compare_at_price,stock,category,image_url,images,status,rating,variants,featured";
 const REEL_COLUMNS = "id,store_id,product_id,caption,caption_en,video_url,cover_url,status,views,likes,comments_count,created_at,submitted_at,rejection_reason,reviewed_at,reviewed_by,hashtags,best_post_time,ai_score,ai_suggestions,watch_time_seconds,shares,saves,product_clicks,orders_attributed";
 const ORDER_ITEM_COLUMNS = "product_id,product_name,quantity,unit_price,variant";
-const ORDER_COLUMNS = `id,store_id,customer_id,customer_name,phone,address,notes,status,subtotal,delivery_fee,total,created_at,order_items(${ORDER_ITEM_COLUMNS})`;
+const ORDER_COLUMNS = `id,store_id,customer_id,customer_name,phone,address,notes,status,subtotal,delivery_fee,total,payment_method,payment_proof_url,created_at,order_items(${ORDER_ITEM_COLUMNS})`;
 const PROFILE_COLUMNS = "id,full_name,email,role,admin_role,status,avatar,phone,created_at";
 const PLATFORM_SETTINGS_COLUMNS = "id,platform_name,support_email,maintenance_mode,merchant_registration_enabled,reel_moderation_required,max_reel_size_mb,commission_percent,ai_enabled,ai_product_writer_enabled,ai_reel_writer_enabled,ai_moderation_enabled,ai_daily_request_limit,messaging_enabled,updated_at";
 const CONVERSATION_COLUMNS = "id,store_id,customer_id,customer_name,customer_avatar,subject,product_id,order_id,status,unread_by_merchant,unread_by_customer,last_message_at,created_at";
@@ -410,6 +410,8 @@ export async function insertOrder(order: Order): Promise<Order> {
     p_address: order.address,
     p_notes: order.notes ?? null,
     p_items: order.items.map((item) => ({ productId: item.productId, quantity: item.quantity, variant: item.variant ?? null })),
+    p_payment_method: order.paymentMethod ?? null,
+    p_payment_proof_url: order.paymentProofUrl ?? null,
   });
   if (error) throw error;
   if (!data || typeof data !== "object") throw new Error("Checkout did not return an order");
@@ -570,6 +572,8 @@ function mapOrder(row: Record<string, unknown>): Order {
     customerName: String(row.customer_name), phone: String(row.phone), address: String(row.address), notes: row.notes ? String(row.notes) : undefined,
     status: row.status as Order["status"], subtotal: Number(row.subtotal ?? row.total), deliveryFee: Number(row.delivery_fee ?? 0), total: Number(row.total),
     items: Array.isArray(row.order_items) ? row.order_items.map((item: Record<string, unknown>) => ({ productId: String(item.product_id), name: String(item.product_name), quantity: Number(item.quantity), unitPrice: Number(item.unit_price), variant: item.variant ? String(item.variant) : undefined })) : [],
+    paymentMethod: row.payment_method ? row.payment_method as Order["paymentMethod"] : undefined,
+    paymentProofUrl: row.payment_proof_url ? String(row.payment_proof_url) : undefined,
     createdAt: String(row.created_at),
   };
 }

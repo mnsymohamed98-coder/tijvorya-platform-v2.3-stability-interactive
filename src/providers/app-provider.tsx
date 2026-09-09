@@ -90,7 +90,7 @@ type AppContextValue = PersistedState & {
   mergeStores: (stores: Store[]) => void;
   resolveStoreBySlug: (slug: string) => Promise<Store | undefined>;
   resolveStoreById: (id: string) => Promise<Store | undefined>;
-  addToCart: (productId: string, quantity?: number, variant?: string) => Promise<void>;
+  addToCart: (productId: string, quantity?: number, variant?: string) => Promise<boolean>;
   updateCartQuantity: (productId: string, quantity: number, variant?: string) => void;
   removeFromCart: (productId: string, variant?: string) => void;
   clearCart: () => void;
@@ -103,7 +103,7 @@ type AppContextValue = PersistedState & {
   sendMessage: (conversationId: string, text: string) => Promise<void>;
   markConversationRead: (conversationId: string, audience: "merchant" | "customer") => Promise<void>;
   setConversationStatus: (conversationId: string, status: Conversation["status"]) => Promise<void>;
-  createOrder: (input: Pick<Order, "customerName" | "phone" | "address" | "notes">) => Promise<Order>;
+  createOrder: (input: Pick<Order, "customerName" | "phone" | "address" | "notes" | "paymentMethod" | "paymentProofUrl">) => Promise<Order>;
   updateOrderStatus: (id: string, status: Order["status"]) => Promise<void>;
   moderateReel: (id: string, status: Reel["status"], input?: ModerateInput) => Promise<void>;
   updateStore: (store: Store) => Promise<void>;
@@ -512,11 +512,11 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
 
   const addToCart = useCallback(async (productId: string, quantity = 1, variant?: string) => {
     const target = await resolveProduct(productId);
-    if (!target || target.stock < 1) { toast(locale === "ar" ? "المنتج غير متوفر" : "Product is unavailable", "error"); return; }
+    if (!target || target.stock < 1) { toast(locale === "ar" ? "المنتج غير متوفر" : "Product is unavailable", "error"); return false; }
     const existingStore = state.cart.length ? state.products.find((product) => product.id === state.cart[0].productId)?.storeId : undefined;
     if (existingStore && existingStore !== target.storeId) {
       toast(locale === "ar" ? "يمكن تنفيذ طلب واحد من متجر واحد. أفرغ السلة أولًا." : "One checkout can contain products from one store only.", "error");
-      return;
+      return false;
     }
     setState((previous) => {
       const current = previous.cart.find((item) => item.productId === productId && item.variant === variant);
@@ -525,7 +525,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
         : [...previous.cart, { productId, quantity: Math.min(quantity, target.stock), variant }];
       return { ...previous, cart };
     });
-    toast(locale === "ar" ? "تمت إضافة المنتج إلى السلة" : "Product added to cart");
+    return true;
   }, [state.products, state.cart, locale, toast, resolveProduct]);
 
   const updateCartQuantity = useCallback((productId: string, quantity: number, variant?: string) => {
@@ -718,7 +718,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     toast(locale === "ar" ? (status === "closed" ? "تم إغلاق المحادثة" : "تمت إعادة فتح المحادثة") : (status === "closed" ? "Conversation closed" : "Conversation reopened"), "info");
   }, [state.conversations, state.currentUser, state.stores, productionMode, appendAudit, toast, locale]);
 
-  const createOrder = useCallback(async (input: Pick<Order, "customerName" | "phone" | "address" | "notes">) => {
+  const createOrder = useCallback(async (input: Pick<Order, "customerName" | "phone" | "address" | "notes" | "paymentMethod" | "paymentProofUrl">) => {
     if (state.cart.length === 0) throw new Error(locale === "ar" ? "السلة فارغة" : "Cart is empty");
     const storeIds = new Set<string>();
     const items: Array<{ productId: string; name: string; quantity: number; unitPrice: number; variant?: string }> = [];

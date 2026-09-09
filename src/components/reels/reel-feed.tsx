@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Bookmark,
   ChevronDown,
@@ -150,6 +150,7 @@ function ReelItem({
   onHide: () => void;
 }) {
   const { locale, products, stores, currentUser, productionMode, addToCart, likedReelIds, toggleLikeReel, toast } = useApp();
+  const router = useRouter();
   const product = products.find((item) => item.id === reel.productId && item.status === "active");
   const store = stores.find((item) => item.id === reel.storeId && (item.status ?? "active") === "active");
   // This component still renders (and its hooks still run) on the render where
@@ -334,7 +335,7 @@ function ReelItem({
           <div className="reel-product-image"><PersistentImage className="media-fill" src={product.image} alt="" optimized sizes="44px" /></div>
           <div><small>{locale === "ar" ? "تسوّق هذا المنتج" : "Shop this product"}</small><strong>{locale === "ar" ? product.name : product.nameEn}</strong><span>{formatMoney(product.price, locale)}</span></div>
         </Link>
-        <button className="reel-shop-button" onClick={() => addToCart(product.id)}><ShoppingBag />{locale === "ar" ? "إضافة" : "Add"}</button>
+        <button className="reel-shop-button" onClick={async () => { if (await addToCart(product.id)) router.push(`/${locale}/checkout`); }}><ShoppingBag />{locale === "ar" ? "اشترِ" : "Buy"}</button>
       </div>
     </div>
   </article>;
