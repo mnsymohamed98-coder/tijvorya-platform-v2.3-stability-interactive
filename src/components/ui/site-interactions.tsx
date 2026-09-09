@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 const REVEAL_SELECTOR = [
   ".section-head",
   ".product-card",
+  ".product-strip-link",
   ".store-card",
   ".pillar-card",
   ".journey-card",
@@ -28,7 +29,6 @@ const REVEAL_SELECTOR = [
   ".merchant-reel-grid a",
   ".about-stack article",
   ".timeline-grid article",
-  ".category-link",
   ".feature-editorial",
   ".cta-panel",
   ".theme-preset",
