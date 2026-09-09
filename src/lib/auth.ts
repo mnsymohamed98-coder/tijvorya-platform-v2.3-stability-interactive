@@ -225,6 +225,60 @@ export async function signUp(input: { fullName: string; email: string; password:
   return { user, hasSession: true };
 }
 
+export type AdminCreateAccountResult = { user: AppUser; tempPassword: string };
+
+// Replacement for merchant self-registration when
+// platformSettings.merchantRegistrationEnabled is off: an admin fills in the
+// merchant's details here instead, and the account is provisioned directly
+// (server-side in production, via /api/admin/create-account) rather than
+// through the normal interactive signUp() flow.
+export async function adminCreateAccount(input: { fullName: string; email: string; phone?: string; role: "merchant" | "influencer" }): Promise<AdminCreateAccountResult> {
+  if (isSupabaseConfigured()) {
+    const response = await fetch("/api/admin/create-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const payload = await response.json() as { userId?: string; email?: string; tempPassword?: string; error?: string };
+    if (!response.ok || !payload.userId || !payload.tempPassword) throw new Error(payload.error ?? "Unable to create the account.");
+    return {
+      user: {
+        id: payload.userId,
+        email: payload.email ?? normalizeEmail(input.email),
+        fullName: input.fullName.trim(),
+        role: input.role,
+        status: "active",
+        avatar: input.fullName.trim().slice(0, 2).toUpperCase(),
+        phone: input.phone?.trim() || undefined,
+        createdAt: new Date().toISOString(),
+      },
+      tempPassword: payload.tempPassword,
+    };
+  }
+
+  const normalizedEmail = normalizeEmail(input.email);
+  const records = readLocalAuthRecords();
+  const platformAccountExists = normalizeEmail(platformAdminUser.email) === normalizedEmail;
+  const localExists = records.some((record) => normalizeEmail(record.user.email) === normalizedEmail);
+  if (platformAccountExists || localExists) {
+    throw new Error("يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل.");
+  }
+  const tempPassword = `Tj${Math.random().toString(36).slice(2, 8)}!${Math.floor(Math.random() * 90 + 10)}`;
+  const user: AppUser = {
+    id: `usr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    email: normalizedEmail,
+    fullName: input.fullName.trim(),
+    role: input.role,
+    status: "active",
+    avatar: input.fullName.trim().slice(0, 2).toUpperCase(),
+    phone: input.phone?.trim() || undefined,
+    createdAt: new Date().toISOString(),
+  };
+  const passwordHash = await hashLocalPassword(normalizedEmail, tempPassword);
+  writeLocalAuthRecords([...records, { user, passwordHash }]);
+  return { user, tempPassword };
+}
+
 export async function requestPasswordReset(email: string, locale: Locale) {
   const supabase = createClient();
   if (!supabase) throw new Error(locale === "ar" ? "فعّل Supabase أولًا لاستخدام استعادة كلمة المرور." : "Connect Supabase before using password recovery.");

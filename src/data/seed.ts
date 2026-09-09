@@ -28,7 +28,7 @@ export const defaultPlatformSettings: PlatformSettings = {
   platformName: "Tijvorya",
   supportEmail: "mnsymohamed98@gmail.com",
   maintenanceMode: false,
-  merchantRegistrationEnabled: true,
+  merchantRegistrationEnabled: false,
   reelModerationRequired: true,
   maxReelSizeMB: 100,
   commissionPercent: 5,

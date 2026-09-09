@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { CircleAlert, CircleCheck, Info } from "lucide-react";
 import { defaultPlatformSettings, initialAuditLog, initialConversations, initialMessages, initialOrders, initialProducts, initialReels, initialStores, initialUsers, platformAdminUser } from "@/data/seed";
-import { getCurrentUser, resetLocalAuthAccounts } from "@/lib/auth";
+import { adminCreateAccount, getCurrentUser, resetLocalAuthAccounts } from "@/lib/auth";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   changeOrderStatus,
@@ -112,6 +112,7 @@ type AppContextValue = PersistedState & {
   setUserStatus: (id: string, status: AppUser["status"]) => Promise<void>;
   setUserRole: (id: string, role: UserRole) => Promise<void>;
   setAdminRole: (id: string, adminRole: AdminRole) => Promise<void>;
+  createMerchantAccount: (input: { fullName: string; email: string; phone?: string; role: "merchant" | "influencer" }) => Promise<{ email: string; tempPassword: string }>;
   updatePlatformSettings: (settings: PlatformSettings) => Promise<void>;
   toast: (text: string, tone?: ToastMessage["tone"]) => void;
   resetDemo: () => void;
@@ -937,6 +938,23 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     }
   }, [state.users, state.currentUser?.id, productionMode, refreshAdminUsers, appendAudit, toast, locale]);
 
+  const createMerchantAccount = useCallback(async (input: { fullName: string; email: string; phone?: string; role: "merchant" | "influencer" }) => {
+    try {
+      const { user, tempPassword } = await adminCreateAccount(input);
+      if (productionMode) {
+        await refreshAdminUsers();
+      } else {
+        setState((previous) => ({ ...previous, users: [...previous.users, user] }));
+      }
+      appendAudit("merchant_account_created", user.id, `تم إنشاء حساب ${input.role === "influencer" ? "مؤثر" : "تاجر"} لـ ${user.fullName}`, state.currentUser?.id);
+      toast(locale === "ar" ? "تم إنشاء الحساب. شارك بيانات الدخول مع صاحب الحساب." : "Account created. Share the login details with them.");
+      return { email: user.email, tempPassword };
+    } catch (error) {
+      toast(error instanceof Error ? error.message : (locale === "ar" ? "تعذر إنشاء الحساب." : "Unable to create the account."), "error");
+      throw error;
+    }
+  }, [productionMode, refreshAdminUsers, appendAudit, state.currentUser?.id, toast, locale]);
+
   const updatePlatformSettings = useCallback(async (platformSettings: PlatformSettings) => {
     if (productionMode) await upsertPlatformSettings(platformSettings);
     setState((previous) => ({ ...previous, platformSettings }));
@@ -988,10 +1006,11 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     setUserStatus,
     setUserRole,
     setAdminRole,
+    createMerchantAccount,
     updatePlatformSettings,
     toast,
     resetDemo,
-  }), [state, locale, ready, workspaceLoading, productionMode, toasts, setCurrentUser, updateAccountProfile, mergeProducts, resolveProduct, mergeStores, resolveStoreBySlug, resolveStoreById, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, updatePlatformSettings, toast, resetDemo]);
+  }), [state, locale, ready, workspaceLoading, productionMode, toasts, setCurrentUser, updateAccountProfile, mergeProducts, resolveProduct, mergeStores, resolveStoreBySlug, resolveStoreById, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, createMerchantAccount, updatePlatformSettings, toast, resetDemo]);
 
   return <AppContext.Provider value={value}>{children}<ToastViewport messages={toasts} /></AppContext.Provider>;
 }

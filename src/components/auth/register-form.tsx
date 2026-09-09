@@ -13,9 +13,9 @@ function strongPassword(value: string) {
 }
 
 export function RegisterForm() {
-  const { locale, setCurrentUser, toast } = useApp();
+  const { locale, platformSettings, setCurrentUser, toast } = useApp();
   const router = useRouter();
-  const [role, setRole] = useState<UserRole>("merchant");
+  const [role, setRole] = useState<UserRole>(platformSettings.merchantRegistrationEnabled ? "merchant" : "customer");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -60,7 +60,8 @@ export function RegisterForm() {
   return <form className="auth-form wide" onSubmit={submit}>
     <div className="auth-heading"><span className="eyebrow">JOIN TIJVORYA</span><h1>{locale === "ar" ? "أنشئ حسابك" : "Create your account"}</h1><p>{locale === "ar" ? "ابدأ كمتسوق أو افتح متجرًا قابلًا للبيع بالفيديو." : "Join as a shopper or open a store built for video commerce."}</p></div>
 
-    <div className="role-picker"><button type="button" className={role === "merchant" ? "is-active" : ""} onClick={() => setRole("merchant")}><strong>{locale === "ar" ? "تاجر" : "Merchant"}</strong><span>{locale === "ar" ? "متجر، منتجات، ريلز وطلبات" : "Store, products, reels and orders"}</span></button><button type="button" className={role === "customer" ? "is-active" : ""} onClick={() => setRole("customer")}><strong>{locale === "ar" ? "متسوق" : "Customer"}</strong><span>{locale === "ar" ? "تصفح، حفظ وشراء" : "Browse, save and shop"}</span></button></div>
+    <div className="role-picker"><button type="button" className={role === "customer" ? "is-active" : ""} onClick={() => setRole("customer")}><strong>{locale === "ar" ? "متسوق" : "Customer"}</strong><span>{locale === "ar" ? "تصفح، حفظ وشراء" : "Browse, save and shop"}</span></button>{platformSettings.merchantRegistrationEnabled && <button type="button" className={role === "merchant" ? "is-active" : ""} onClick={() => setRole("merchant")}><strong>{locale === "ar" ? "تاجر" : "Merchant"}</strong><span>{locale === "ar" ? "متجر، منتجات، ريلز وطلبات" : "Store, products, reels and orders"}</span></button>}</div>
+    {!platformSettings.merchantRegistrationEnabled && <p className="field-hint">{locale === "ar" ? "تسجيل التجار الذاتي متوقف حاليًا." : "Merchant self-registration is currently closed."} <Link href={`/${locale}/contact`}>{locale === "ar" ? "تواصل معنا لفتح متجرك" : "Contact us to open your store"}</Link></p>}
     <button className="oauth-button" type="button" onClick={googleSignUp} disabled={googleLoading || loading}><span className="google-mark">G</span>{googleLoading && <LoaderCircle className="spin" />}{locale === "ar" ? "إنشاء الحساب باستخدام Google" : "Create account with Google"}</button>
     <div className="auth-divider"><span>{locale === "ar" ? "أو أنشئه بالبريد" : "or create with email"}</span></div>
     <div className="form-grid two"><label className="field"><span>{locale === "ar" ? "الاسم الكامل" : "Full name"}</span><input name="fullName" autoComplete="name" required /></label><label className="field"><span>{locale === "ar" ? "رقم الهاتف" : "Phone"}</span><input name="phone" type="tel" autoComplete="tel" required /></label></div>
