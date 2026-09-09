@@ -26,10 +26,11 @@ import { PublicShell } from "@/components/layout/public-shell";
 import { ProductCard } from "@/components/commerce/product-card";
 import { HeroCommercePreview } from "@/components/commerce/hero-commerce-preview";
 import { StoreCard } from "@/components/commerce/store-card";
-import { PersistentVideo } from "@/components/ui/persistent-media";
+import { PersistentImage, PersistentVideo } from "@/components/ui/persistent-media";
 import { HomeStructuredData } from "@/components/seo/structured-data";
 import { useApp } from "@/providers/app-provider";
 import { copy } from "@/lib/i18n";
+import { formatMoney } from "@/lib/utils";
 import { loadHomepagePreviewProducts, loadHomepagePreviewReels, loadHomepageReadyStores, loadPublicStats } from "@/lib/supabase/repository";
 import type { Product, Reel, Store as StoreType } from "@/types";
 
@@ -59,7 +60,6 @@ export default function HomePage() {
     return () => { active = false; };
   }, [productionMode, mergeProducts]);
   const discoverProducts = productionMode ? homepageProducts : publicProducts;
-  const categories = Array.from(new Set(discoverProducts.map((product) => product.category).filter(Boolean))).slice(0, 6);
 
   // Same reasoning as homepageProducts above: state.stores/reels are scoped
   // to whatever the current viewer's role loaded (a merchant only ever sees
@@ -184,7 +184,11 @@ export default function HomePage() {
 
     <section className="section container"><div className="section-head"><div><span className="eyebrow">COMMERCE ENGINE</span><h2>{locale === "ar" ? "أربعة عناصر تبني منصة تُستخدم وتُوثق وتكبر." : "Four foundations for a platform people use, trust and grow with."}</h2><p>{locale === "ar" ? "الانتشار لا يبدأ بإضافة مزايا كثيرة؛ يبدأ بتجربة واضحة، ثقة قوية، تشغيل قابل للقياس، وذكاء يخدم قرار الشراء." : "Scale does not start with feature volume. It starts with clarity, trust, measurable operations and intelligence that supports buying decisions."}</p></div></div><div className="platform-pillars">{pillars.map(({ icon: Icon, title, text }) => <article className="pillar-card" key={title}><span><Icon /></span><h3>{title}</h3><p>{text}</p></article>)}</div></section>
 
-    {categories.length > 0 && <section className="section section-soft"><div className="container"><div className="section-head"><div><span className="eyebrow">SHOP BY INTEREST</span><h2>{locale === "ar" ? "ابدأ من اهتمامك، لا من قائمة طويلة." : "Start with an interest, not a long catalogue."}</h2></div><Link href={`/${locale}/marketplace`}>{locale === "ar" ? "عرض كل المنتجات" : "View all products"}<Arrow /></Link></div><div className="category-showcase">{categories.map((category, index) => <Link className="category-link" key={category} href={`/${locale}/marketplace?category=${encodeURIComponent(category)}`}><span>{String(index + 1).padStart(2, "0")}</span><strong>{category}</strong><Arrow /></Link>)}</div></div></section>}
+    {discoverProducts.length > 0 && <section className="section section-soft"><div className="container"><div className="section-head"><div><span className="eyebrow">FEATURED PICKS</span><h2>{locale === "ar" ? "منتجات مختارة تستحق نظرة سريعة." : "Featured products worth a quick look."}</h2></div><Link href={`/${locale}/marketplace`}>{locale === "ar" ? "عرض كل المنتجات" : "View all products"}<Arrow /></Link></div><div className="product-strip-showcase">{discoverProducts.slice(0, 6).map((product) => { const store = activeStores.find((item) => item.id === product.storeId); return <Link className="product-strip-link" key={product.id} href={`/${locale}/product/${product.id}`}>
+      <span className="product-strip-thumb"><PersistentImage className="media-fill" src={product.image} alt={locale === "ar" ? product.name : product.nameEn} optimized sizes="56px" /></span>
+      <span className="product-strip-body"><strong>{locale === "ar" ? product.name : product.nameEn}</strong>{store && <span>{locale === "ar" ? store.name : store.nameEn}</span>}</span>
+      <span className="product-strip-price"><strong>{formatMoney(product.price, locale)}</strong><Arrow /></span>
+    </Link>; })}</div></div></section>}
 
     <section className="section container"><div className="section-head"><div><span className="eyebrow">DISCOVER</span><h2>{locale === "ar" ? "منتجات جاهزة للاكتشاف والشراء." : "Products ready to be discovered and purchased."}</h2><p>{locale === "ar" ? "كل منتج مرتبط بمتجر فعلي ويمكن شراؤه من السوق أو مباشرة من الريلز." : "Every product belongs to a real store and can be purchased from the marketplace or directly from reels."}</p></div>{discoverProducts.length > 0 && <Link href={`/${locale}/marketplace`}>{locale === "ar" ? "عرض السوق" : "View marketplace"}<Arrow /></Link>}</div>{discoverProducts.length > 0 ? <div className="product-grid">{discoverProducts.slice(0, 4).map((product) => <ProductCard key={product.id} product={product} store={activeStores.find((store) => store.id === product.storeId)} />)}</div> : <div className="public-empty-showcase"><ShoppingBag /><div><strong>{locale === "ar" ? "السوق يستعد لاستقبال أول المنتجات" : "The marketplace is ready for its first products"}</strong><span>{locale === "ar" ? "عند نشر منتجات حقيقية من متجر نشط ستظهر هنا تلقائيًا." : "Real products from active stores will appear here automatically once published."}</span></div><Link className="button button-dark" href={`/${locale}/contact`}>{locale === "ar" ? "ابدأ كأول تاجر" : "Start as a merchant"}<Arrow /></Link></div>}</section>
 
