@@ -222,6 +222,7 @@ export type AuditAction =
   | "user_activated"
   | "user_suspended"
   | "user_role_changed"
+  | "merchant_account_created"
   | "platform_settings_updated"
   | "ai_settings_updated"
   | "message_sent"

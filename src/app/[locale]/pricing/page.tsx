@@ -145,7 +145,7 @@ export default function PricingPage() {
                   className={`button button-block ${
                     p.featured ? "button-dark" : "button-ghost"
                   }`}
-                  href={`/${locale}/register?plan=${p.id}`}
+                  href={`/${locale}/contact`}
                 >
                   {locale === "ar" ? "ابدأ مجانًا" : "Start free"}
                 </Link>
