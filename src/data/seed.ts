@@ -8,7 +8,7 @@ import type { AppUser, AuditEntry, ChatMessage, Conversation, Order, PlatformSet
 export const platformAdminUser: AppUser = {
   id: "usr_platform_admin",
   fullName: "Tijvorya Platform Admin",
-  email: "admin@tijvorya.com",
+  email: "tijvorya@gmail.com",
   role: "admin",
   adminRole: "super_admin",
   status: "active",
@@ -26,7 +26,7 @@ export const initialAuditLog: AuditEntry[] = [];
 
 export const defaultPlatformSettings: PlatformSettings = {
   platformName: "Tijvorya",
-  supportEmail: "mnsymohamed98@gmail.com",
+  supportEmail: "tijvorya@gmail.com",
   maintenanceMode: false,
   merchantRegistrationEnabled: false,
   reelModerationRequired: true,
