@@ -23,7 +23,7 @@ export function SiteFooter({ locale }: { locale: "ar" | "en" }) {
         <span className="footer-trust"><ShieldCheck />{locale === "ar" ? "بنية صلاحيات ومراجعة محتوى للنسخة الإنتاجية" : "Production-ready permissions and content moderation foundation"}</span>
         <div className="footer-social">{socialLinks.map((social) => <a key={social.name} href={social.href} aria-label={social.name} target="_blank" rel="noopener noreferrer">{social.icon}</a>)}</div>
       </div>
-      <div><strong>{locale === "ar" ? "اكتشف" : "Discover"}</strong><Link href={`/${locale}/marketplace`}>{locale === "ar" ? "السوق" : "Marketplace"}</Link><Link href={`/${locale}/reels`}>{locale === "ar" ? "الريلز" : "Reels"}</Link><Link href={`/${locale}/pricing`}>{locale === "ar" ? "الباقات" : "Plans"}</Link></div>
+      <div><strong>{locale === "ar" ? "اكتشف" : "Discover"}</strong><Link href={`/${locale}/marketplace`}>{locale === "ar" ? "السوق" : "Marketplace"}</Link><Link href={`/${locale}/reels`}>{locale === "ar" ? "الريلز" : "Reels"}</Link></div>
       <div><strong>{locale === "ar" ? "الشركة" : "Company"}</strong><Link href={`/${locale}/about`}>{locale === "ar" ? "من نحن" : "About"}</Link><Link href={`/${locale}/contact`}>{locale === "ar" ? "تواصل معنا" : "Contact"}</Link><Link href={`/${locale}/contact`}>{locale === "ar" ? "افتح متجرك" : "Open a store"}</Link></div>
       <div><strong>{locale === "ar" ? "الثقة" : "Trust"}</strong><Link href={`/${locale}/privacy`}>{locale === "ar" ? "الخصوصية" : "Privacy"}</Link><Link href={`/${locale}/terms`}>{locale === "ar" ? "الشروط" : "Terms"}</Link><Link href={`/${locale}/login`}>{locale === "ar" ? "تسجيل الدخول" : "Sign in"}</Link></div>
     </div>

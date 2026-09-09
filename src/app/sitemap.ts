@@ -5,7 +5,7 @@ import { merchantDomainUrl } from "@/lib/store-website";
 
 export const revalidate = 3600;
 
-const publicRoutes = ["", "/marketplace", "/reels", "/pricing", "/about", "/contact", "/privacy", "/terms", "/login", "/register"];
+const publicRoutes = ["", "/marketplace", "/reels", "/about", "/contact", "/privacy", "/terms", "/login", "/register"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const fixed = (["ar", "en"] as const).flatMap((locale) => publicRoutes.map((route) => ({

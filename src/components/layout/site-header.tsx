@@ -31,7 +31,6 @@ export function SiteHeader() {
     [`/${locale}`, t.nav.home],
     [`/${locale}/marketplace`, t.nav.marketplace],
     [`/${locale}/reels`, t.nav.reels],
-    [`/${locale}/pricing`, t.nav.pricing],
     [`/${locale}/about`, t.nav.about],
     [`/${locale}/contact`, t.nav.contact],
   ] as const;
