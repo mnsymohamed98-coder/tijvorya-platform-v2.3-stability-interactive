@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, Copy, LoaderCircle, Landmark, Wallet } from "lucide-react";
+import { Check, Copy, LoaderCircle } from "lucide-react";
 import { FormEvent, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { MediaUploader } from "./media-uploader";
 import { useApp } from "@/providers/app-provider";
@@ -91,12 +92,12 @@ export function CheckoutForm() {
 
       <div className="payment-option-grid">
         <button type="button" className={`payment-option ${method === "bank_transfer" ? "is-active" : ""}`} onClick={() => setMethod("bank_transfer")}>
-          <span className="payment-option-icon"><Landmark /></span>
+          <span className="payment-option-icon"><Image src="/assets/payments/bank-of-palestine.png" alt="" width={38} height={38} /></span>
           <span className="payment-option-copy"><strong>{locale === "ar" ? "تحويل بنكي" : "Bank transfer"}</strong><span>{locale === "ar" ? "بنك فلسطين" : "Bank of Palestine"}</span></span>
           {method === "bank_transfer" && <Check className="payment-option-check" />}
         </button>
         <button type="button" className={`payment-option ${method === "palpay" ? "is-active" : ""}`} onClick={() => setMethod("palpay")}>
-          <span className="payment-option-icon"><Wallet /></span>
+          <span className="payment-option-icon"><Image src="/assets/payments/palpay.png" alt="" width={38} height={38} /></span>
           <span className="payment-option-copy"><strong>{locale === "ar" ? "محفظة PalPay" : "PalPay wallet"}</strong><span>{locale === "ar" ? "دفع فوري عبر المحفظة" : "Instant wallet payment"}</span></span>
           {method === "palpay" && <Check className="payment-option-check" />}
         </button>
