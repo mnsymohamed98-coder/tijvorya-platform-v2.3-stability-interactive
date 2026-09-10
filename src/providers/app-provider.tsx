@@ -768,9 +768,13 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
       if (productionMode) await removeOrder(id);
     } catch (error) {
       const code = errorMessage(error, "");
-      toast(code.includes("ORDER_DELETE_FORBIDDEN")
-        ? (locale === "ar" ? "لا تملك صلاحية حذف هذا الطلب." : "You don't have permission to delete this order.")
-        : (locale === "ar" ? "تعذر حذف الطلب. حاول مرة أخرى." : "Unable to delete the order. Please try again."), "error");
+      if (code.includes("ORDER_DELETE_FORBIDDEN")) {
+        toast(locale === "ar" ? "لا تملك صلاحية حذف هذا الطلب." : "You don't have permission to delete this order.", "error");
+      } else {
+        // Surfaced verbatim (not mapped to a friendly message) since this is
+        // an unclassified failure - the raw text is what makes it diagnosable.
+        toast(`${locale === "ar" ? "تعذر حذف الطلب:" : "Unable to delete the order:"} ${code || "unknown error"}`, "error");
+      }
       return;
     }
     setState((previous) => ({ ...previous, orders: previous.orders.filter((order) => order.id !== id) }));
