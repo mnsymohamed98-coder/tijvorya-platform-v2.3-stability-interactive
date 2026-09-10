@@ -29,7 +29,7 @@ import {
   upsertStore,
   upsertPlatformSettings,
 } from "@/lib/supabase/repository";
-import { uid } from "@/lib/utils";
+import { errorMessage, uid } from "@/lib/utils";
 import type {
   AdminRole,
   AppUser,
@@ -764,7 +764,15 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
   }, [productionMode, toast, locale]);
 
   const deleteOrder = useCallback(async (id: string) => {
-    if (productionMode) await removeOrder(id);
+    try {
+      if (productionMode) await removeOrder(id);
+    } catch (error) {
+      const code = errorMessage(error, "");
+      toast(code.includes("ORDER_DELETE_FORBIDDEN")
+        ? (locale === "ar" ? "لا تملك صلاحية حذف هذا الطلب." : "You don't have permission to delete this order.")
+        : (locale === "ar" ? "تعذر حذف الطلب. حاول مرة أخرى." : "Unable to delete the order. Please try again."), "error");
+      return;
+    }
     setState((previous) => ({ ...previous, orders: previous.orders.filter((order) => order.id !== id) }));
     toast(locale === "ar" ? "تم حذف الطلب" : "Order deleted", "info");
   }, [productionMode, toast, locale]);

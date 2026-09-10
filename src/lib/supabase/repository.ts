@@ -426,8 +426,12 @@ export async function changeOrderStatus(id: string, status: Order["status"]) {
 
 export async function removeOrder(id: string) {
   const supabase = createClient(); if (!supabase) return;
-  const { error } = await supabase.from("orders").delete().eq("id", id);
+  // A row an RLS policy blocks is silently excluded rather than erroring -
+  // select() back what was actually deleted so a denied delete surfaces as
+  // a real failure instead of the UI pretending it worked.
+  const { data, error } = await supabase.from("orders").delete().eq("id", id).select("id");
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error("ORDER_DELETE_FORBIDDEN");
 }
 
 export async function changeReelStatus(id: string, status: Reel["status"], input?: { rejectionReason?: string; reviewedBy?: string }) {
