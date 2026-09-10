@@ -424,6 +424,12 @@ export async function changeOrderStatus(id: string, status: Order["status"]) {
   if (error) throw error;
 }
 
+export async function removeOrder(id: string) {
+  const supabase = createClient(); if (!supabase) return;
+  const { error } = await supabase.from("orders").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function changeReelStatus(id: string, status: Reel["status"], input?: { rejectionReason?: string; reviewedBy?: string }) {
   const supabase = createClient(); if (!supabase) return;
   const { error } = await supabase.from("reels").update({

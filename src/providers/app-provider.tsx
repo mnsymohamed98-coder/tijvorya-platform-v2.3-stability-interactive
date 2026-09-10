@@ -19,6 +19,7 @@ import {
   loadCustomerWorkspace,
   loadLikedReelIds,
   loadMerchantWorkspace,
+  removeOrder,
   removeProduct,
   setReelLike,
   updateConversation,
@@ -105,6 +106,7 @@ type AppContextValue = PersistedState & {
   setConversationStatus: (conversationId: string, status: Conversation["status"]) => Promise<void>;
   createOrder: (input: Pick<Order, "customerName" | "phone" | "address" | "notes" | "paymentMethod" | "paymentProofUrl">) => Promise<Order>;
   updateOrderStatus: (id: string, status: Order["status"]) => Promise<void>;
+  deleteOrder: (id: string) => Promise<void>;
   moderateReel: (id: string, status: Reel["status"], input?: ModerateInput) => Promise<void>;
   updateStore: (store: Store) => Promise<void>;
   setStoreStatus: (id: string, status: Store["status"]) => Promise<void>;
@@ -761,6 +763,12 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     toast(locale === "ar" ? "تم تحديث حالة الطلب" : "Order status updated");
   }, [productionMode, toast, locale]);
 
+  const deleteOrder = useCallback(async (id: string) => {
+    if (productionMode) await removeOrder(id);
+    setState((previous) => ({ ...previous, orders: previous.orders.filter((order) => order.id !== id) }));
+    toast(locale === "ar" ? "تم حذف الطلب" : "Order deleted", "info");
+  }, [productionMode, toast, locale]);
+
   const moderateReel = useCallback(async (id: string, status: Reel["status"], input?: ModerateInput) => {
     if (status === "rejected" && !input?.rejectionReason?.trim()) {
       throw new Error(locale === "ar" ? "اكتب سبب الرفض قبل المتابعة" : "Add a rejection reason before continuing");
@@ -999,6 +1007,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     setConversationStatus,
     createOrder,
     updateOrderStatus,
+    deleteOrder,
     moderateReel,
     updateStore,
     setStoreStatus,
@@ -1010,7 +1019,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     updatePlatformSettings,
     toast,
     resetDemo,
-  }), [state, locale, ready, workspaceLoading, productionMode, toasts, setCurrentUser, updateAccountProfile, mergeProducts, resolveProduct, mergeStores, resolveStoreBySlug, resolveStoreById, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, createMerchantAccount, updatePlatformSettings, toast, resetDemo]);
+  }), [state, locale, ready, workspaceLoading, productionMode, toasts, setCurrentUser, updateAccountProfile, mergeProducts, resolveProduct, mergeStores, resolveStoreBySlug, resolveStoreById, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, deleteOrder, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, createMerchantAccount, updatePlatformSettings, toast, resetDemo]);
 
   return <AppContext.Provider value={value}>{children}<ToastViewport messages={toasts} /></AppContext.Provider>;
 }

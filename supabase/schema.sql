@@ -615,6 +615,9 @@ create policy "order items create via checkout" on public.order_items for insert
 revoke insert on public.orders from anon, authenticated;
 revoke insert on public.order_items from anon, authenticated;
 
+drop policy if exists "orders merchant delete" on public.orders;
+create policy "orders merchant delete" on public.orders for delete using (public.owns_store(store_id) or public.is_admin());
+
 create or replace function public.create_checkout_order(
   p_customer_name text,
   p_phone text,
