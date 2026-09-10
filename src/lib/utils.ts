@@ -11,9 +11,11 @@ export function uid(prefix = "id") {
 const configuredCurrency = process.env.NEXT_PUBLIC_DEFAULT_CURRENCY?.trim().toUpperCase();
 const DEFAULT_CURRENCY = configuredCurrency && /^[A-Z]{3}$/.test(configuredCurrency) ? configuredCurrency : "ILS";
 
-export function formatMoney(value: number, locale: "ar" | "en" = "ar", currency = DEFAULT_CURRENCY) {
+// Prices always render with Western digits and the shekel symbol regardless
+// of UI locale - ar-PS would otherwise switch to Arabic-Indic numerals.
+export function formatMoney(value: number, _locale: "ar" | "en" = "ar", currency = DEFAULT_CURRENCY) {
   try {
-    return new Intl.NumberFormat(locale === "ar" ? "ar-PS" : "en-US", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency,
       maximumFractionDigits: 2,
