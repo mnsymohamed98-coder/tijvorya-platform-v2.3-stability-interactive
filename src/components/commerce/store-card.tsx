@@ -1,16 +1,19 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { ArrowUpLeft, Globe2, MapPin } from "lucide-react";
 import { PersistentImage } from "@/components/ui/persistent-media";
+import { normalizeStoreTheme } from "@/lib/store-theme";
 import type { Locale, Store } from "@/types";
-import { businessCategoryLabel, merchantDomain, merchantStoreHref } from "@/lib/store-website";
+import { businessCategoryLabel, merchantDisplayDomain, merchantStoreHref } from "@/lib/store-website";
 
 export function StoreCard({ store, locale }: { store: Store; locale: Locale }) {
   const storeName = locale === "ar" ? store.name : store.nameEn;
   const businessCategory = businessCategoryLabel(store.website?.businessCategory || "general", locale);
-  const domain = store.website?.domain?.trim() || merchantDomain(store.slug);
+  const domain = merchantDisplayDomain(store.slug, locale);
   const isReady = store.website?.onboardingCompleted === true;
+  const theme = normalizeStoreTheme(store.theme, store.themeColor);
 
-  return <Link className="store-card store-card-logo" href={merchantStoreHref(store.slug, locale)} aria-label={locale === "ar" ? `زيارة متجر ${storeName}` : `Visit ${storeName}`}>
+  return <Link className="store-card store-card-logo" href={merchantStoreHref(store.slug, locale)} aria-label={locale === "ar" ? `زيارة متجر ${storeName}` : `Visit ${storeName}`} style={{ "--store-accent": theme.accentColor } as CSSProperties}>
     <div className="store-card-top">
       <div className="store-card-icon-shell">
         <div className="store-logo store-logo-large">
