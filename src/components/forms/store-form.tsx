@@ -64,7 +64,13 @@ export function StoreForm() {
         themeColor: theme.accentColor,
         theme,
         website: {
-          onboardingCompleted: website.onboardingCompleted,
+          // Saving this form is itself a signal the store is meant to be
+          // live - the public marketplace query requires this flag, but
+          // only the separate onboarding wizard ever set it, so a store
+          // managed only through Store settings (the normal path once
+          // admin can edit any store) stayed invisible forever no matter
+          // how complete its data was.
+          onboardingCompleted: true,
           legalName: String(form.get("legalName") ?? website.legalName ?? "").trim(),
           registrationNumber: String(form.get("registrationNumber") ?? website.registrationNumber ?? "").trim(),
           domain: merchantDomain(slug),
