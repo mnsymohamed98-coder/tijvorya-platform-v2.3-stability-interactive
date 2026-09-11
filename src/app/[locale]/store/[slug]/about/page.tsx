@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { BadgeCheck, Clock3, Mail, MapPin, MessageCircle, PackageCheck, Phone, ShieldCheck, Truck } from "lucide-react";
+import { BadgeCheck, Clock3, Mail, MapPin, MessageCircle, PackageCheck, Phone, Truck } from "lucide-react";
 import { FacebookBrandIcon, InstagramBrandIcon, TikTokBrandIcon } from "@/components/ui/social-brand-icons";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
@@ -21,7 +20,7 @@ function cleanWhatsapp(value?: string) { return value?.replace(/\D/g, ""); }
 
 export default function AboutPage() {
   const params = useParams<{ slug: string }>();
-  const { locale, stores, platformSettings, ready, productionMode, resolveStoreBySlug } = useApp();
+  const { locale, stores, ready, productionMode, resolveStoreBySlug } = useApp();
   const requestedSlug = decodeSlug(params.slug);
   const store = stores.find((item) => item.slug.trim().toLocaleLowerCase() === requestedSlug && (item.status ?? "active") === "active");
 
@@ -80,7 +79,6 @@ export default function AboutPage() {
           {website.businessEmail && <a href={`mailto:${website.businessEmail}`}><Mail /><div><span>{locale === "ar" ? "البريد" : "Email"}</span><strong>{website.businessEmail}</strong></div></a>}
           {store.phone && <a href={`tel:${cleanPhone(store.phone)}`}><Phone /><div><span>{locale === "ar" ? "الهاتف" : "Phone"}</span><strong>{store.phone}</strong></div></a>}
           {store.whatsapp && <a href={`https://wa.me/${cleanWhatsapp(store.whatsapp)}`} target="_blank" rel="noopener noreferrer"><MessageCircle /><div><span>WhatsApp</span><strong>{locale === "ar" ? "ابدأ محادثة" : "Start a chat"}</strong></div></a>}
-          {platformSettings.messagingEnabled && <Link href={`/${locale}/messages?store=${encodeURIComponent(store.slug)}`}><ShieldCheck /><div><span>Tijvorya</span><strong>{locale === "ar" ? "مراسلة آمنة داخل المنصة" : "Message securely on platform"}</strong></div></Link>}
         </div>
       </div>
       {(instagram || facebook || tiktok) && <div className="merchant-social-row"><span>{locale === "ar" ? "تابع المتجر" : "Follow the store"}</span>{instagram && <a href={instagram} target="_blank" rel="noopener noreferrer"><InstagramBrandIcon />Instagram</a>}{facebook && <a href={facebook} target="_blank" rel="noopener noreferrer"><FacebookBrandIcon />Facebook</a>}{tiktok && <a href={tiktok} target="_blank" rel="noopener noreferrer"><TikTokBrandIcon />TikTok</a>}</div>}
