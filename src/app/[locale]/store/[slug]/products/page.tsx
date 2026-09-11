@@ -9,6 +9,7 @@ import { StorefrontNotFound } from "@/components/storefront/storefront-not-found
 import { StorefrontLoading } from "@/components/storefront/storefront-loading";
 import { loadStoreCatalog } from "@/lib/supabase/repository";
 import { useApp } from "@/providers/app-provider";
+import { chunk } from "@/lib/utils";
 
 function decodeSlug(value: string) {
   try { return decodeURIComponent(value).trim().toLocaleLowerCase(); }
@@ -76,7 +77,7 @@ function ProductsContent() {
         {categories.map((item) => <button key={item} className={category === item ? "is-active" : ""} onClick={() => setCategory(item)}>{item}<b>{storeProducts.filter((product) => product.category === item).length}</b></button>)}
       </div>
       <div className="merchant-results-line"><strong>{filtered.length}</strong> {locale === "ar" ? "منتج" : filtered.length === 1 ? "product" : "products"}</div>
-      {filtered.length > 0 ? <div className="product-grid merchant-catalog-grid store-product-grid">{filtered.map((item) => <ProductCard key={item.id} product={item} />)}</div> : <div className="merchant-site-empty"><Search /><h3>{locale === "ar" ? "لم نجد منتجات مطابقة" : "No matching products"}</h3><p>{locale === "ar" ? "جرّب كلمة بحث أخرى أو اختر قسمًا مختلفًا." : "Try another search term or choose a different category."}</p><button className="merchant-secondary-button" onClick={() => { setQuery(""); setCategory("all"); }}>{locale === "ar" ? "إعادة ضبط البحث" : "Reset filters"}</button></div>}
+      {filtered.length > 0 ? <div className="product-rows">{chunk(filtered, 8).map((row, index) => <div className="product-grid merchant-catalog-grid store-product-grid product-carousel" key={index}>{row.map((item) => <ProductCard key={item.id} product={item} />)}</div>)}</div> : <div className="merchant-site-empty"><Search /><h3>{locale === "ar" ? "لم نجد منتجات مطابقة" : "No matching products"}</h3><p>{locale === "ar" ? "جرّب كلمة بحث أخرى أو اختر قسمًا مختلفًا." : "Try another search term or choose a different category."}</p><button className="merchant-secondary-button" onClick={() => { setQuery(""); setCategory("all"); }}>{locale === "ar" ? "إعادة ضبط البحث" : "Reset filters"}</button></div>}
     </section>
   </StorefrontFrame>;
 }
