@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Circle, MessageCircle, PackageCheck, Truck } from "lucide-react";
+import { CheckCircle2, Circle, PackageCheck, Truck } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { CheckoutShell } from "@/components/layout/checkout-shell";
@@ -39,7 +39,7 @@ function buildWhatsAppOrderMessage(order: Order, locale: Locale, products: Produ
 
 export default function OrderPage() {
   const params = useParams<{ id: string }>();
-  const { locale, orders, stores, products, platformSettings } = useApp();
+  const { locale, orders, stores, products } = useApp();
   const order = orders.find((item) => item.id === decodeURIComponent(params.id));
   const store = stores.find((item) => item.id === order?.storeId);
   const handedOff = useRef(false);
@@ -71,7 +71,7 @@ export default function OrderPage() {
         <div className="editor-card">
           <div className="card-head"><div><span className="eyebrow">TRACKING</span><h2>{locale === "ar" ? "مسار الطلب" : "Order journey"}</h2></div></div>
           <div className="order-timeline">{sequence.map((status, index) => <div key={status} className={index <= current ? "done" : ""}>{index <= current ? <CheckCircle2 /> : <Circle />}<span>{statusLabels[status]}</span></div>)}</div>
-          {store && (store.whatsapp ? <a className="button button-ghost order-message-link" href={whatsappHref(store.whatsapp, buildWhatsAppOrderMessage(order, locale, products))} target="_blank" rel="noopener noreferrer"><WhatsAppBrandIcon />{locale === "ar" ? "تواصل مع المتجر عبر واتساب بخصوص الطلب" : "Message store on WhatsApp about this order"}</a> : platformSettings.messagingEnabled ? <Link className="button button-ghost order-message-link" href={`/${locale}/messages?store=${encodeURIComponent(store.slug)}&order=${encodeURIComponent(order.id)}`}><MessageCircle />{locale === "ar" ? "مراسلة المتجر بخصوص الطلب" : "Message store about this order"}</Link> : null)}
+          {store?.whatsapp && <a className="button button-ghost order-message-link" href={whatsappHref(store.whatsapp, buildWhatsAppOrderMessage(order, locale, products))} target="_blank" rel="noopener noreferrer"><WhatsAppBrandIcon />{locale === "ar" ? "تواصل مع المتجر عبر واتساب بخصوص الطلب" : "Message store on WhatsApp about this order"}</a>}
         </div>
         <aside className="order-summary detail">
           <h3>{locale === "ar" ? "تفاصيل الطلب" : "Order details"}</h3>

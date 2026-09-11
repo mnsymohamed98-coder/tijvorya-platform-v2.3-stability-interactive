@@ -58,7 +58,6 @@ export function StorefrontFrame({
   const {
     locale,
     cart,
-    platformSettings,
     toast,
   } = useApp();
 
@@ -402,7 +401,7 @@ export function StorefrontFrame({
               <Share2 />
             </button>
 
-            {store.whatsapp ? (
+            {store.whatsapp && (
               <a
                 className="merchant-site-icon-link"
                 href={whatsappHref(store.whatsapp)}
@@ -416,21 +415,7 @@ export function StorefrontFrame({
               >
                 <WhatsAppBrandIcon />
               </a>
-            ) : platformSettings.messagingEnabled ? (
-              <Link
-                className="merchant-site-icon-link"
-                href={`/${locale}/messages?store=${encodeURIComponent(
-                  store.slug
-                )}`}
-                aria-label={
-                  locale === "ar"
-                    ? "مراسلة المتجر"
-                    : "Message store"
-                }
-              >
-                <MessageCircle />
-              </Link>
-            ) : null}
+            )}
 
             <Link
               className="merchant-site-icon-link"
