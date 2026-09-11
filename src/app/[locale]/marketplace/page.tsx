@@ -10,6 +10,13 @@ import { loadPublicCategories, searchPublicProducts, type PublicProductSort } fr
 import type { Product } from "@/types";
 
 const PAGE_SIZE = 24;
+const ROW_SIZE = 8;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const rows: T[][] = [];
+  for (let index = 0; index < items.length; index += size) rows.push(items.slice(index, index + size));
+  return rows;
+}
 
 export default function MarketplacePage() {
   const { locale, products, stores, favoriteIds, productionMode, mergeProducts } = useApp();
@@ -127,7 +134,7 @@ export default function MarketplacePage() {
       </div>
       <div className="results-line"><span><strong>{total}</strong> {locale === "ar" ? "منتج" : "products"}</span>{hasFilters && <button type="button" onClick={resetFilters}><X /> {locale === "ar" ? "مسح الفلاتر" : "Clear filters"}</button>}</div>
       {visible.length ? <>
-        <div className="product-grid marketplace-product-grid">{visible.map((product) => <ProductCard key={product.id} product={product} store={storeById.get(product.storeId)} />)}</div>
+        <div className="marketplace-results">{chunk(visible, ROW_SIZE).map((row, index) => <div className="product-grid marketplace-row" key={index}>{row.map((product) => <ProductCard key={product.id} product={product} store={storeById.get(product.storeId)} />)}</div>)}</div>
         {hasMore && <button type="button" className="button button-ghost button-block" disabled={loadingMore} onClick={loadMore}>{loadingMore ? (locale === "ar" ? "جارٍ التحميل..." : "Loading...") : (locale === "ar" ? "تحميل المزيد" : "Load more")}</button>}
       </> : <EmptyState title={locale === "ar" ? "لا توجد نتائج" : "No results"} text={locale === "ar" ? "جرّب كلمات أو تصنيفًا مختلفًا، أو ألغِ بعض الفلاتر." : "Try a different query, category or fewer filters."} />}
     </section>
