@@ -119,7 +119,7 @@ export default function MarketplacePage() {
   const hasFilters = Boolean(query || category !== "all" || favoritesOnly || availableOnly || sort !== "featured");
   function resetFilters() { setQuery(""); setCategory("all"); setSort("featured"); setFavoritesOnly(false); setAvailableOnly(false); }
 
-  return <PublicShell locale={locale}>
+  return <PublicShell locale={locale} hideFooter>
     <section className="page-hero compact"><div className="container"><span className="eyebrow">TIJVORYA MARKET</span><h1>{locale === "ar" ? "السوق" : "Marketplace"}</h1><p>{locale === "ar" ? "اكتشف منتجات ومتاجر موثوقة داخل تجربة شراء واحدة." : "Discover trusted products and stores inside one shopping experience."}</p></div></section>
     <section className="section container">
       <div className="market-toolbar">
