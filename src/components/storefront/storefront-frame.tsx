@@ -27,7 +27,7 @@ import {
 import { PersistentImage } from "@/components/ui/persistent-media";
 import { normalizeStoreTheme } from "@/lib/store-theme";
 import {
-  merchantDomain,
+  merchantDisplayDomain,
   merchantStoreHref,
   normalizeStoreWebsiteProfile,
   safeExternalUrl,
@@ -102,9 +102,7 @@ export function StorefrontFrame({
       ? store.name
       : store.nameEn || store.name;
 
-  const domain =
-    website.domain ||
-    merchantDomain(store.slug);
+  const domain = merchantDisplayDomain(store.slug, locale);
 
   const socialLinks = [
     {
