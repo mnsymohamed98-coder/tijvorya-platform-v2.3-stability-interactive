@@ -14,6 +14,7 @@ import { WhatsAppBrandIcon } from "@/components/ui/social-brand-icons";
 import { normalizeStoreTheme } from "@/lib/store-theme";
 import { loadStoreCatalog } from "@/lib/supabase/repository";
 import { useApp } from "@/providers/app-provider";
+import { chunk } from "@/lib/utils";
 
 function decodeSlug(value: string) {
   try { return decodeURIComponent(value).trim().toLocaleLowerCase(); }
@@ -75,7 +76,9 @@ export default function StorePage() {
   const website = normalizeStoreWebsiteProfile(store.website);
   const theme = normalizeStoreTheme(store.theme, store.themeColor);
   const items = products.filter((item) => item.storeId === store.id && item.status === "active");
-  const featured = [...items.filter((item) => item.featured), ...items.filter((item) => !item.featured)].slice(0, 4);
+  const featuredAll = [...items.filter((item) => item.featured), ...items.filter((item) => !item.featured)];
+  const featuredRows = chunk(featuredAll.slice(0, 32), 8);
+  const hasMoreFeatured = featuredAll.length > 32;
   const itemIds = new Set(items.map((item) => item.id));
   const storeReels = reels.filter((item) => item.storeId === store.id && item.status === "approved" && itemIds.has(item.productId)).slice(0, 4);
   const categories = Array.from(new Set(items.map((item) => item.category).filter(Boolean))).slice(0, 6);
@@ -152,7 +155,7 @@ export default function StorePage() {
 
     <section className="merchant-site-section merchant-site-shell">
       <div className="merchant-section-heading"><div><span>{locale === "ar" ? "مختارات المتجر" : "Store picks"}</span><h2>{locale === "ar" ? "منتجات تستحق الاكتشاف" : "Products worth discovering"}</h2></div><Link href={productsHref}>{locale === "ar" ? "عرض الكل" : "View all"}<ArrowUpRight /></Link></div>
-      {featured.length > 0 ? <div className="product-grid merchant-featured-grid store-product-grid">{featured.map((item) => <ProductCard key={item.id} product={item} />)}</div> : <div className="merchant-site-empty"><PackageCheck /><h3>{locale === "ar" ? "المنتجات قادمة قريبًا" : "Products are coming soon"}</h3><p>{locale === "ar" ? "يعمل المتجر حاليًا على تجهيز مجموعته الأولى." : "The store is preparing its first collection."}</p></div>}
+      {featuredAll.length > 0 ? <div className="product-rows">{featuredRows.map((row, index) => <div className="product-grid merchant-featured-grid store-product-grid product-carousel" key={index}>{row.map((item) => <ProductCard key={item.id} product={item} />)}</div>)}{hasMoreFeatured && <Link className="product-rows-more" href={productsHref}>{locale === "ar" ? "استكشف باقي المنتجات" : "Explore the rest of the products"}<ArrowUpRight /></Link>}</div> : <div className="merchant-site-empty"><PackageCheck /><h3>{locale === "ar" ? "المنتجات قادمة قريبًا" : "Products are coming soon"}</h3><p>{locale === "ar" ? "يعمل المتجر حاليًا على تجهيز مجموعته الأولى." : "The store is preparing its first collection."}</p></div>}
     </section>
 
     {categories.length > 0 && <section className="merchant-category-band"><div className="merchant-site-shell"><div className="merchant-section-heading compact"><div><span>{locale === "ar" ? "الأقسام" : "Categories"}</span><h2>{locale === "ar" ? "تسوق حسب القسم" : "Shop by category"}</h2></div></div><div className="merchant-category-grid">{categories.map((category, index) => <Link href={`${productsHref}?category=${encodeURIComponent(category)}`} key={category}><div className="merchant-category-top"><small>{String(index + 1).padStart(2, "0")}</small><ArrowUpRight /></div><strong>{category}</strong></Link>)}</div></div></section>}
