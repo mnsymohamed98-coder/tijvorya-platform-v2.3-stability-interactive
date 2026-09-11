@@ -35,25 +35,21 @@ export function FacebookBrandIcon(props: BrandIconProps) {
 }
 
 export function TikTokBrandIcon(props: BrandIconProps) {
-  // A finely-detailed note path held up fine at large preview sizes but
-  // turned into an illegible smudge at the ~15-18px this actually renders at
-  // in the footer/follow-row - swapped for a bold, simple stroke note (the
-  // same shape lucide's Music2 icon uses) that stays crisp at small sizes,
-  // with the cyan/pink offset copies kept for the recognizable TikTok look.
-  const stem = "M12.5 16.5V4l5.3 3";
+  // The official TikTok note-mark path (sourced from simple-icons), kept in
+  // the same rounded-square badge as the Instagram/Facebook marks above so
+  // all three sit at the same size and shape in a row - the earlier
+  // hand-approximated note shape read as an illegible smudge at small
+  // sizes and didn't match the real logo. Cyan/magenta offset copies under
+  // a white top layer reproduce TikTok's signature layered-glitch mark.
+  const note = "M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z";
   return (
     <svg viewBox="0 0 24 24" aria-hidden focusable={false} {...props}>
       <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="#000" />
-      <g transform="translate(-0.55,-0.35)" fill="#25F4EE">
-        <circle cx="9.5" cy="16.5" r="3" />
-        <path d={stem} fill="none" stroke="#25F4EE" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+      <g transform="translate(3.55,1.15) scale(0.62)">
+        <path d={note} transform="translate(-0.6,-0.4)" fill="#25F4EE" />
+        <path d={note} transform="translate(0.6,0.4)" fill="#FE2C55" />
+        <path d={note} fill="#fff" />
       </g>
-      <g transform="translate(0.55,0.35)" fill="#FE2C55">
-        <circle cx="9.5" cy="16.5" r="3" />
-        <path d={stem} fill="none" stroke="#FE2C55" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
-      </g>
-      <circle cx="9.5" cy="16.5" r="3" fill="#fff" />
-      <path d={stem} fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
