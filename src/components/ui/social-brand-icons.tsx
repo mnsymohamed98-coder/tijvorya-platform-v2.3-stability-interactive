@@ -45,7 +45,7 @@ export function TikTokBrandIcon(props: BrandIconProps) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden focusable={false} {...props}>
       <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="#000" />
-      <g transform="translate(3.55,1.15) scale(0.62)">
+      <g transform="translate(12,12) scale(0.58) translate(-12,-12)">
         <path d={note} transform="translate(-0.6,-0.4)" fill="#25F4EE" />
         <path d={note} transform="translate(0.6,0.4)" fill="#FE2C55" />
         <path d={note} fill="#fff" />
