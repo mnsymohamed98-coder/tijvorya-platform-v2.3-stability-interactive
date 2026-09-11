@@ -151,11 +151,11 @@ export default function HomePage() {
 
     <section className="hero-section hero-global"><span className="hero-ambient hero-ambient-a" aria-hidden="true" /><span className="hero-ambient hero-ambient-b" aria-hidden="true" /><span className="hero-ambient hero-ambient-c" aria-hidden="true" /><div className="container hero-grid hero-grid-enhanced">
       <div className="hero-copy">
-        <span className="hero-badge"><Zap /> {locale === "ar" ? "منصة تجارة اجتماعية قابلة للتوسع" : "A scalable social-commerce platform"}</span>
-        <h1>{locale === "ar" ? "حوّل كل مشاهدة إلى فرصة شراء." : "Turn every view into a buying opportunity."}</h1>
-        <p>{locale === "ar" ? "Tijvorya تجمع المتجر، المنتجات، الريلز القابلة للشراء، الطلبات والتحليلات في تجربة واحدة مصممة للتاجر والمتسوّق." : "Tijvorya unifies storefronts, products, shoppable reels, orders and analytics in one experience built for merchants and shoppers."}</p>
+        <span className="hero-badge"><Zap /> {locale === "ar" ? "منصة تجارة اجتماعية تفاعلية وذكية" : "An interactive, smart social-commerce platform"}</span>
+        <h1>{locale === "ar" ? "شاهد، اكتشف، واشترِ منتجاتك المفضلة — في مكان واحد." : "Watch, discover, and buy your favorite products — all in one place."}</h1>
+        <p>{locale === "ar" ? "استمتع بمشاهدة أحدث الريلز واكتشاف المنتجات المميزة، مع تجربة شراء سلسة وآمنة وسريعة تصلك أينما كنت." : "Enjoy watching the latest reels and discovering featured products, with a smooth, secure and fast shopping experience that reaches you wherever you are."}</p>
         <div className="hero-actions"><Link className="button button-dark button-large hero-cta-primary" href={`/${locale}/contact`}>{t.start}<Arrow /></Link><Link className="button button-ghost button-large hero-cta-secondary" href={`/${locale}/marketplace`}>{t.explore}</Link></div>
-        <div className="trust-row"><span><CheckCircle2 />{locale === "ar" ? "عربية وإنجليزية أصلية" : "Native Arabic and English"}</span><span><CheckCircle2 />{locale === "ar" ? "شراء مباشر من الريلز" : "Direct shopping from reels"}</span><span><CheckCircle2 />{locale === "ar" ? "صلاحيات ومراجعة محتوى" : "Permissions and moderation"}</span></div>
+        <div className="trust-row"><span><CheckCircle2 />{locale === "ar" ? "منتجات مضمونة وعروض حصرية" : "Guaranteed products and exclusive deals"}</span><span><CheckCircle2 />{locale === "ar" ? "شراء مباشر وسريع من الريلز" : "Direct, fast shopping from reels"}</span><span><CheckCircle2 />{locale === "ar" ? "شحن سريع وتتبع مباشر للطلب" : "Fast shipping and live order tracking"}</span></div>
         <div className="hero-proof"><div><BadgeCheck /><strong>{locale === "ar" ? "تجربة موثوقة" : "Trusted experience"}</strong><span>{locale === "ar" ? "متاجر ومحتوى تحت المراجعة" : "Stores and content under review"}</span></div><div><PackageCheck /><strong>{locale === "ar" ? "رحلة طلب واضحة" : "Clear order journey"}</strong><span>{locale === "ar" ? "من الاكتشاف حتى متابعة الطلب" : "From discovery to order tracking"}</span></div></div>
       </div>
       <div className="hero-visual hero-image-visual">
