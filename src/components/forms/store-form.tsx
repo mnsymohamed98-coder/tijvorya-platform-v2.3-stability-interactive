@@ -117,7 +117,7 @@ export function StoreForm() {
       <div className="card-head"><div><span className="eyebrow">WEBSITE CONTENT</span><h3>{locale === "ar" ? "محتوى موقع المتجر" : "Store website content"}</h3><p>{locale === "ar" ? "هذه البيانات تظهر تلقائيًا في صفحات الرئيسية والمنتجات وعن المتجر." : "These details automatically power your Home, Products and About pages."}</p></div></div>
       <div className="form-grid three">
         <label className="field"><span>{locale === "ar" ? "مجال النشاط" : "Business category"}</span><select name="businessCategory" defaultValue={website.businessCategory}>{businessCategoryOptions.map((item) => <option key={item.value} value={item.value}>{locale === "ar" ? item.ar : item.en}</option>)}</select></label>
-        <label className="field"><span>{locale === "ar" ? "البريد التجاري" : "Business email"}</span><input name="businessEmail" type="email" dir="ltr" defaultValue={website.businessEmail || currentUser?.email} /></label>
+        <label className="field"><span>{locale === "ar" ? "البريد التجاري" : "Business email"}</span><input name="businessEmail" type="email" dir="ltr" defaultValue={website.businessEmail || (currentUser?.role === "admin" ? "" : currentUser?.email)} /></label>
         <label className="field"><span>{locale === "ar" ? "الدولة" : "Country"}</span><input name="country" defaultValue={website.country} /></label>
       </div>
       <div className="form-grid two">
