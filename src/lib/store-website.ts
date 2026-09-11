@@ -91,6 +91,17 @@ export function merchantDomainUrl(slug: string, locale: Locale = "ar", page: "ho
   return `https://${merchantDomain(slug)}${localePrefix}${pageSuffix}`;
 }
 
+// The text shown for a merchant to read/copy/share, as opposed to an href -
+// a bare "slug.tijvorya.com" only actually resolves once real wildcard DNS
+// is configured and NEXT_PUBLIC_STOREFRONT_SUBDOMAINS is on; showing that
+// format regardless (as a stored website.domain value does, since it was
+// written at save time without checking the flag) means copying it can
+// lead nowhere. This always reflects a path that works right now.
+export function merchantDisplayDomain(slug: string, locale: Locale = "ar") {
+  if (process.env.NEXT_PUBLIC_STOREFRONT_SUBDOMAINS === "true") return merchantDomain(slug);
+  return `${storefrontRootDomain()}/${locale}/store/${encodeURIComponent(slug.trim().toLowerCase())}`;
+}
+
 export function merchantStoreHref(slug: string, locale: Locale, page: "home" | "products" | "about" = "home") {
   if (process.env.NEXT_PUBLIC_STOREFRONT_SUBDOMAINS === "true") return merchantDomainUrl(slug, locale, page);
   const base = `/${locale}/store/${encodeURIComponent(slug)}`;

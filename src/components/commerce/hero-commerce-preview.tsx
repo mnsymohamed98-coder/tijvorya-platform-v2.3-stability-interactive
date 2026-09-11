@@ -3,6 +3,7 @@
 import { Film, LayoutGrid, Package, Play, Store as StoreIcon } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { PersistentImage } from "@/components/ui/persistent-media";
+import { merchantDisplayDomain } from "@/lib/store-website";
 import { formatMoney } from "@/lib/utils";
 import type { Locale, Product, Reel, Store } from "@/types";
 
@@ -46,7 +47,7 @@ export function HeroCommercePreview({ locale, products, stores, reels, stats }: 
 
         {mode === "stores" && <section className="hero-live-panel" role="tabpanel">
           <header><div><span>{locale === "ar" ? "شبكة المتاجر" : "STORE NETWORK"}</span><h3>{locale === "ar" ? "هويات تجارية جاهزة" : "Launch-ready brand identities"}</h3></div><StoreIcon /></header>
-          {visibleStores.length > 0 ? <div className="hero-live-store-grid">{visibleStores.map((store) => <article key={store.id}><div><PersistentImage className="media-cover" src={store.logo} alt={locale === "ar" ? store.name : store.nameEn} optimized width={50} height={50} /></div><span><strong>{locale === "ar" ? store.name : store.nameEn}</strong><small>{store.website?.domain || `${store.slug}.tijvorya.com`}</small></span></article>)}</div> : <PreviewEmpty icon={<StoreIcon />} text={locale === "ar" ? "ستظهر المتاجر الجاهزة هنا تلقائيًا." : "Launch-ready stores will appear here automatically."} />}
+          {visibleStores.length > 0 ? <div className="hero-live-store-grid">{visibleStores.map((store) => <article key={store.id}><div><PersistentImage className="media-cover" src={store.logo} alt={locale === "ar" ? store.name : store.nameEn} optimized width={50} height={50} /></div><span><strong>{locale === "ar" ? store.name : store.nameEn}</strong><small>{merchantDisplayDomain(store.slug, locale)}</small></span></article>)}</div> : <PreviewEmpty icon={<StoreIcon />} text={locale === "ar" ? "ستظهر المتاجر الجاهزة هنا تلقائيًا." : "Launch-ready stores will appear here automatically."} />}
         </section>}
 
         {mode === "reels" && <section className="hero-live-panel" role="tabpanel">

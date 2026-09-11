@@ -1,13 +1,14 @@
 "use client";
 
-import { BadgeCheck, Clock3, Mail, MapPin, MessageCircle, PackageCheck, Phone, Truck } from "lucide-react";
+import { BadgeCheck, Clock3, Mail, MapPin, MessageCircle, PackageCheck, Phone, Star, Truck } from "lucide-react";
 import { FacebookBrandIcon, InstagramBrandIcon, TikTokBrandIcon } from "@/components/ui/social-brand-icons";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { StorefrontFrame } from "@/components/storefront/storefront-frame";
 import { StorefrontNotFound } from "@/components/storefront/storefront-not-found";
 import { StorefrontLoading } from "@/components/storefront/storefront-loading";
-import { businessCategoryLabel, normalizeStoreWebsiteProfile, safeExternalUrl } from "@/lib/store-website";
+import { PersistentImage } from "@/components/ui/persistent-media";
+import { businessCategoryLabel, merchantDisplayDomain, normalizeStoreWebsiteProfile, safeExternalUrl } from "@/lib/store-website";
 import { useApp } from "@/providers/app-provider";
 
 function decodeSlug(value: string) {
@@ -45,12 +46,18 @@ export default function AboutPage() {
 
   return <StorefrontFrame store={store} active="about">
     <section className="merchant-page-hero merchant-about-hero">
+      <div className="merchant-about-hero-media"><PersistentImage className="media-fill" src={store.cover} alt="" optimized sizes="100vw" /><div className="merchant-about-hero-shade" /></div>
       <div className="merchant-site-shell"><span>{businessCategoryLabel(website.businessCategory, locale)}</span><h1>{locale === "ar" ? `عن ${name}` : `About ${name}`}</h1><p>{tagline}</p></div>
     </section>
 
     <section className="merchant-site-section merchant-site-shell">
       <div className="merchant-about-intro">
-        <div><span className="merchant-store-category">{locale === "ar" ? "من نحن" : "Who we are"}</span><h2>{locale === "ar" ? "علامة تجارية تهتم بالتجربة قبل المنتج وبعده" : "A brand focused on the full customer experience"}</h2></div>
+        <div><span className="merchant-store-category">{locale === "ar" ? "من نحن" : "Who we are"}</span><h2>{locale === "ar" ? "علامة تجارية تهتم بالتجربة قبل المنتج وبعده" : "A brand focused on the full customer experience"}</h2>
+          <div className="merchant-about-badge-card">
+            <PersistentImage className="merchant-about-logo" src={store.logo} alt={name} optimized width={64} height={64} />
+            <div><strong>{name}</strong><div className="merchant-about-badge-stats">{store.verified && <span><BadgeCheck />{locale === "ar" ? "متجر موثّق" : "Verified"}</span>}{store.rating > 0 && <span><Star fill="currentColor" />{store.rating.toFixed(1)}</span>}{store.city && <span><MapPin />{store.city}</span>}</div></div>
+          </div>
+        </div>
         <div><p>{about}</p>{store.verified && <span className="merchant-verified-note"><BadgeCheck />{locale === "ar" ? "هذا المتجر موثوق على منصة Tijvorya" : "This merchant is verified on Tijvorya"}</span>}</div>
       </div>
     </section>
@@ -59,7 +66,7 @@ export default function AboutPage() {
       <div className="merchant-business-identity">
         <div><span>{locale === "ar" ? "الهوية التجارية" : "Business identity"}</span><strong>{website.legalName || name}</strong></div>
         {website.registrationNumber && <div><span>{locale === "ar" ? "رقم التسجيل / الترخيص" : "Registration / license"}</span><strong dir="ltr">{website.registrationNumber}</strong></div>}
-        <div><span>{locale === "ar" ? "الموقع الرسمي" : "Official website"}</span><strong dir="ltr">{website.domain || `${store.slug}.tijvorya.com`}</strong></div>
+        <div><span>{locale === "ar" ? "الموقع الرسمي" : "Official website"}</span><strong dir="ltr">{merchantDisplayDomain(store.slug, locale)}</strong></div>
       </div>
     </section>}
 

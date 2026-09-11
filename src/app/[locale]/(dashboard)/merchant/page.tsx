@@ -15,7 +15,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { SalesChart } from "@/components/dashboard/sales-chart";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StatusPill } from "@/components/ui/status-pill";
-import { merchantStoreHref } from "@/lib/store-website";
+import { merchantDisplayDomain, merchantStoreHref } from "@/lib/store-website";
 import { useApp } from "@/providers/app-provider";
 import { formatMoney } from "@/lib/utils";
 
@@ -272,8 +272,7 @@ export default function MerchantDashboard() {
               </small>
 
               <strong>
-                {store.website.domain ||
-                  `${store.slug}.tijvorya.com`}
+                {merchantDisplayDomain(store.slug, locale)}
               </strong>
 
               <p>
