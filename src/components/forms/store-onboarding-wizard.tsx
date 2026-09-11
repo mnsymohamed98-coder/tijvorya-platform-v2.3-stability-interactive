@@ -62,11 +62,15 @@ export function StoreOnboardingWizard() {
     businessCategory: website.businessCategory,
     tagline: website.tagline,
     taglineEn: website.taglineEn,
-    businessEmail: website.businessEmail || currentUser?.email || "",
+    // Only pre-fill from the signed-in user's own contact info when they
+    // are the actual merchant - an admin managing this store on someone
+    // else's behalf must never have their personal email/phone silently
+    // saved as the store's public contact info.
+    businessEmail: website.businessEmail || (currentUser?.role === "admin" ? "" : currentUser?.email) || "",
     country: website.country,
     city: current?.city ?? "",
     address: website.address,
-    phone: current?.phone || currentUser?.phone || "",
+    phone: current?.phone || (currentUser?.role === "admin" ? "" : currentUser?.phone) || "",
     whatsapp: current?.whatsapp ?? "",
     openingHours: website.openingHours,
     shippingAreas: website.shippingAreas,
