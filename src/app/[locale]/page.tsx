@@ -30,7 +30,7 @@ import { PersistentImage, PersistentVideo } from "@/components/ui/persistent-med
 import { HomeStructuredData } from "@/components/seo/structured-data";
 import { useApp } from "@/providers/app-provider";
 import { copy } from "@/lib/i18n";
-import { formatMoney } from "@/lib/utils";
+import { chunk, formatMoney } from "@/lib/utils";
 import { loadHomepagePreviewProducts, loadHomepagePreviewReels, loadHomepageReadyStores, loadPublicStats } from "@/lib/supabase/repository";
 import type { Product, Reel, Store as StoreType } from "@/types";
 
@@ -52,7 +52,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!productionMode) return;
     let active = true;
-    loadHomepagePreviewProducts(16).then((items) => {
+    loadHomepagePreviewProducts(33).then((items) => {
       if (!active) return;
       setHomepageProducts(items);
       mergeProducts(items);
@@ -60,6 +60,8 @@ export default function HomePage() {
     return () => { active = false; };
   }, [productionMode, mergeProducts]);
   const discoverProducts = productionMode ? homepageProducts : publicProducts;
+  const discoverRows = chunk(discoverProducts.slice(0, 32), 8);
+  const hasMoreDiscoverProducts = discoverProducts.length > 32;
 
   // Same reasoning as homepageProducts above: state.stores/reels are scoped
   // to whatever the current viewer's role loaded (a merchant only ever sees
@@ -190,9 +192,7 @@ export default function HomePage() {
       <span className="product-strip-price"><strong>{formatMoney(product.price, locale)}</strong><Arrow /></span>
     </Link>; })}</div></div></section>}
 
-    <section className="section container"><div className="section-head"><div><span className="eyebrow">DISCOVER</span><h2>{locale === "ar" ? "منتجات جاهزة للاكتشاف والشراء." : "Products ready to be discovered and purchased."}</h2><p>{locale === "ar" ? "كل منتج مرتبط بمتجر فعلي ويمكن شراؤه من السوق أو مباشرة من الريلز." : "Every product belongs to a real store and can be purchased from the marketplace or directly from reels."}</p></div>{discoverProducts.length > 0 && <Link href={`/${locale}/marketplace`}>{locale === "ar" ? "عرض السوق" : "View marketplace"}<Arrow /></Link>}</div>{discoverProducts.length > 0 ? <div className="product-carousel">{discoverProducts.slice(0, 8).map((product) => <ProductCard key={product.id} product={product} store={activeStores.find((store) => store.id === product.storeId)} />)}</div> : <div className="public-empty-showcase"><ShoppingBag /><div><strong>{locale === "ar" ? "السوق يستعد لاستقبال أول المنتجات" : "The marketplace is ready for its first products"}</strong><span>{locale === "ar" ? "عند نشر منتجات حقيقية من متجر نشط ستظهر هنا تلقائيًا." : "Real products from active stores will appear here automatically once published."}</span></div><Link className="button button-dark" href={`/${locale}/contact`}>{locale === "ar" ? "ابدأ كأول تاجر" : "Start as a merchant"}<Arrow /></Link></div>}</section>
-
-    {discoverProducts.length > 8 && <section className="section container"><div className="section-head"><div><span className="eyebrow">MORE TO EXPLORE</span><h2>{locale === "ar" ? "منتجات أخرى تستحق نظرة." : "More products worth a look."}</h2></div><Link href={`/${locale}/marketplace`}>{locale === "ar" ? "عرض السوق" : "View marketplace"}<Arrow /></Link></div><div className="product-carousel">{discoverProducts.slice(8, 16).map((product) => <ProductCard key={product.id} product={product} store={activeStores.find((store) => store.id === product.storeId)} />)}</div></section>}
+    <section className="section container"><div className="section-head"><div><span className="eyebrow">DISCOVER</span><h2>{locale === "ar" ? "منتجات جاهزة للاكتشاف والشراء." : "Products ready to be discovered and purchased."}</h2><p>{locale === "ar" ? "كل منتج مرتبط بمتجر فعلي ويمكن شراؤه من السوق أو مباشرة من الريلز." : "Every product belongs to a real store and can be purchased from the marketplace or directly from reels."}</p></div>{discoverProducts.length > 0 && <Link href={`/${locale}/marketplace`}>{locale === "ar" ? "عرض السوق" : "View marketplace"}<Arrow /></Link>}</div>{discoverProducts.length > 0 ? <div className="product-rows">{discoverRows.map((row, index) => <div className="product-carousel" key={index}>{row.map((product) => <ProductCard key={product.id} product={product} store={activeStores.find((store) => store.id === product.storeId)} />)}</div>)}{hasMoreDiscoverProducts && <Link className="product-rows-more" href={`/${locale}/marketplace`}>{locale === "ar" ? "استكشف باقي المنتجات في السوق" : "Explore the rest in the marketplace"}<Arrow /></Link>}</div> : <div className="public-empty-showcase"><ShoppingBag /><div><strong>{locale === "ar" ? "السوق يستعد لاستقبال أول المنتجات" : "The marketplace is ready for its first products"}</strong><span>{locale === "ar" ? "عند نشر منتجات حقيقية من متجر نشط ستظهر هنا تلقائيًا." : "Real products from active stores will appear here automatically once published."}</span></div><Link className="button button-dark" href={`/${locale}/contact`}>{locale === "ar" ? "ابدأ كأول تاجر" : "Start as a merchant"}<Arrow /></Link></div>}</section>
 
     {previewStores.length > 0 && <section className="section section-soft"><div className="container"><div className="section-head"><div><span className="eyebrow">READY STORES</span><h2>{locale === "ar" ? "متاجر جاهزة بواجهة رسمية وهوية واضحة." : "Launch-ready stores with a clear and official identity."}</h2><p>{locale === "ar" ? "بدل بطاقات كبيرة مزدحمة، تظهر المتاجر الجاهزة هنا بهوية الشعار والدومين الخاص بها في ترتيب أنظف وأكثر احترافية." : "Instead of heavy promotional cards, launched stores are presented here through their logo identity and unique domain in a cleaner, more professional layout."}</p></div><Link href={`/${locale}/stores`}>{locale === "ar" ? "استكشف جميع المتاجر" : "Explore all stores"}<Arrow /></Link></div><div className="store-carousel">{previewStores.slice(0, 8).map((store) => <StoreCard key={store.id} store={store} locale={locale} />)}</div></div></section>}
 

@@ -2,6 +2,12 @@ export function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
 }
 
+export function chunk<T>(items: T[], size: number): T[][] {
+  const rows: T[][] = [];
+  for (let index = 0; index < items.length; index += size) rows.push(items.slice(index, index + size));
+  return rows;
+}
+
 export function uid(prefix = "id") {
   const cryptoApi = globalThis.crypto;
   if (cryptoApi && "randomUUID" in cryptoApi) return `${prefix}_${cryptoApi.randomUUID()}`;
