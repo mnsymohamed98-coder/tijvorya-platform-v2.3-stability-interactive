@@ -37,22 +37,28 @@ const adminNav = [
 ] as const;
 
 export function DashboardShell({ children, role }: { children: React.ReactNode; role: "merchant" | "admin" }) {
-  const { locale, currentUser, cart, productionMode, conversations, stores, setCurrentUser, platformSettings } = useApp();
+  const { locale, currentUser, cart, productionMode, conversations, activeMerchantStore, adminViewStoreId, setAdminViewStoreId, setCurrentUser, platformSettings } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const base = `/${locale}/${role}`;
   const nav = (role === "merchant" ? merchantNav : adminNav).filter(([suffix]) => suffix !== "/messages" || platformSettings.messagingEnabled);
-  const ownedStoreIds = new Set(stores.filter((store) => store.ownerId === currentUser?.id).map((store) => store.id));
+  const isAdminViewingStore = role === "merchant" && currentUser?.role === "admin";
+  const ownedStoreIds = new Set(activeMerchantStore ? [activeMerchantStore.id] : []);
   const messageBadge = role === "merchant"
     ? conversations.filter((conversation) => ownedStoreIds.has(conversation.storeId)).reduce((sum, conversation) => sum + conversation.unreadByMerchant, 0)
     : conversations.filter((conversation) => conversation.status === "open").length;
 
-  if (!currentUser || (currentUser.role !== role && !(role === "merchant" && currentUser.role === "influencer"))) {
+  if (!currentUser || (currentUser.role !== role && !(role === "merchant" && (currentUser.role === "influencer" || currentUser.role === "admin")))) {
     return <div className="auth-gate"><Logo locale={locale} /><div className="auth-gate-card"><ShieldCheck /><h1>{locale === "ar" ? "هذه المنطقة محمية" : "This area is protected"}</h1><p>{locale === "ar" ? "سجّل الدخول بالحساب المناسب للوصول إلى لوحة التحكم." : "Sign in with the appropriate account to access this dashboard."}</p><Link className="button button-dark" href={role === "admin" ? `/${locale}/admin-access` : `/${locale}/login?next=${encodeURIComponent(pathname)}`}>{locale === "ar" ? "تسجيل الدخول" : "Sign in"}</Link></div></div>;
   }
 
+  if (isAdminViewingStore && !adminViewStoreId) {
+    return <div className="auth-gate"><Logo locale={locale} /><div className="auth-gate-card"><ShieldCheck /><h1>{locale === "ar" ? "اختر متجرًا أولًا" : "Pick a store first"}</h1><p>{locale === "ar" ? "ادخل من صفحة المتاجر واضغط \"إدارة كتاجر\" على المتجر الذي تريد التحكم بلوحته." : "Open the stores page and click \"Manage as merchant\" on the store whose dashboard you want to control."}</p><Link className="button button-dark" href={`/${locale}/admin/stores`}>{locale === "ar" ? "الذهاب إلى المتاجر" : "Go to stores"}</Link></div></div>;
+  }
+
   async function logout() { await signOut(); setCurrentUser(null); router.push(`/${locale}`); }
+  function exitStoreView() { setAdminViewStoreId(null); router.push(`/${locale}/admin/stores`); }
   return <div className="dashboard-layout">
     {mobileOpen && <div className="dashboard-sidebar-backdrop" onClick={() => setMobileOpen(false)} />}
     <aside className={cn("dashboard-sidebar", mobileOpen && "is-open")}>
@@ -67,6 +73,7 @@ export function DashboardShell({ children, role }: { children: React.ReactNode; 
     </aside>
     <div className="dashboard-main">
       <header className="dashboard-topbar"><button className="icon-button dashboard-mobile-toggle" onClick={() => setMobileOpen(true)}><Menu /></button><div className="dashboard-search"><span>{locale === "ar" ? "بحث سريع في المنصة" : "Quick platform search"}</span></div><div className="dashboard-account"><Link className="icon-button" href={`/${locale}/cart`} aria-label="cart">{cart.length}</Link><Avatar className="avatar" value={currentUser.avatar} fallback={currentUser.fullName.slice(0, 2).toUpperCase()} /><span className="account-copy"><strong>{currentUser.fullName}</strong><small>{currentUser.role}</small></span><ChevronDown size={16} /><button className="icon-button" onClick={logout} aria-label="logout"><LogOut /></button></div></header>
+      {isAdminViewingStore && <div className="admin-impersonation-banner"><ShieldCheck /><span>{locale === "ar" ? <>تدير الآن لوحة متجر <strong>{activeMerchantStore ? (locale === "ar" ? activeMerchantStore.name : activeMerchantStore.nameEn) : ""}</strong> كأدمن.</> : <>Managing the dashboard for <strong>{activeMerchantStore ? activeMerchantStore.nameEn || activeMerchantStore.name : ""}</strong> as admin.</>}</span><button type="button" className="button button-ghost" onClick={exitStoreView}>{locale === "ar" ? "الخروج إلى قائمة المتاجر" : "Exit to stores"}</button></div>}
       <main className="dashboard-content">{children}</main>
     </div>
   </div>;

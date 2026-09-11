@@ -22,17 +22,13 @@ import { formatMoney } from "@/lib/utils";
 export default function MerchantDashboard() {
   const {
     locale,
-    stores,
     products,
     reels,
     orders,
     currentUser,
+    activeMerchantStore: store,
     toast,
   } = useApp();
-
-  const store = stores.find(
-    (item) => item.ownerId === currentUser?.id
-  );
 
   const storeProducts = products.filter(
     (item) => item.storeId === store?.id

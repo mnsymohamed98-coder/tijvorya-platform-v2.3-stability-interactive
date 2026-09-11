@@ -10,8 +10,7 @@ import { useApp } from "@/providers/app-provider";
 import { loadReelViewEvents } from "@/lib/supabase/repository";
 
 export default function Page() {
-  const { locale, reels, stores, currentUser, productionMode } = useApp();
-  const store = stores.find((item) => item.ownerId === currentUser?.id);
+  const { locale, reels, activeMerchantStore: store, productionMode } = useApp();
   const storeReels = useMemo(() => reels.filter((item) => item.storeId === store?.id), [reels, store?.id]);
   const [viewTimestamps, setViewTimestamps] = useState<string[]>([]);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { LoaderCircle, Save, Sparkles } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MediaUploader } from "./media-uploader";
 import { useApp } from "@/providers/app-provider";
@@ -10,9 +10,8 @@ import type { Product } from "@/types";
 import type { AIProductCopy } from "@/types/ai";
 
 export function ProductForm({ product }: { product?: Product }) {
-  const { locale, stores, currentUser, saveProduct, toast, platformSettings } = useApp();
+  const { locale, activeMerchantStore: merchantStore, saveProduct, toast, platformSettings } = useApp();
   const router = useRouter();
-  const merchantStore = useMemo(() => stores.find((store) => store.ownerId === currentUser?.id), [stores, currentUser]);
   const [images, setImages] = useState<string[]>(() => {
     const initial = product?.images?.length ? product.images : product?.image ? [product.image] : [];
     return [initial[0] ?? "", initial[1] ?? "", initial[2] ?? ""];

@@ -82,6 +82,9 @@ type AppContextValue = PersistedState & {
   locale: Locale;
   ready: boolean;
   workspaceLoading: boolean;
+  adminViewStoreId: string | null;
+  setAdminViewStoreId: (id: string | null) => void;
+  activeMerchantStore: Store | undefined;
   productionMode: boolean;
   toasts: ToastMessage[];
   setCurrentUser: (user: AppUser | null) => void;
@@ -213,6 +216,21 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
   const loadedWorkspaceKey = useRef<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  // Lets an admin operate the merchant dashboard on a store's behalf.
+  // Tab-scoped (sessionStorage, not the main persisted state) since it's a
+  // temporary working context, not data that should survive across tabs or
+  // leak into local/demo state persistence.
+  const [adminViewStoreId, setAdminViewStoreIdState] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try { return window.sessionStorage.getItem("tijvorya-admin-view-store") || null; } catch { return null; }
+  });
+  const setAdminViewStoreId = useCallback((id: string | null) => {
+    setAdminViewStoreIdState(id);
+    try {
+      if (id) window.sessionStorage.setItem("tijvorya-admin-view-store", id);
+      else window.sessionStorage.removeItem("tijvorya-admin-view-store");
+    } catch { /* sessionStorage can be unavailable (private mode) - in-memory state still works */ }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -987,11 +1005,25 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     toast(locale === "ar" ? "تم مسح بيانات التطوير المحلية" : "Local development data cleared", "info");
   }, [toast, locale]);
 
+  // The store a merchant-dashboard page should act on: the merchant's own
+  // store normally, or - when an admin has picked one from admin/stores -
+  // that store instead, so every merchant page/form works unmodified for
+  // an admin managing another store's dashboard.
+  const activeMerchantStore = useMemo(() => {
+    if (state.currentUser?.role === "admin" && adminViewStoreId) {
+      return state.stores.find((store) => store.id === adminViewStoreId);
+    }
+    return state.stores.find((store) => store.ownerId === state.currentUser?.id);
+  }, [state.stores, state.currentUser, adminViewStoreId]);
+
   const value = useMemo<AppContextValue>(() => ({
     ...state,
     locale,
     ready,
     workspaceLoading,
+    adminViewStoreId,
+    setAdminViewStoreId,
+    activeMerchantStore,
     productionMode,
     toasts,
     setCurrentUser,
@@ -1028,7 +1060,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     updatePlatformSettings,
     toast,
     resetDemo,
-  }), [state, locale, ready, workspaceLoading, productionMode, toasts, setCurrentUser, updateAccountProfile, mergeProducts, resolveProduct, mergeStores, resolveStoreBySlug, resolveStoreById, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, deleteOrder, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, createMerchantAccount, updatePlatformSettings, toast, resetDemo]);
+  }), [state, locale, ready, workspaceLoading, adminViewStoreId, setAdminViewStoreId, activeMerchantStore, productionMode, toasts, setCurrentUser, updateAccountProfile, mergeProducts, resolveProduct, mergeStores, resolveStoreBySlug, resolveStoreById, addToCart, updateCartQuantity, removeFromCart, clearCart, toggleFavorite, toggleLikeReel, saveProduct, deleteProduct, saveReel, startConversation, sendMessage, markConversationRead, setConversationStatus, createOrder, updateOrderStatus, deleteOrder, moderateReel, updateStore, setStoreStatus, setStoreVerified, setUserStatus, setUserRole, setAdminRole, createMerchantAccount, updatePlatformSettings, toast, resetDemo]);
 
   return <AppContext.Provider value={value}>{children}<ToastViewport messages={toasts} /></AppContext.Provider>;
 }

@@ -20,6 +20,7 @@ function MessagingWorkspaceInner({ mode }: { mode: Mode }) {
     locale,
     currentUser,
     stores,
+    activeMerchantStore,
     products,
     conversations,
     messages,
@@ -46,7 +47,7 @@ function MessagingWorkspaceInner({ mode }: { mode: Mode }) {
   const [mobileListOpen, setMobileListOpen] = useState(!requestedStoreKey && !requestedConversationId);
   const [newConversationMode, setNewConversationMode] = useState(false);
 
-  const ownedStoreIds = useMemo(() => new Set(stores.filter((store) => store.ownerId === currentUser?.id).map((store) => store.id)), [stores, currentUser?.id]);
+  const ownedStoreIds = useMemo(() => new Set(activeMerchantStore ? [activeMerchantStore.id] : []), [activeMerchantStore]);
   const visibleConversations = useMemo(() => {
     const rows = conversations.filter((conversation) => {
       if (mode === "customer") return conversation.customerId === currentUser?.id;
@@ -106,7 +107,7 @@ function MessagingWorkspaceInner({ mode }: { mode: Mode }) {
   const roleAllowed = mode === "customer"
     ? currentUser.role === "customer"
     : mode === "merchant"
-      ? currentUser.role === "merchant" || currentUser.role === "influencer"
+      ? currentUser.role === "merchant" || currentUser.role === "influencer" || currentUser.role === "admin"
       : currentUser.role === "admin";
   if (!roleAllowed) {
     const href = currentUser.role === "admin" ? `/${locale}/admin/messages` : currentUser.role === "merchant" || currentUser.role === "influencer" ? `/${locale}/merchant/messages` : `/${locale}/messages`;
