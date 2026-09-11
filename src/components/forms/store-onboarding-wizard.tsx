@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, BadgeCheck, Building2, Check, Eye, Globe2, LoaderCircle, Palette, Rocket, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { MediaUploader } from "./media-uploader";
 import { StoreThemeEditor } from "./store-theme-editor";
 import { normalizeStoreTheme } from "@/lib/store-theme";
@@ -45,9 +45,8 @@ const stepIcons = [Building2, Truck, Globe2, Palette];
 function valueOr(value: string | undefined, fallback = "") { return value?.trim() ? value : fallback; }
 
 export function StoreOnboardingWizard() {
-  const { locale, stores, currentUser, updateStore, toast } = useApp();
+  const { locale, stores, currentUser, activeMerchantStore: current, updateStore, toast } = useApp();
   const router = useRouter();
-  const current = useMemo(() => stores.find((store) => store.ownerId === currentUser?.id), [stores, currentUser?.id]);
   const website = normalizeStoreWebsiteProfile(current?.website);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -188,7 +187,8 @@ export function StoreOnboardingWizard() {
       };
       const store: Store = {
         id: current?.id ?? uid("store"),
-        ownerId: currentUser.id,
+        // Preserve the existing owner when editing - see store-form.tsx.
+        ownerId: current?.ownerId ?? currentUser.id,
         slug,
         name: draft.name.trim(),
         nameEn: valueOr(draft.nameEn, draft.name.trim()),

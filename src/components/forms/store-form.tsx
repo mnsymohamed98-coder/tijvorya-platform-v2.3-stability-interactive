@@ -12,8 +12,7 @@ import { safeNumber, slugify, uid } from "@/lib/utils";
 import type { Store } from "@/types";
 
 export function StoreForm() {
-  const { locale, stores, currentUser, updateStore, toast } = useApp();
-  const current = useMemo(() => stores.find((store) => store.ownerId === currentUser?.id), [stores, currentUser?.id]);
+  const { locale, stores, currentUser, activeMerchantStore: current, updateStore, toast } = useApp();
   const website = useMemo(() => normalizeStoreWebsiteProfile(current?.website), [current?.website]);
   const [logo, setLogo] = useState(current?.logo ?? "/assets/logo.svg");
   const [cover, setCover] = useState(current?.cover ?? "/assets/cover-urban.svg");
@@ -42,7 +41,11 @@ export function StoreForm() {
     try {
       const store: Store = {
         id: current?.id ?? uid("store"),
-        ownerId: currentUser.id,
+        // Preserve the existing owner when editing - an admin managing a
+        // merchant's dashboard must not reassign the store to themselves.
+        // Only a brand-new store (no `current`) is owned by whoever is
+        // creating it.
+        ownerId: current?.ownerId ?? currentUser.id,
         slug,
         name,
         nameEn: String(form.get("nameEn") ?? "").trim() || name,

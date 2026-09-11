@@ -1,7 +1,7 @@
 "use client";
 
 import { FileCheck2, LoaderCircle, Save, Send, ShieldCheck, Sparkles } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MediaUploader } from "./media-uploader";
 import { PersistentVideo } from "@/components/ui/persistent-media";
@@ -11,9 +11,8 @@ import type { Reel, ReelStatus } from "@/types";
 import type { AIReelCopy, AIReelStrategy } from "@/types/ai";
 
 export function ReelForm({ reel }: { reel?: Reel }) {
-  const { locale, stores, products, currentUser, saveReel, toast, platformSettings } = useApp();
+  const { locale, products, activeMerchantStore: merchantStore, saveReel, toast, platformSettings } = useApp();
   const router = useRouter();
-  const merchantStore = useMemo(() => stores.find((store) => store.ownerId === currentUser?.id), [stores, currentUser]);
   const merchantProducts = products.filter((product) => product.storeId === merchantStore?.id && product.status === "active");
   const [productId, setProductId] = useState(reel?.productId ?? "");
   const [videoUrl, setVideoUrl] = useState(reel?.videoUrl ?? "");

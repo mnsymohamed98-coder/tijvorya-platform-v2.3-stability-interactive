@@ -249,7 +249,7 @@ create policy "stores owner write" on public.stores for all using (owner_id=auth
 create policy "products public active" on public.products for select using (status='active' or public.owns_store(store_id) or public.is_admin());
 create policy "products owner write" on public.products for all using (public.owns_store(store_id) or public.is_admin()) with check (public.owns_store(store_id) or public.is_admin());
 create policy "reels public approved" on public.reels for select using (status='approved' or public.owns_store(store_id) or public.is_admin());
-create policy "reels owner insert" on public.reels for insert with check (public.owns_store(store_id));
+create policy "reels owner insert" on public.reels for insert with check (public.owns_store(store_id) or public.is_admin());
 create policy "reels owner update" on public.reels for update using (public.owns_store(store_id) and status in ('draft','rejected','approved')) with check (public.owns_store(store_id));
 create policy "reels admin moderate" on public.reels for update using (public.is_admin()) with check (public.is_admin());
 create policy "reel events insert" on public.reel_events for insert with check (auth.uid() = user_id or user_id is null);
@@ -622,6 +622,13 @@ create policy "orders merchant delete" on public.orders for delete using (public
 -- this schema was authored by hand rather than via Supabase's table UI
 -- (which grants this automatically), so it was never explicitly granted.
 grant delete on public.orders to authenticated;
+
+-- Lets an admin upload a new reel while managing a store's dashboard on the
+-- merchant's behalf (admin already could read/update/moderate any reel, and
+-- write to any store's products/settings - this was the one write path that
+-- still required literal store ownership).
+drop policy if exists "reels owner insert" on public.reels;
+create policy "reels owner insert" on public.reels for insert with check (public.owns_store(store_id) or public.is_admin());
 
 create or replace function public.create_checkout_order(
   p_customer_name text,
