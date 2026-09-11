@@ -85,7 +85,7 @@ export async function updateSession(request: NextRequest) {
     if (!allowed.includes(section)) return redirectWithCookies(request, response, `/${locale}/admin`);
   }
 
-  if (merchantMatch && role !== "merchant" && role !== "influencer") {
+  if (merchantMatch && role !== "merchant" && role !== "influencer" && role !== "admin") {
     return redirectWithCookies(request, response, `/${locale}/marketplace`);
   }
 
