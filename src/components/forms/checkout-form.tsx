@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, LoaderCircle } from "lucide-react";
+import { Check, Copy, LoaderCircle, ShieldCheck } from "lucide-react";
 import { FormEvent, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -103,13 +103,15 @@ export function CheckoutForm() {
         </button>
       </div>
 
-      {method && <div className="payment-transfer-details">
+      <div className="payment-transfer-details">
         <div><span>{locale === "ar" ? "حوّل إلى" : "Transfer to"}</span><strong dir="ltr">{TRANSFER_NUMBER}</strong></div>
         <div><span>{locale === "ar" ? "باسم" : "Account name"}</span><strong>{TRANSFER_NAME}</strong></div>
         <button type="button" className="button button-ghost" onClick={copyNumber}><Copy />{copied ? (locale === "ar" ? "تم النسخ" : "Copied") : (locale === "ar" ? "نسخ الرقم" : "Copy number")}</button>
-      </div>}
+      </div>
 
       <MediaUploader resourceType="image" folder="tijvorya/payments" value={proofUrl} onChange={setProofUrl} maxMB={8} label={locale === "ar" ? "صورة إشعار التحويل" : "Transfer receipt screenshot"} />
+
+      <p className="payment-verify-note"><ShieldCheck />{locale === "ar" ? "سيتم التأكد من عملية التحويل والتواصل معك في أقرب وقت ممكن." : "We'll verify the transfer and get in touch with you as soon as possible."}</p>
     </div>
 
     <button type="submit" className="button button-dark button-block button-large" disabled={loading}>{loading && <LoaderCircle className="spin" />}{locale === "ar" ? "تأكيد الطلب" : "Place order"}</button>
