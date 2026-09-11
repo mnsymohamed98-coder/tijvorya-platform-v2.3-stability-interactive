@@ -127,7 +127,7 @@ export default function MarketplacePage() {
       </div>
       <div className="results-line"><span><strong>{total}</strong> {locale === "ar" ? "منتج" : "products"}</span>{hasFilters && <button type="button" onClick={resetFilters}><X /> {locale === "ar" ? "مسح الفلاتر" : "Clear filters"}</button>}</div>
       {visible.length ? <>
-        <div className="product-grid">{visible.map((product) => <ProductCard key={product.id} product={product} store={storeById.get(product.storeId)} />)}</div>
+        <div className="product-grid marketplace-product-grid">{visible.map((product) => <ProductCard key={product.id} product={product} store={storeById.get(product.storeId)} />)}</div>
         {hasMore && <button type="button" className="button button-ghost button-block" disabled={loadingMore} onClick={loadMore}>{loadingMore ? (locale === "ar" ? "جارٍ التحميل..." : "Loading...") : (locale === "ar" ? "تحميل المزيد" : "Load more")}</button>}
       </> : <EmptyState title={locale === "ar" ? "لا توجد نتائج" : "No results"} text={locale === "ar" ? "جرّب كلمات أو تصنيفًا مختلفًا، أو ألغِ بعض الفلاتر." : "Try a different query, category or fewer filters."} />}
     </section>
