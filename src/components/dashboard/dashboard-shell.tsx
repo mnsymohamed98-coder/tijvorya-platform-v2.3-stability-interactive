@@ -42,8 +42,15 @@ export function DashboardShell({ children, role }: { children: React.ReactNode; 
   const pathname = usePathname();
   const router = useRouter();
   const base = `/${locale}/${role}`;
-  const nav = (role === "merchant" ? merchantNav : adminNav).filter(([suffix]) => suffix !== "/messages" || platformSettings.messagingEnabled);
   const isAdminViewingStore = role === "merchant" && currentUser?.role === "admin";
+  // "Settings" here is the signed-in user's own account (name/phone), not
+  // the store's - it edits the same admin profile no matter which store is
+  // being managed, so under impersonation it would look like every store
+  // shares one contact record. The store's own phone/WhatsApp live on
+  // "Store settings" instead, which already resolves to the right store.
+  const nav = (role === "merchant" ? merchantNav : adminNav)
+    .filter(([suffix]) => suffix !== "/messages" || platformSettings.messagingEnabled)
+    .filter(([suffix]) => suffix !== "/settings" || !isAdminViewingStore);
   const ownedStoreIds = new Set(activeMerchantStore ? [activeMerchantStore.id] : []);
   const messageBadge = role === "merchant"
     ? conversations.filter((conversation) => ownedStoreIds.has(conversation.storeId)).reduce((sum, conversation) => sum + conversation.unreadByMerchant, 0)

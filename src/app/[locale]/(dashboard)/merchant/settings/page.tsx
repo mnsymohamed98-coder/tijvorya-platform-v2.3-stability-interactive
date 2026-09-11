@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { LoaderCircle, Save, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { LoaderCircle, Save, ShieldCheck, Store } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useApp } from "@/providers/app-provider";
 
@@ -15,6 +16,15 @@ export default function Page() {
     setName(currentUser?.fullName ?? "");
     setPhone(currentUser?.phone ?? "");
   }, [currentUser?.fullName, currentUser?.phone]);
+
+  // This form edits the signed-in user's own account, not the store being
+  // managed - normally the nav hides this page for an admin managing a
+  // store (see dashboard-shell.tsx), but a direct link should still land
+  // here safely rather than silently let admin overwrite their own profile
+  // thinking it's the store's contact info.
+  if (currentUser?.role === "admin") {
+    return <><PageHeader eyebrow="SETTINGS" title={locale === "ar" ? "الإعدادات" : "Settings"} text="" /><div className="empty-state"><ShieldCheck /><h2>{locale === "ar" ? "هذه إعدادات حسابك الشخصي، وليست إعدادات المتجر" : "This is your own account, not the store's settings"}</h2><p>{locale === "ar" ? "تعديل الاسم أو الهاتف هنا يغيّر حساب الأدمن نفسه بغض النظر عن أي متجر تديره - وهو نفس الحساب في كل مرة، لذلك يبدو وكأنه يؤثر على كل متجر. لتغيير هاتف أو واتساب المتجر، استخدم صفحة إعدادات المتجر." : "Editing the name or phone here changes the admin account itself, regardless of which store you're managing - the same account every time, which is why it looks like it affects every store. To change the store's phone or WhatsApp, use Store settings instead."}</p><Link className="button button-dark" href={`/${locale}/merchant/store`}><Store />{locale === "ar" ? "الذهاب إلى إعدادات المتجر" : "Go to store settings"}</Link></div></>;
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
