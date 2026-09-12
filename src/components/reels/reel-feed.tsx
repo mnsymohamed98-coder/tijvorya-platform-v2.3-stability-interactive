@@ -29,7 +29,8 @@ import { PersistentImage, PersistentVideo } from "@/components/ui/persistent-med
 import { formatCompact, formatMoney, uid } from "@/lib/utils";
 import { EMPTY_REEL_PROFILE, rankReels, recordPreference, type ReelPreferenceProfile } from "@/lib/reels/recommendation";
 import { getReelSessionId } from "@/lib/reels/session";
-import { merchantStoreHref } from "@/lib/store-website";
+import { merchantStoreHref, whatsappHref } from "@/lib/store-website";
+import { WhatsAppBrandIcon } from "@/components/ui/social-brand-icons";
 import { getProductsByIds, insertReelComment, loadReelComments, recordReelView } from "@/lib/supabase/repository";
 import type { Reel } from "@/types";
 
@@ -130,7 +131,6 @@ function ReelItem({
   soundOn,
   saved,
   following,
-  commentCount,
   onToggleSound,
   onToggleSave,
   onToggleFollow,
@@ -142,7 +142,6 @@ function ReelItem({
   soundOn: boolean;
   saved: boolean;
   following: boolean;
-  commentCount: number;
   onToggleSound: () => void;
   onToggleSave: () => void;
   onToggleFollow: () => void;
@@ -238,6 +237,12 @@ function ReelItem({
 
   if (!product || !store) return null;
   const caption = locale === "ar" ? reel.caption : reel.captionEn;
+  const productName = locale === "ar" ? product.name : product.nameEn;
+  const merchantWhatsappHref = whatsappHref(store.whatsapp, locale === "ar" ? `مرحبًا، شفت الريلز عن ${productName} وحابب أسأل عنه.` : `Hi, I saw the reel about ${productName} and wanted to ask about it.`);
+  function contactMerchant() {
+    if (merchantWhatsappHref) window.open(merchantWhatsappHref, "_blank", "noopener,noreferrer");
+    else onOpenComments();
+  }
 
   const share = async () => {
     const url = `${window.location.origin}/${locale}/reels?reel=${reel.id}`;
@@ -297,9 +302,9 @@ function ReelItem({
         <span className="reel-action-icon"><Heart fill={liked ? "currentColor" : "none"}/></span>
         <span>{formatCompact(reel.likes, locale)}</span>
       </button>
-      <button onClick={onOpenComments}>
-        <span className="reel-action-icon"><MessageCircle /></span>
-        <span>{formatCompact(commentCount, locale)}</span>
+      <button onClick={contactMerchant} aria-label={locale === "ar" ? "تواصل مع المتجر عبر واتساب" : "Contact the store on WhatsApp"}>
+        <span className="reel-action-icon"><WhatsAppBrandIcon /></span>
+        <span>{locale === "ar" ? "واتساب" : "WhatsApp"}</span>
       </button>
       <button onClick={share}>
         <span className="reel-action-icon reel-share-icon"><Send /></span>
@@ -570,7 +575,6 @@ export function ReelFeed({ reels }: { reels: Reel[] }) {
         soundOn={soundOn}
         saved={social.savedIds.includes(reel.id)}
         following={social.followedStoreIds.includes(reel.storeId)}
-        commentCount={productionMode ? (reel.commentsCount ?? 0) : social.comments.filter((comment) => comment.reelId === reel.id).length}
         onToggleSound={() => setSoundOn((value) => !value)}
         onToggleSave={() => { toggleSave(reel.id); setProfile((current) => recordPreference(current, { reel, product: products.find((item) => item.id === reel.productId), signal: "save" })); }}
         onToggleFollow={() => { toggleFollow(reel.storeId); setProfile((current) => recordPreference(current, { reel, product: products.find((item) => item.id === reel.productId), signal: "follow" })); }}
