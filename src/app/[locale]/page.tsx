@@ -13,7 +13,6 @@ import {
   Languages,
   LockKeyhole,
   PackageCheck,
-  PlayCircle,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
@@ -29,14 +28,12 @@ import { StoreCard } from "@/components/commerce/store-card";
 import { PersistentImage, PersistentVideo } from "@/components/ui/persistent-media";
 import { HomeStructuredData } from "@/components/seo/structured-data";
 import { useApp } from "@/providers/app-provider";
-import { copy } from "@/lib/i18n";
 import { chunk, formatMoney } from "@/lib/utils";
 import { loadHomepagePreviewProducts, loadHomepagePreviewReels, loadHomepageReadyStores, loadPublicStats } from "@/lib/supabase/repository";
 import type { Product, Reel, Store as StoreType } from "@/types";
 
 export default function HomePage() {
   const { locale, products, stores, reels, productionMode, mergeProducts, resolveProduct } = useApp();
-  const t = copy[locale];
   const Arrow = locale === "ar" ? ArrowLeft : ArrowRight;
   const activeStores = stores.filter((store) => (store.status ?? "active") === "active");
   const activeStoreIds = new Set(activeStores.map((store) => store.id));
@@ -122,18 +119,6 @@ export default function HomePage() {
     { icon: Sparkles, label: "Responsible AI" },
   ];
 
-  const pillars = locale === "ar" ? [
-    { icon: PlayCircle, title: "اكتشاف يقود إلى الشراء", text: "ريلز مرتبطة مباشرة بالمنتج والسعر والمتجر، بدل فصل المحتوى عن المبيعات." },
-    { icon: ShieldCheck, title: "ثقة قبل النمو", text: "توثيق المتاجر، مراجعة المحتوى، وصلاحيات واضحة للإدارة والتاجر والمتسوّق." },
-    { icon: BarChart3, title: "تشغيل مبني على البيانات", text: "طلبات ومخزون ورسائل وأداء محتوى داخل لوحة واحدة قابلة للقياس." },
-    { icon: Sparkles, title: "ذكاء اصطناعي مسؤول", text: "محتوى واقتراحات وتحليل أداء مع مراجعة بشرية قبل النشر." },
-  ] : [
-    { icon: PlayCircle, title: "Discovery that converts", text: "Reels connect directly to products, prices and stores instead of separating content from commerce." },
-    { icon: ShieldCheck, title: "Trust before scale", text: "Store verification, content moderation and clear permissions for admins, merchants and shoppers." },
-    { icon: BarChart3, title: "Data-led operations", text: "Orders, inventory, messaging and content performance inside one measurable workspace." },
-    { icon: Sparkles, title: "Responsible AI", text: "Content, recommendations and performance analysis with human review before publishing." },
-  ];
-
   const readiness = locale === "ar" ? [
     { icon: Languages, title: "تجربة متعددة اللغات", text: "عربية أصلية باتجاه RTL وإنجليزية باتجاه LTR، مع أساس لإضافة أسواق ولغات جديدة." },
     { icon: LockKeyhole, title: "أمان على مستوى البيانات", text: "مصادقة وصلاحيات وقواعد عزل للبيانات، مع مسار دفع يعيد حساب الأسعار من قاعدة البيانات." },
@@ -184,8 +169,6 @@ export default function HomePage() {
       <div className="metrics-track-set" aria-hidden="true">{metrics.map(({ icon: Icon, label }, index) => <div className="metrics-chip" key={`metric-b-${index}`}><span className="metrics-chip-icon"><Icon /></span><span>{label}</span></div>)}</div>
     </div></div></section>
 
-    <section className="section container"><div className="section-head"><div><span className="eyebrow">COMMERCE ENGINE</span><h2>{locale === "ar" ? "أربعة عناصر تبني منصة تُستخدم وتُوثق وتكبر." : "Four foundations for a platform people use, trust and grow with."}</h2><p>{locale === "ar" ? "الانتشار لا يبدأ بإضافة مزايا كثيرة؛ يبدأ بتجربة واضحة، ثقة قوية، تشغيل قابل للقياس، وذكاء يخدم قرار الشراء." : "Scale does not start with feature volume. It starts with clarity, trust, measurable operations and intelligence that supports buying decisions."}</p></div></div><div className="platform-pillars">{pillars.map(({ icon: Icon, title, text }) => <article className="pillar-card" key={title}><span><Icon /></span><h3>{title}</h3><p>{text}</p></article>)}</div></section>
-
     {discoverProducts.length > 0 && <section className="section section-soft"><div className="container"><div className="section-head"><div><span className="eyebrow">FEATURED PICKS</span><h2>{locale === "ar" ? "منتجات مختارة تستحق نظرة سريعة." : "Featured products worth a quick look."}</h2></div><Link href={`/${locale}/marketplace`}>{locale === "ar" ? "عرض كل المنتجات" : "View all products"}<Arrow /></Link></div><div className="product-strip-showcase">{discoverProducts.slice(0, 6).map((product) => { const store = activeStores.find((item) => item.id === product.storeId); return <Link className="product-strip-link" key={product.id} href={`/${locale}/product/${product.id}`}>
       <span className="product-strip-thumb"><PersistentImage className="media-fill" src={product.image} alt={locale === "ar" ? product.name : product.nameEn} optimized sizes="56px" /></span>
       <span className="product-strip-body"><strong>{locale === "ar" ? product.name : product.nameEn}</strong>{store && <span>{locale === "ar" ? store.name : store.nameEn}</span>}</span>
@@ -201,7 +184,5 @@ export default function HomePage() {
     <section className="section section-dark"><div className="container"><div className="section-head global-head"><div><span className="eyebrow">GLOBAL FOUNDATION</span><h2>{locale === "ar" ? "أساس تقني وتسويقي جاهز للانتقال من سوق محلي إلى أسواق متعددة." : "A technical and commercial foundation for moving from one market to many."}</h2><p>{locale === "ar" ? "التوسع العالمي يحتاج تكاملات محلية لكل بلد، لكن المنصة الآن تملك الطبقات الأساسية التي تمنع إعادة البناء من الصفر." : "Global expansion still requires local integrations per country, but the platform now has the core layers that avoid rebuilding from scratch."}</p></div></div><div className="global-readiness">{readiness.map(({ icon: Icon, title, text }) => <article className="readiness-card" key={title}><Icon /><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
 
     <section className="section container"><div className="merchant-buyer-grid"><article className="journey-card journey-card-merchant"><span className="journey-card-ambient" aria-hidden="true" /><Store className="journey-card-glyph" aria-hidden="true" /><span className="journey-card-icon"><Store /></span><span className="eyebrow">FOR MERCHANTS</span><h2>{locale === "ar" ? "شغّل متجرك من مساحة واحدة." : "Operate your store from one workspace."}</h2><p>{locale === "ar" ? "أضف المنتجات، أنشئ المحتوى، تابع الطلبات والمخزون والرسائل، وراجع الأداء دون أدوات متفرقة." : "Manage products, content, orders, inventory, messages and performance without fragmented tools."}</p><Link className="journey-card-cta" href={`/${locale}/contact`}>{locale === "ar" ? "ابدأ كتاجر" : "Start as a merchant"}<Arrow /></Link></article><article className="journey-card journey-card-accent"><span className="journey-card-ambient" aria-hidden="true" /><ShoppingBag className="journey-card-glyph" aria-hidden="true" /><span className="journey-card-icon"><ShoppingBag /></span><span className="eyebrow">FOR SHOPPERS</span><h2>{locale === "ar" ? "اكتشف بثقة واشترِ بسرعة." : "Discover with confidence and buy faster."}</h2><p>{locale === "ar" ? "تصفح السوق أو الريلز، احفظ ما يعجبك، تواصل مع المتجر، وتابع الطلب داخل المنصة." : "Browse the marketplace or reels, save favorites, message stores and track orders in one place."}</p><Link className="journey-card-cta" href={`/${locale}/marketplace`}>{locale === "ar" ? "ابدأ التسوق" : "Start shopping"}<Arrow /></Link></article></div></section>
-
-    <section className="section container"><div className="cta-panel"><Sparkles className="cta-panel-glyph" aria-hidden="true" /><div><span className="eyebrow">START SELLING</span><h2>{locale === "ar" ? "ابنِ متجرك، اختبر السوق، ثم توسّع بالبيانات." : "Build your store, validate the market, then scale with data."}</h2><p>{locale === "ar" ? "ابدأ بالمنتجات والريلز والطلبات، ثم أضف تكاملات السوق المستهدف وفق نتائج حقيقية." : "Start with products, reels and orders, then add market-specific integrations based on real results."}</p></div><Link className="button button-light button-large cta-button" href={`/${locale}/contact`}>{t.start}<Arrow /></Link></div></section>
   </PublicShell>;
 }
