@@ -1,12 +1,14 @@
 "use client";
 
-import { Check, Copy, LoaderCircle, ShieldCheck } from "lucide-react";
+import { Check, Copy, LoaderCircle, MapPin, ShieldCheck } from "lucide-react";
 import { FormEvent, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { MediaUploader } from "./media-uploader";
 import { useApp } from "@/providers/app-provider";
-import type { PaymentMethod } from "@/types";
+import { DELIVERY_ZONES, deliveryZoneLabel } from "@/lib/store-website";
+import { formatMoney } from "@/lib/utils";
+import type { DeliveryZone, PaymentMethod, Store } from "@/types";
 
 const TRANSFER_NUMBER = "0567954507";
 const TRANSFER_NAME = "محمد منسي";
@@ -19,6 +21,7 @@ function checkoutErrorMessage(error: unknown, locale: "ar" | "en") {
     INVALID_ADDRESS: ["أدخل عنوانًا أكثر تفصيلًا.", "Enter a more detailed address."],
     NOTES_TOO_LONG: ["الملاحظات طويلة جدًا.", "The notes are too long."],
     INVALID_PAYMENT_METHOD: ["اختر طريقة الدفع.", "Choose a payment method."],
+    INVALID_DELIVERY_ZONE: ["اختر منطقة التوصيل.", "Choose a delivery area."],
     PAYMENT_PROOF_REQUIRED: ["أرفق صورة إشعار التحويل.", "Attach a screenshot of the transfer receipt."],
     INVALID_CART: ["السلة غير صالحة. حدّث الصفحة وحاول مجددًا.", "The cart is invalid. Refresh and try again."],
     PRODUCT_UNAVAILABLE: ["أحد المنتجات لم يعد متاحًا.", "One of the products is no longer available."],
@@ -31,7 +34,7 @@ function checkoutErrorMessage(error: unknown, locale: "ar" | "en") {
   return locale === "ar" ? "تعذر تأكيد الطلب حاليًا. حاول مرة أخرى." : "Unable to place the order right now. Please try again.";
 }
 
-export function CheckoutForm() {
+export function CheckoutForm({ zone, onZoneChange, store }: { zone: DeliveryZone | ""; onZoneChange: (zone: DeliveryZone) => void; store?: Store }) {
   const { locale, cart, currentUser, createOrder, toast } = useApp();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -52,6 +55,7 @@ export function CheckoutForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!cart.length) { router.push(`/${locale}/cart`); return; }
+    if (!zone) { toast(locale === "ar" ? "اختر منطقة التوصيل" : "Choose a delivery area", "error"); return; }
     if (!method) { toast(locale === "ar" ? "اختر طريقة الدفع" : "Choose a payment method", "error"); return; }
     if (!proofUrl) { toast(locale === "ar" ? "أرفق صورة إشعار التحويل قبل تأكيد الطلب" : "Attach a screenshot of the transfer receipt before confirming", "error"); return; }
     const form = new FormData(event.currentTarget);
@@ -64,6 +68,7 @@ export function CheckoutForm() {
         notes: String(form.get("notes") ?? "").trim() || undefined,
         paymentMethod: method,
         paymentProofUrl: proofUrl,
+        deliveryZone: zone || undefined,
       });
       router.push(`/${locale}/order/${order.id}`);
     } catch (error) {
@@ -82,6 +87,16 @@ export function CheckoutForm() {
         <label className="field"><span>{locale === "ar" ? "رقم الهاتف" : "Phone number"}</span><input name="phone" type="tel" required minLength={7} maxLength={30} autoComplete="tel" defaultValue={currentUser?.phone} pattern="[0-9+() -]{7,30}" inputMode="tel" /></label>
       </div>
       <label className="field"><span>{locale === "ar" ? "العنوان بالتفصيل" : "Full address"}</span><textarea name="address" rows={4} required minLength={8} maxLength={500} autoComplete="street-address" placeholder={locale === "ar" ? "المدينة، الحي، الشارع، أقرب نقطة دالة" : "City, area, street and nearest landmark"} /></label>
+      <div className="field">
+        <span>{locale === "ar" ? "منطقة التوصيل" : "Delivery area"}</span>
+        <div className="delivery-zone-grid">
+          {DELIVERY_ZONES.map((item) => <button type="button" key={item} className={`delivery-zone-option ${zone === item ? "is-active" : ""}`} onClick={() => onZoneChange(item)} aria-pressed={zone === item}>
+            <MapPin />
+            <span>{deliveryZoneLabel(item, locale)}</span>
+            <strong>{formatMoney(Math.max(0, store?.deliveryFees?.[item] ?? 0), locale)}</strong>
+          </button>)}
+        </div>
+      </div>
       <label className="field"><span>{locale === "ar" ? "ملاحظات اختيارية" : "Optional notes"}</span><textarea name="notes" rows={3} maxLength={1000} /></label>
     </div>
 

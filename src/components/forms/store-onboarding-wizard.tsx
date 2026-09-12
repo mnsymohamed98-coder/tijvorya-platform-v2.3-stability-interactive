@@ -7,10 +7,10 @@ import { useState } from "react";
 import { MediaUploader } from "./media-uploader";
 import { StoreThemeEditor } from "./store-theme-editor";
 import { normalizeStoreTheme } from "@/lib/store-theme";
-import { businessCategoryOptions, isReservedStoreSlug, merchantDomain, merchantStoreHref, normalizeStoreWebsiteProfile } from "@/lib/store-website";
+import { businessCategoryOptions, DELIVERY_ZONES, deliveryZoneLabel, isReservedStoreSlug, merchantDomain, merchantStoreHref, normalizeStoreWebsiteProfile } from "@/lib/store-website";
 import { useApp } from "@/providers/app-provider";
 import { safeNumber, slugify, uid } from "@/lib/utils";
-import type { Store, StoreTheme, StoreWebsiteProfile } from "@/types";
+import type { DeliveryZone, Store, StoreTheme, StoreWebsiteProfile } from "@/types";
 
 type Draft = {
   name: string;
@@ -30,7 +30,7 @@ type Draft = {
   openingHours: string;
   shippingAreas: string;
   returnPolicy: string;
-  deliveryFee: string;
+  deliveryFees: Record<DeliveryZone, string>;
   about: string;
   aboutEn: string;
   instagram: string;
@@ -75,7 +75,7 @@ export function StoreOnboardingWizard() {
     openingHours: website.openingHours,
     shippingAreas: website.shippingAreas,
     returnPolicy: website.returnPolicy,
-    deliveryFee: String(current?.deliveryFee ?? 0),
+    deliveryFees: Object.fromEntries(DELIVERY_ZONES.map((zone) => [zone, String(current?.deliveryFees?.[zone] ?? 0)])) as Record<DeliveryZone, string>,
     about: website.about,
     aboutEn: website.aboutEn,
     instagram: website.instagram ?? "",
@@ -87,6 +87,10 @@ export function StoreOnboardingWizard() {
 
   function patch<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((previous) => ({ ...previous, [key]: value }));
+  }
+
+  function patchDeliveryFee(zone: DeliveryZone, value: string) {
+    setDraft((previous) => ({ ...previous, deliveryFees: { ...previous.deliveryFees, [zone]: value } }));
   }
 
   const steps = locale === "ar"
@@ -207,7 +211,7 @@ export function StoreOnboardingWizard() {
         status: current?.status === "suspended" ? "suspended" : "active",
         phone: draft.phone.trim(),
         whatsapp: draft.whatsapp.trim(),
-        deliveryFee: Math.max(0, safeNumber(draft.deliveryFee)),
+        deliveryFees: Object.fromEntries(DELIVERY_ZONES.map((zone) => [zone, Math.max(0, safeNumber(draft.deliveryFees[zone]))])),
         themeColor: theme.accentColor,
         theme,
         website: profile,
@@ -252,7 +256,7 @@ export function StoreOnboardingWizard() {
     status: "active",
     phone: draft.phone,
     whatsapp: draft.whatsapp,
-    deliveryFee: safeNumber(draft.deliveryFee),
+    deliveryFees: Object.fromEntries(DELIVERY_ZONES.map((zone) => [zone, safeNumber(draft.deliveryFees[zone])])),
     theme,
   };
   const generatedSlug = slugify(draft.slug || draft.name || "my-store");
@@ -306,7 +310,7 @@ export function StoreOnboardingWizard() {
           <label className="field"><span>{locale === "ar" ? "مناطق التوصيل" : "Delivery areas"} *</span><input value={draft.shippingAreas} onChange={(event) => patch("shippingAreas", event.target.value)} placeholder={locale === "ar" ? "غزة، الوسطى، خانيونس" : "City center, North district, ..."} /></label>
         </div>
         <div className="form-grid two">
-          <label className="field"><span>{locale === "ar" ? "رسوم التوصيل الافتراضية" : "Default delivery fee"}</span><input type="number" min="0" value={draft.deliveryFee} onChange={(event) => patch("deliveryFee", event.target.value)} /></label>
+          {DELIVERY_ZONES.map((zone) => <label className="field" key={zone}><span>{locale === "ar" ? `رسوم التوصيل - ${deliveryZoneLabel(zone, locale)}` : `Delivery fee - ${deliveryZoneLabel(zone, locale)}`}</span><input type="number" min="0" value={draft.deliveryFees[zone]} onChange={(event) => patchDeliveryFee(zone, event.target.value)} /></label>)}
           <label className="field"><span>{locale === "ar" ? "سياسة الاستبدال والإرجاع" : "Returns & exchanges policy"} *</span><textarea rows={4} value={draft.returnPolicy} onChange={(event) => patch("returnPolicy", event.target.value)} placeholder={locale === "ar" ? "مثال: الاستبدال خلال 7 أيام للمنتج غير المستخدم..." : "Example: Exchanges within 7 days for unused products..."} /></label>
         </div>
       </section>}

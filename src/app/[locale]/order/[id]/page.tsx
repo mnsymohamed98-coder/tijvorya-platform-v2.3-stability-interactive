@@ -8,7 +8,7 @@ import { CheckoutShell } from "@/components/layout/checkout-shell";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useApp } from "@/providers/app-provider";
 import { formatMoney } from "@/lib/utils";
-import { whatsappHref } from "@/lib/store-website";
+import { deliveryZoneLabel, whatsappHref } from "@/lib/store-website";
 import { WhatsAppBrandIcon } from "@/components/ui/social-brand-icons";
 import type { Locale, Order, Product } from "@/types";
 
@@ -76,7 +76,7 @@ export default function OrderPage() {
         <aside className="order-summary detail">
           <h3>{locale === "ar" ? "تفاصيل الطلب" : "Order details"}</h3>
           {order.items.map((item, index) => <div key={`${item.productId}-${index}`}><span>{item.name} × {item.quantity}{item.variant ? ` · ${item.variant}` : ""}</span><strong>{formatMoney(item.unitPrice * item.quantity, locale)}</strong></div>)}
-          <div><span>{locale === "ar" ? "التوصيل" : "Delivery"}</span><strong>{formatMoney(order.deliveryFee ?? 0, locale)}</strong></div>
+          <div><span>{locale === "ar" ? "التوصيل" : "Delivery"}{order.deliveryZone ? ` · ${deliveryZoneLabel(order.deliveryZone, locale)}` : ""}</span><strong>{formatMoney(order.deliveryFee ?? 0, locale)}</strong></div>
           <div className="summary-total"><span>{locale === "ar" ? "الإجمالي" : "Total"}</span><strong>{formatMoney(order.total, locale)}</strong></div>
           <p><Truck />{order.address}</p><p><PackageCheck />{order.customerName} · {order.phone}</p>
         </aside>

@@ -1,4 +1,16 @@
-import type { Locale, StoreWebsiteProfile } from "@/types";
+import type { DeliveryZone, Locale, StoreWebsiteProfile } from "@/types";
+
+export const DELIVERY_ZONES: readonly DeliveryZone[] = ["gaza", "central", "khanYounis"];
+
+const DELIVERY_ZONE_LABELS: Record<DeliveryZone, [string, string]> = {
+  gaza: ["غزة", "Gaza"],
+  central: ["الوسطى", "Central Gaza"],
+  khanYounis: ["خانيونس", "Khan Younis"],
+};
+
+export function deliveryZoneLabel(zone: DeliveryZone, locale: Locale = "ar") {
+  return DELIVERY_ZONE_LABELS[zone][locale === "ar" ? 0 : 1];
+}
 
 export const defaultStoreWebsiteProfile: StoreWebsiteProfile = {
   onboardingCompleted: false,

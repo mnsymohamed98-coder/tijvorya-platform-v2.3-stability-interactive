@@ -107,7 +107,7 @@ type AppContextValue = PersistedState & {
   sendMessage: (conversationId: string, text: string) => Promise<void>;
   markConversationRead: (conversationId: string, audience: "merchant" | "customer") => Promise<void>;
   setConversationStatus: (conversationId: string, status: Conversation["status"]) => Promise<void>;
-  createOrder: (input: Pick<Order, "customerName" | "phone" | "address" | "notes" | "paymentMethod" | "paymentProofUrl">) => Promise<Order>;
+  createOrder: (input: Pick<Order, "customerName" | "phone" | "address" | "notes" | "paymentMethod" | "paymentProofUrl" | "deliveryZone">) => Promise<Order>;
   updateOrderStatus: (id: string, status: Order["status"]) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   moderateReel: (id: string, status: Reel["status"], input?: ModerateInput) => Promise<void>;
@@ -738,8 +738,9 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     toast(locale === "ar" ? (status === "closed" ? "تم إغلاق المحادثة" : "تمت إعادة فتح المحادثة") : (status === "closed" ? "Conversation closed" : "Conversation reopened"), "info");
   }, [state.conversations, state.currentUser, state.stores, productionMode, appendAudit, toast, locale]);
 
-  const createOrder = useCallback(async (input: Pick<Order, "customerName" | "phone" | "address" | "notes" | "paymentMethod" | "paymentProofUrl">) => {
+  const createOrder = useCallback(async (input: Pick<Order, "customerName" | "phone" | "address" | "notes" | "paymentMethod" | "paymentProofUrl" | "deliveryZone">) => {
     if (state.cart.length === 0) throw new Error(locale === "ar" ? "السلة فارغة" : "Cart is empty");
+    if (!input.deliveryZone) throw new Error(locale === "ar" ? "اختر منطقة التوصيل" : "Choose a delivery area");
     const storeIds = new Set<string>();
     const items: Array<{ productId: string; name: string; quantity: number; unitPrice: number; variant?: string }> = [];
     for (const cartItem of state.cart) {
@@ -756,7 +757,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     const store = state.stores.find((item) => item.id === storeId);
     if (!store || (store.status ?? "active") !== "active") throw new Error(locale === "ar" ? "المتجر غير متاح لاستقبال الطلبات حاليًا." : "The store is not currently accepting orders.");
     const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-    const deliveryFee = Math.max(0, store.deliveryFee ?? 0);
+    const deliveryFee = Math.max(0, store.deliveryFees?.[input.deliveryZone] ?? 0);
     let order: Order = {
       id: `TJV-${uid("checkout").replace(/[^a-zA-Z0-9]/g, "").slice(-12).toUpperCase()}`, storeId, customerId: state.currentUser?.id,
       ...input, status: "pending", subtotal, deliveryFee, total: subtotal + deliveryFee, items, createdAt: new Date().toISOString(),

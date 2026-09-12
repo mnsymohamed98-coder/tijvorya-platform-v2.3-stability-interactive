@@ -10,6 +10,7 @@ export type StoreHeroStyle = "cover" | "split" | "minimal";
 export type StoreLayout = "grid" | "editorial";
 export type StoreFont = "system" | "rounded" | "serif";
 export type StoreButtonStyle = "solid" | "outline" | "pill";
+export type DeliveryZone = "gaza" | "central" | "khanYounis";
 export type ConversationStatus = "open" | "closed";
 export type MessageSenderRole = "customer" | "merchant" | "admin";
 export type OrderStatus =
@@ -86,7 +87,7 @@ export interface Store {
   status?: StoreStatus;
   phone?: string;
   whatsapp?: string;
-  deliveryFee?: number;
+  deliveryFees?: Partial<Record<DeliveryZone, number>>;
   themeColor?: string;
   theme?: StoreTheme;
   website?: StoreWebsiteProfile;
@@ -191,6 +192,7 @@ export interface Order {
   notes?: string;
   status: OrderStatus;
   subtotal?: number;
+  deliveryZone?: DeliveryZone;
   deliveryFee?: number;
   total: number;
   items: OrderItem[];
