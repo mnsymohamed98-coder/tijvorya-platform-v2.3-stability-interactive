@@ -24,7 +24,7 @@ export function SiteFooter({ locale }: { locale: "ar" | "en" }) {
         <div className="footer-social">{socialLinks.map((social) => <a key={social.name} href={social.href} aria-label={social.name} target="_blank" rel="noopener noreferrer">{social.icon}</a>)}</div>
       </div>
       <div><strong>{locale === "ar" ? "اكتشف" : "Discover"}</strong><Link href={`/${locale}/marketplace`}>{locale === "ar" ? "السوق" : "Marketplace"}</Link><Link href={`/${locale}/reels`}>{locale === "ar" ? "الريلز" : "Reels"}</Link></div>
-      <div><strong>{locale === "ar" ? "الشركة" : "Company"}</strong><Link href={`/${locale}/about`}>{locale === "ar" ? "من نحن" : "About"}</Link><Link href={`/${locale}/contact`}>{locale === "ar" ? "تواصل معنا" : "Contact"}</Link><Link href={`/${locale}/contact`}>{locale === "ar" ? "افتح متجرك" : "Open a store"}</Link></div>
+      <div><strong>{locale === "ar" ? "الشركة" : "Company"}</strong><Link href={`/${locale}/about`}>{locale === "ar" ? "من نحن" : "About"}</Link><Link href={`/${locale}/contact`}>{locale === "ar" ? "تواصل معنا" : "Contact"}</Link></div>
       <div><strong>{locale === "ar" ? "الثقة" : "Trust"}</strong><Link href={`/${locale}/privacy`}>{locale === "ar" ? "الخصوصية" : "Privacy"}</Link><Link href={`/${locale}/terms`}>{locale === "ar" ? "الشروط" : "Terms"}</Link><Link href={`/${locale}/login`}>{locale === "ar" ? "تسجيل الدخول" : "Sign in"}</Link></div>
     </div>
     <div className="container footer-bottom"><span>© {new Date().getFullYear()} Tijvorya</span><span>{locale === "ar" ? "تجارة اجتماعية موثوقة، مصممة للنمو عبر الأسواق." : "Trusted social commerce, designed to grow across markets."}</span><span>{locale === "ar" ? "المؤسس والرئيس التنفيذي: Mohammed Mansi" : "Founder & CEO: Mohammed Mansi"}</span></div>
