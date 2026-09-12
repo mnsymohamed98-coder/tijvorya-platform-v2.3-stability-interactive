@@ -162,7 +162,7 @@ export default function StorePage() {
 
     {storeReels.length > 0 && <section id="store-reels" className="merchant-site-section merchant-site-shell">
       <div className="merchant-section-heading"><div><span>REELS</span><h2>{locale === "ar" ? "شاهد المنتجات أثناء الاستخدام" : "See products in motion"}</h2></div><Link href={`/${locale}/reels`}>{locale === "ar" ? "مشاهدة الريلز" : "Watch reels"}<ArrowUpRight /></Link></div>
-      <div className="merchant-reel-grid">{storeReels.map((item) => <Link key={item.id} href={`/${locale}/reels?reel=${encodeURIComponent(item.id)}`}><div><PersistentImage className="media-fill" src={item.cover} alt={locale === "ar" ? item.caption : item.captionEn} optimized sizes="(max-width: 780px) 100vw, (max-width: 1050px) 50vw, 25vw" /><span>{item.views.toLocaleString()} {locale === "ar" ? "مشاهدة" : "views"}</span></div><strong>{locale === "ar" ? item.caption : item.captionEn}</strong></Link>)}</div>
+      <div className="merchant-reel-grid">{storeReels.map((item) => <Link key={item.id} href={`/${locale}/reels?reel=${encodeURIComponent(item.id)}`}><div><PersistentImage className="media-fill" src={item.cover} alt={locale === "ar" ? item.caption : item.captionEn} optimized sizes="(max-width: 780px) 100vw, (max-width: 1050px) 50vw, 25vw" /><span>{item.views.toLocaleString()} {locale === "ar" ? "مشاهدة" : "views"}</span></div></Link>)}</div>
     </section>}
 
     <section className="merchant-story-section">
