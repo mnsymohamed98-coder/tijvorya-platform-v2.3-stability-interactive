@@ -1,13 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
-import { InstagramIcon, LinkedInIcon, TikTokIcon, XIcon } from "./social-icons";
+import { FacebookIcon, InstagramIcon, TikTokIcon } from "./social-icons";
 
 const socialLinks = [
-  { name: "Instagram", href: "#", icon: <InstagramIcon /> },
-  { name: "TikTok", href: "#", icon: <TikTokIcon /> },
-  { name: "X", href: "#", icon: <XIcon /> },
-  { name: "LinkedIn", href: "#", icon: <LinkedInIcon /> },
+  { name: "Instagram", href: "https://www.instagram.com/tijvorya_?stkn=MXQ2ZGI2NzBxeGVyNg==", icon: <InstagramIcon /> },
+  { name: "TikTok", href: "https://www.tiktok.com/@tijvorya?_r=1&_t=ZS-99dhSlzTUjl", icon: <TikTokIcon /> },
+  { name: "Facebook", href: "https://www.facebook.com/share/1FisCR83dX/", icon: <FacebookIcon /> },
 ] as const;
 
 export function SiteFooter({ locale }: { locale: "ar" | "en" }) {

@@ -12,17 +12,8 @@ export function TikTokIcon() {
   </svg>;
 }
 
-export function XIcon() {
+export function FacebookIcon() {
   return <svg viewBox="0 0 24 24" fill="currentColor">
-    <path d="M4 3h4.2l4 5.6L16.8 3H20l-6.3 7.6L20.4 21h-4.2l-4.3-6.1L6.8 21H3.5l6.8-8.1L4 3z" />
-  </svg>;
-}
-
-export function LinkedInIcon() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="3" />
-    <path d="M7.7 10.2v6.3" />
-    <circle cx="7.7" cy="7.4" r="0.4" fill="currentColor" />
-    <path d="M11.5 16.5v-3.7c0-1.4.9-2.3 2.2-2.3s2 .9 2 2.3v3.7M11.5 10.2v6.3" />
+    <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z" />
   </svg>;
 }
