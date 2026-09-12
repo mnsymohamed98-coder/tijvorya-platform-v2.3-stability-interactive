@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -35,6 +36,7 @@ import type { Product, Reel, Store as StoreType } from "@/types";
 
 export default function HomePage() {
   const { locale, products, stores, reels, productionMode, mergeProducts, resolveProduct } = useApp();
+  const router = useRouter();
   const Arrow = locale === "ar" ? ArrowLeft : ArrowRight;
   const activeStores = stores.filter((store) => (store.status ?? "active") === "active");
   const activeStoreIds = new Set(activeStores.map((store) => store.id));
@@ -148,8 +150,8 @@ export default function HomePage() {
         <div className="hero-visual-shell">
           <div className="hero-visual-panel hero-visual-panel-top"><Sparkles />
             <div>
-              <strong>{locale === "ar" ? "واجهة موحّدة للتاجر" : "Unified merchant workspace"}</strong>
-              <span>{locale === "ar" ? "منتجات، طلبات، ريلز، وتحليلات داخل تجربة واحدة" : "Products, orders, reels and analytics in one experience"}</span>
+              <strong>{locale === "ar" ? "وجهتك الأولى للتسوق" : "Your first shopping destination"}</strong>
+              <span>{locale === "ar" ? "منتجات صُممت لتميزك، بأفضل جودة وأنسب سعر." : "Products designed to make you stand out, with the best quality and price."}</span>
             </div>
           </div>
           <div className="hero-dashboard-stage">
@@ -157,8 +159,8 @@ export default function HomePage() {
           </div>
           <div className="hero-visual-panel hero-visual-panel-bottom"><ShoppingBag />
             <div>
-              <strong>{locale === "ar" ? "متجر رسمي جاهز للإطلاق" : "Launch-ready official storefront"}</strong>
-              <span>{locale === "ar" ? "هوية بصرية، دومين مستقل، وتجربة شراء احترافية" : "Brand identity, unique domain and a professional buying experience"}</span>
+              <strong>{locale === "ar" ? "تسوق بكل ثقة وسهولة" : "Shop with confidence and ease"}</strong>
+              <span>{locale === "ar" ? "آلاف المنتجات الحصرية، مع ضمان الشراء وتجربة مريحة." : "Thousands of exclusive products, with a purchase guarantee and a comfortable experience."}</span>
             </div>
           </div>
         </div>
@@ -180,7 +182,7 @@ export default function HomePage() {
 
     {previewStores.length > 0 && <section className="section section-soft"><div className="container"><div className="section-head"><div><span className="eyebrow">READY STORES</span><h2>{locale === "ar" ? "متاجر جاهزة بواجهة رسمية وهوية واضحة." : "Launch-ready stores with a clear and official identity."}</h2><p>{locale === "ar" ? "بدل بطاقات كبيرة مزدحمة، تظهر المتاجر الجاهزة هنا بهوية الشعار والدومين الخاص بها في ترتيب أنظف وأكثر احترافية." : "Instead of heavy promotional cards, launched stores are presented here through their logo identity and unique domain in a cleaner, more professional layout."}</p></div><Link href={`/${locale}/stores`}>{locale === "ar" ? "استكشف جميع المتاجر" : "Explore all stores"}<Arrow /></Link></div><div className="store-carousel">{previewStores.slice(0, 8).map((store) => <StoreCard key={store.id} store={store} locale={locale} />)}</div></div></section>}
 
-    <section className="section container"><div className="feature-editorial"><div className="feature-copy"><span className="eyebrow">SHOPPABLE REELS</span><h2>{locale === "ar" ? "المشاهدة بداية رحلة الطلب، وليست نهايتها." : "Watching starts the order journey instead of ending it."}</h2><p>{locale === "ar" ? "تجربة فيديو عمودية مرتبطة بالمنتج والسعر والمتجر، مع إضافة للسلة دون مغادرة المحتوى." : "A vertical video experience connected to the product, price and store, with cart actions without leaving the content."}</p><ul><li><Film />{locale === "ar" ? "تغذية ريلز شخصية قابلة للتطوير" : "A personalizable reels feed"}</li><li><ShoppingBag />{locale === "ar" ? "شراء مباشر من الفيديو" : "Direct purchase from video"}</li><li><ShieldCheck />{locale === "ar" ? "مراجعة إدارية قبل النشر" : "Moderation before publishing"}</li></ul><Link className="button button-dark" href={`/${locale}/reels`}>{locale === "ar" ? "افتح صفحة الريلز" : "Open reels"}<Arrow /></Link></div><div className="feature-phone"><div className="phone-screen">{featuredReel ? <PersistentVideo src={featuredReel.videoUrl} poster={featuredReel.cover} muted loop autoPlay playsInline /> : <div className="phone-empty"><Film /><span>{locale === "ar" ? "لا توجد ريلز منشورة بعد" : "No published reels yet"}</span></div>}<div className="phone-overlay"><span>Tijvorya Reels</span>{featuredProduct && <strong>{locale === "ar" ? featuredProduct.name : featuredProduct.nameEn}</strong>}<button type="button"><ShoppingBag />{locale === "ar" ? "أضف للسلة" : "Add to cart"}</button></div></div></div></div></section>
+    <section className="section container"><div className="feature-editorial"><div className="feature-copy"><span className="eyebrow">SHOPPABLE REELS</span><h2>{locale === "ar" ? "المشاهدة بداية رحلة الطلب، وليست نهايتها." : "Watching starts the order journey instead of ending it."}</h2><p>{locale === "ar" ? "تجربة فيديو عمودية مرتبطة بالمنتج والسعر والمتجر، مع إضافة للسلة دون مغادرة المحتوى." : "A vertical video experience connected to the product, price and store, with cart actions without leaving the content."}</p><ul><li><Film />{locale === "ar" ? "تغذية ريلز شخصية قابلة للتطوير" : "A personalizable reels feed"}</li><li><ShoppingBag />{locale === "ar" ? "شراء مباشر من الفيديو" : "Direct purchase from video"}</li><li><ShieldCheck />{locale === "ar" ? "مراجعة إدارية قبل النشر" : "Moderation before publishing"}</li></ul><Link className="button button-dark" href={`/${locale}/reels`}>{locale === "ar" ? "افتح صفحة الريلز" : "Open reels"}<Arrow /></Link></div><div className="feature-phone"><div className="phone-screen" role="link" tabIndex={0} onClick={() => router.push(`/${locale}/reels`)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); router.push(`/${locale}/reels`); } }} aria-label={locale === "ar" ? "فتح صفحة الريلز" : "Open the reels page"}>{featuredReel ? <PersistentVideo src={featuredReel.videoUrl} poster={featuredReel.cover} muted loop autoPlay playsInline /> : <div className="phone-empty"><Film /><span>{locale === "ar" ? "لا توجد ريلز منشورة بعد" : "No published reels yet"}</span></div>}<div className="phone-overlay"><span>Tijvorya Reels</span>{featuredProduct && <strong>{locale === "ar" ? featuredProduct.name : featuredProduct.nameEn}</strong>}<button type="button" onClick={(event) => event.stopPropagation()}><ShoppingBag />{locale === "ar" ? "أضف للسلة" : "Add to cart"}</button></div></div></div></div></section>
 
     <section className="section section-dark"><div className="container"><div className="section-head global-head"><div><span className="eyebrow">WHY TIJVORYA</span><h2>{locale === "ar" ? "أربعة أسباب تجعل متجرك يتفوق ويكبر معنا." : "Four reasons your store grows stronger with us."}</h2><p>{locale === "ar" ? "من أول نقرة وحتى تأكيد الطلب، صممنا كل تفصيلة لتمنحك تجربة أسرع، حضورًا أقوى، وتفوقًا حقيقيًا في السوق." : "From the first click to a confirmed order, every detail is built to give you a faster experience, a stronger presence, and a real edge in the market."}</p></div></div><div className="global-readiness">{readiness.map(({ icon: Icon, title, text }) => <article className="readiness-card" key={title}><span className="readiness-card-icon"><Icon /></span><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
 
