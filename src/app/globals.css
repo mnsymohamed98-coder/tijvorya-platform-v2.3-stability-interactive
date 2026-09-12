@@ -524,7 +524,17 @@ body *:not(svg):not(path){font-family:inherit}
 .store-card-cta{margin-top:2px;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:12px;background:color-mix(in srgb,var(--store-accent,var(--primary)) 8%,#fff);color:var(--store-accent,var(--primary));font-size:12px;font-weight:900}
 .store-card.store-card-logo:hover .store-card-cta{background:var(--store-accent,var(--primary));color:#fff;gap:9px}
 .store-card-cta svg{width:15px}
-.global-head h2{max-width:900px}.global-head p{color:#bac5d4}.global-readiness{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.readiness-card{border:1px solid #344054;border-radius:13px;padding:22px;min-height:230px}.readiness-card>svg{width:28px;height:28px;color:#7fb6ff}.readiness-card h3{font-size:17px;margin:18px 0 8px}.readiness-card p{color:#b8c2d2;font-size:12px;margin:0}
+.global-head h2{max-width:900px}.global-head p{color:#bac5d4}.global-readiness{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.readiness-card{position:relative;overflow:hidden;border:1px solid #344054;border-radius:16px;padding:26px;min-height:230px;background:linear-gradient(160deg,rgba(255,255,255,.04),transparent 60%);transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s ease,border-color .28s ease}
+.readiness-card:hover{transform:translateY(-6px);border-color:#4f7fd6;box-shadow:0 22px 48px rgba(0,0,0,.38)}
+.readiness-card-icon{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;box-shadow:0 10px 22px rgba(0,0,0,.28)}
+.readiness-card-icon svg{width:25px;height:25px;color:#fff}
+.readiness-card:nth-child(1) .readiness-card-icon{background:linear-gradient(155deg,#2563eb,#60a5fa)}
+.readiness-card:nth-child(2) .readiness-card-icon{background:linear-gradient(155deg,#7c3aed,#c084fc)}
+.readiness-card:nth-child(3) .readiness-card-icon{background:linear-gradient(155deg,#d97706,#fbbf24)}
+.readiness-card:nth-child(4) .readiness-card-icon{background:linear-gradient(155deg,#0f9d63,#34d399)}
+.readiness-card h3{font-size:18px;line-height:1.4;margin:20px 0 10px;color:#fff}
+.readiness-card p{color:#b8c2d2;font-size:13px;line-height:1.65;margin:0}
 .merchant-buyer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
 .journey-card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:20px;background:#fff;padding:38px;min-height:330px;display:flex;flex-direction:column;align-items:flex-start;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease,border-color .35s ease}
 .journey-card:hover{transform:translateY(-7px)}
