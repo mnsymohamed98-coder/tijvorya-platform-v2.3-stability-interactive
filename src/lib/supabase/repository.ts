@@ -1,14 +1,14 @@
-import type { AppUser, ChatMessage, Conversation, Order, PlatformSettings, Product, Reel, Store, StoreTheme, StoreWebsiteProfile } from "@/types";
-import { normalizeStoreWebsiteProfile } from "@/lib/store-website";
+import type { AppUser, ChatMessage, Conversation, DeliveryZone, Order, PlatformSettings, Product, Reel, Store, StoreTheme, StoreWebsiteProfile } from "@/types";
+import { DELIVERY_ZONES, normalizeStoreWebsiteProfile } from "@/lib/store-website";
 import { createClient, isSupabaseConfigured } from "./client";
 
 // Explicit column lists (instead of "*") so every workspace load only pulls
 // what the mapXxx() functions below actually read, cutting payload size.
-const STORE_COLUMNS = "id,owner_id,slug,name,name_en,description,description_en,logo_url,cover_url,rating,verified,city,completion,status,phone,whatsapp,delivery_fee,theme_color,theme,website";
+const STORE_COLUMNS = "id,owner_id,slug,name,name_en,description,description_en,logo_url,cover_url,rating,verified,city,completion,status,phone,whatsapp,delivery_fees,theme_color,theme,website";
 const PRODUCT_COLUMNS = "id,store_id,name,name_en,description,description_en,price,compare_at_price,stock,category,image_url,images,status,rating,variants,featured";
 const REEL_COLUMNS = "id,store_id,product_id,caption,caption_en,video_url,cover_url,status,views,likes,comments_count,created_at,submitted_at,rejection_reason,reviewed_at,reviewed_by,hashtags,best_post_time,ai_score,ai_suggestions,watch_time_seconds,shares,saves,product_clicks,orders_attributed";
 const ORDER_ITEM_COLUMNS = "product_id,product_name,quantity,unit_price,variant";
-const ORDER_COLUMNS = `id,store_id,customer_id,customer_name,phone,address,notes,status,subtotal,delivery_fee,total,payment_method,payment_proof_url,created_at,order_items(${ORDER_ITEM_COLUMNS})`;
+const ORDER_COLUMNS = `id,store_id,customer_id,customer_name,phone,address,notes,status,subtotal,delivery_zone,delivery_fee,total,payment_method,payment_proof_url,created_at,order_items(${ORDER_ITEM_COLUMNS})`;
 const PROFILE_COLUMNS = "id,full_name,email,role,admin_role,status,avatar,phone,created_at";
 const PLATFORM_SETTINGS_COLUMNS = "id,platform_name,support_email,maintenance_mode,merchant_registration_enabled,reel_moderation_required,max_reel_size_mb,commission_percent,ai_enabled,ai_product_writer_enabled,ai_reel_writer_enabled,ai_moderation_enabled,ai_daily_request_limit,messaging_enabled,updated_at";
 const CONVERSATION_COLUMNS = "id,store_id,customer_id,customer_name,customer_avatar,subject,product_id,order_id,status,unread_by_merchant,unread_by_customer,last_message_at,created_at";
@@ -412,6 +412,7 @@ export async function insertOrder(order: Order): Promise<Order> {
     p_items: order.items.map((item) => ({ productId: item.productId, quantity: item.quantity, variant: item.variant ?? null })),
     p_payment_method: order.paymentMethod ?? null,
     p_payment_proof_url: order.paymentProofUrl ?? null,
+    p_delivery_zone: order.deliveryZone ?? null,
   });
   if (error) throw error;
   if (!data || typeof data !== "object") throw new Error("Checkout did not return an order");
@@ -529,7 +530,7 @@ export async function upsertStore(store: Store) {
     description: store.description, description_en: store.descriptionEn, logo_url: store.logo, cover_url: store.cover,
     rating: store.rating, verified: store.verified, city: store.city, completion: store.completion,
     status: store.status ?? "active", phone: store.phone ?? null, whatsapp: store.whatsapp ?? null,
-    delivery_fee: store.deliveryFee ?? 0, theme_color: store.themeColor ?? store.theme?.accentColor ?? "#2f6fed", theme: store.theme ?? null,
+    delivery_fees: store.deliveryFees ?? {}, theme_color: store.themeColor ?? store.theme?.accentColor ?? "#2f6fed", theme: store.theme ?? null,
     website: normalizeStoreWebsiteProfile(store.website),
   });
   if (error) {
@@ -580,7 +581,7 @@ function mapOrder(row: Record<string, unknown>): Order {
   return {
     id: String(row.id), storeId: String(row.store_id), customerId: row.customer_id ? String(row.customer_id) : undefined,
     customerName: String(row.customer_name), phone: String(row.phone), address: String(row.address), notes: row.notes ? String(row.notes) : undefined,
-    status: row.status as Order["status"], subtotal: Number(row.subtotal ?? row.total), deliveryFee: Number(row.delivery_fee ?? 0), total: Number(row.total),
+    status: row.status as Order["status"], subtotal: Number(row.subtotal ?? row.total), deliveryZone: row.delivery_zone ? row.delivery_zone as Order["deliveryZone"] : undefined, deliveryFee: Number(row.delivery_fee ?? 0), total: Number(row.total),
     items: Array.isArray(row.order_items) ? row.order_items.map((item: Record<string, unknown>) => ({ productId: String(item.product_id), name: String(item.product_name), quantity: Number(item.quantity), unitPrice: Number(item.unit_price), variant: item.variant ? String(item.variant) : undefined })) : [],
     paymentMethod: row.payment_method ? row.payment_method as Order["paymentMethod"] : undefined,
     paymentProofUrl: row.payment_proof_url ? String(row.payment_proof_url) : undefined,
@@ -604,7 +605,7 @@ function mapStore(row: Record<string, unknown>): Store {
     description: String(row.description ?? ""), descriptionEn: String(row.description_en ?? row.description ?? ""), logo: String(row.logo_url ?? "/assets/logo.svg"),
     cover: String(row.cover_url ?? "/assets/cover-urban.svg"), rating: Number(row.rating ?? 0), verified: Boolean(row.verified), city: String(row.city ?? ""),
     completion: Number(row.completion ?? 0), status: (row.status as Store["status"]) ?? "active", phone: row.phone ? String(row.phone) : undefined,
-    whatsapp: row.whatsapp ? String(row.whatsapp) : undefined, deliveryFee: Number(row.delivery_fee ?? 0), themeColor: String(row.theme_color ?? "#2f6fed"), theme: mapStoreTheme(row.theme, String(row.theme_color ?? "#2f6fed")),
+    whatsapp: row.whatsapp ? String(row.whatsapp) : undefined, deliveryFees: mapDeliveryFees(row.delivery_fees), themeColor: String(row.theme_color ?? "#2f6fed"), theme: mapStoreTheme(row.theme, String(row.theme_color ?? "#2f6fed")),
     website: mapStoreWebsite(row.website),
   };
 }
@@ -653,6 +654,14 @@ function mapMessage(row: Record<string, unknown>): ChatMessage {
     senderRole: (row.sender_role as ChatMessage["senderRole"]) ?? "customer", text: String(row.text ?? ""),
     createdAt: String(row.created_at ?? new Date().toISOString()), readAt: row.read_at ? String(row.read_at) : undefined,
   };
+}
+
+function mapDeliveryFees(value: unknown): Partial<Record<DeliveryZone, number>> | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const record = value as Record<string, unknown>;
+  const result: Partial<Record<DeliveryZone, number>> = {};
+  for (const zone of DELIVERY_ZONES) if (record[zone] != null) result[zone] = Number(record[zone]);
+  return result;
 }
 
 function mapStoreWebsite(value: unknown): StoreWebsiteProfile | undefined {

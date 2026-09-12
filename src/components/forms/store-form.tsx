@@ -6,7 +6,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { MediaUploader } from "./media-uploader";
 import { StoreThemeEditor } from "./store-theme-editor";
 import { normalizeStoreTheme } from "@/lib/store-theme";
-import { businessCategoryOptions, isReservedStoreSlug, merchantDomain, merchantStoreHref, normalizeStoreWebsiteProfile } from "@/lib/store-website";
+import { businessCategoryOptions, DELIVERY_ZONES, deliveryZoneLabel, isReservedStoreSlug, merchantDomain, merchantStoreHref, normalizeStoreWebsiteProfile } from "@/lib/store-website";
 import { useApp } from "@/providers/app-provider";
 import { safeNumber, slugify, uid } from "@/lib/utils";
 import type { Store } from "@/types";
@@ -60,7 +60,7 @@ export function StoreForm() {
         status: current?.status ?? "active",
         phone: String(form.get("phone") ?? "").trim(),
         whatsapp: String(form.get("whatsapp") ?? "").trim(),
-        deliveryFee: Math.max(0, safeNumber(form.get("deliveryFee"))),
+        deliveryFees: Object.fromEntries(DELIVERY_ZONES.map((zone) => [zone, Math.max(0, safeNumber(form.get(`deliveryFee_${zone}`)))])),
         themeColor: theme.accentColor,
         theme,
         website: {
@@ -167,7 +167,10 @@ export function StoreForm() {
         <label className="field"><span>{locale === "ar" ? "المدينة" : "City"}</span><input name="city" required defaultValue={current?.city} /></label>
         <label className="field"><span>{locale === "ar" ? "الهاتف" : "Phone"}</span><input name="phone" type="tel" defaultValue={current?.phone} /></label>
         <label className="field"><span>WhatsApp</span><input name="whatsapp" type="tel" defaultValue={current?.whatsapp} /></label>
-        <label className="field"><span>{locale === "ar" ? "رسوم التوصيل" : "Delivery fee"}</span><input name="deliveryFee" type="number" min="0" defaultValue={current?.deliveryFee ?? 0} /></label>
+      </div>
+      <p className="field-hint">{locale === "ar" ? "رسوم التوصيل حسب المنطقة" : "Delivery fee by area"}</p>
+      <div className="form-grid four">
+        {DELIVERY_ZONES.map((zone) => <label className="field" key={zone}><span>{deliveryZoneLabel(zone, locale)}</span><input name={`deliveryFee_${zone}`} type="number" min="0" defaultValue={current?.deliveryFees?.[zone] ?? 0} /></label>)}
       </div>
     </section>
 

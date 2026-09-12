@@ -40,9 +40,18 @@ create table if not exists public.stores (
   phone text,
   whatsapp text,
   delivery_fee numeric(12,2) default 0,
+  delivery_fees jsonb not null default '{}'::jsonb,
   theme_color text default '#1769e0',
   created_at timestamptz not null default now()
 );
+
+-- Per-zone delivery pricing (gaza/central/khanYounis) replaces the old flat
+-- delivery_fee - the old column stays in place (unused) rather than being
+-- dropped, and existing stores get their old flat fee applied to all three
+-- zones as a starting point instead of silently resetting to free delivery.
+alter table public.stores add column if not exists delivery_fees jsonb not null default '{}'::jsonb;
+update public.stores set delivery_fees = jsonb_build_object('gaza', delivery_fee, 'central', delivery_fee, 'khanYounis', delivery_fee)
+  where delivery_fees = '{}'::jsonb and delivery_fee is not null;
 
 create table if not exists public.products (
   id text primary key,
@@ -164,6 +173,7 @@ create table if not exists public.orders (
   notes text,
   status text not null default 'pending' check (status in ('pending','accepted','preparing','ready','out_for_delivery','completed','cancelled')),
   subtotal numeric(12,2) not null default 0,
+  delivery_zone text check (delivery_zone in ('gaza','central','khanYounis')),
   delivery_fee numeric(12,2) not null default 0,
   total numeric(12,2) not null default 0,
   payment_method text,
@@ -172,6 +182,10 @@ create table if not exists public.orders (
 );
 alter table public.orders add column if not exists payment_method text;
 alter table public.orders add column if not exists payment_proof_url text;
+alter table public.orders add column if not exists delivery_zone text;
+do $$ begin
+  alter table public.orders add constraint orders_delivery_zone_check check (delivery_zone is null or delivery_zone in ('gaza','central','khanYounis'));
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.order_items (
   id bigint generated always as identity primary key,
@@ -637,7 +651,8 @@ create or replace function public.create_checkout_order(
   p_notes text,
   p_items jsonb,
   p_payment_method text default null,
-  p_payment_proof_url text default null
+  p_payment_proof_url text default null,
+  p_delivery_zone text default null
 ) returns jsonb
 language plpgsql
 security definer
@@ -650,6 +665,7 @@ declare
   v_notes text := nullif(btrim(coalesce(p_notes, '')), '');
   v_payment_method text := nullif(btrim(coalesce(p_payment_method, '')), '');
   v_payment_proof_url text := nullif(btrim(coalesce(p_payment_proof_url, '')), '');
+  v_delivery_zone text := nullif(btrim(coalesce(p_delivery_zone, '')), '');
   v_item jsonb;
   v_product record;
   v_product_id text;
@@ -669,6 +685,7 @@ begin
   if v_notes is not null and char_length(v_notes) > 1000 then raise exception 'NOTES_TOO_LONG'; end if;
   if v_payment_method is null or v_payment_method not in ('bank_transfer','palpay') then raise exception 'INVALID_PAYMENT_METHOD'; end if;
   if v_payment_proof_url is null or char_length(v_payment_proof_url) > 2000 then raise exception 'PAYMENT_PROOF_REQUIRED'; end if;
+  if v_delivery_zone is null or v_delivery_zone not in ('gaza','central','khanYounis') then raise exception 'INVALID_DELIVERY_ZONE'; end if;
   if p_items is null or jsonb_typeof(p_items) <> 'array' then raise exception 'INVALID_CART'; end if;
   if jsonb_array_length(p_items) < 1 or jsonb_array_length(p_items) > 50 then raise exception 'INVALID_CART'; end if;
 
@@ -689,7 +706,7 @@ begin
     if v_variant is not null and char_length(v_variant) > 120 then raise exception 'INVALID_VARIANT'; end if;
 
     select p.id, p.store_id, p.name, p.price, p.stock, p.status, p.variants,
-           s.status as store_status, s.delivery_fee
+           s.status as store_status, s.delivery_fees
       into v_product
       from public.products p
       join public.stores s on s.id = p.store_id
@@ -713,7 +730,7 @@ begin
 
     if v_store_id is null then
       v_store_id := v_product.store_id;
-      v_delivery_fee := greatest(coalesce(v_product.delivery_fee, 0), 0);
+      v_delivery_fee := greatest(coalesce((v_product.delivery_fees ->> v_delivery_zone)::numeric, 0), 0);
     elsif v_store_id <> v_product.store_id then
       raise exception 'MULTI_STORE_CART';
     end if;
@@ -732,8 +749,8 @@ begin
   v_total := v_subtotal + v_delivery_fee;
   v_order_id := 'TJV-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 12));
 
-  insert into public.orders(id, store_id, customer_id, customer_name, phone, address, notes, status, subtotal, delivery_fee, total, payment_method, payment_proof_url, created_at)
-  values(v_order_id, v_store_id, auth.uid(), v_customer_name, v_phone, v_address, v_notes, 'pending', v_subtotal, v_delivery_fee, v_total, v_payment_method, v_payment_proof_url, v_created_at);
+  insert into public.orders(id, store_id, customer_id, customer_name, phone, address, notes, status, subtotal, delivery_zone, delivery_fee, total, payment_method, payment_proof_url, created_at)
+  values(v_order_id, v_store_id, auth.uid(), v_customer_name, v_phone, v_address, v_notes, 'pending', v_subtotal, v_delivery_zone, v_delivery_fee, v_total, v_payment_method, v_payment_proof_url, v_created_at);
 
   insert into public.order_items(order_id, product_id, product_name, quantity, unit_price, variant)
   select v_order_id,
@@ -754,6 +771,7 @@ begin
     'notes', v_notes,
     'status', 'pending',
     'subtotal', v_subtotal,
+    'delivery_zone', v_delivery_zone,
     'delivery_fee', v_delivery_fee,
     'total', v_total,
     'payment_method', v_payment_method,
@@ -764,8 +782,8 @@ begin
 end;
 $$;
 
-revoke all on function public.create_checkout_order(text,text,text,text,jsonb,text,text) from public;
-grant execute on function public.create_checkout_order(text,text,text,text,jsonb,text,text) to anon, authenticated;
+revoke all on function public.create_checkout_order(text,text,text,text,jsonb,text,text,text) from public;
+grant execute on function public.create_checkout_order(text,text,text,text,jsonb,text,text,text) to anon, authenticated;
 
 create table if not exists public.contact_requests (
   id uuid primary key default gen_random_uuid(),
