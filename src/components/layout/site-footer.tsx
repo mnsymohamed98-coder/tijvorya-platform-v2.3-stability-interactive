@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ShieldCheck } from "lucide-react";
 import { FacebookIcon, InstagramIcon, TikTokIcon } from "./social-icons";
 
 const socialLinks = [
@@ -19,7 +18,6 @@ export function SiteFooter({ locale }: { locale: "ar" | "en" }) {
           <span>Tijvorya</span>
         </Link>
         <p>{locale === "ar" ? "منصة تجارة اجتماعية تهدف إلى تعزيز التجارة الإلكترونية في غزة وتنفيذ عملية الشراء إلكترونيًا وبسرعة وأمان." : "A social-commerce platform aiming to grow e-commerce in Gaza, making online purchases fast and secure."}</p>
-        <span className="footer-trust"><ShieldCheck />{locale === "ar" ? "بنية صلاحيات ومراجعة محتوى للنسخة الإنتاجية" : "Production-ready permissions and content moderation foundation"}</span>
         <div className="footer-social">{socialLinks.map((social) => <a key={social.name} href={social.href} aria-label={social.name} target="_blank" rel="noopener noreferrer">{social.icon}</a>)}</div>
       </div>
       <div><strong>{locale === "ar" ? "اكتشف" : "Discover"}</strong><Link href={`/${locale}/marketplace`}>{locale === "ar" ? "السوق" : "Marketplace"}</Link><Link href={`/${locale}/reels`}>{locale === "ar" ? "الريلز" : "Reels"}</Link></div>
