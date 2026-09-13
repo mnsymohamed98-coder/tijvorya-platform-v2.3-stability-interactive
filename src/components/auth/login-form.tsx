@@ -187,7 +187,6 @@ export function LoginForm() {
             onChange={(event) =>
               setEmail(event.target.value)
             }
-            placeholder="name@example.com"
           />
         </div>
       </label>
