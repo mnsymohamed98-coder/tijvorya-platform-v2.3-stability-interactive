@@ -113,8 +113,8 @@ export function LoginForm() {
 
         <p>
           {locale === "ar"
-            ? "ادخل إلى متجرك وطلباتك وريـلزك من مكان واحد."
-            : "Access your store, orders and reels from one place."}
+            ? "ادخل إلى حسابك كمتسوق لتصفح المنتجات والشراء بسهولة."
+            : "Sign in to your shopper account to browse products and buy with ease."}
         </p>
       </div>
 
