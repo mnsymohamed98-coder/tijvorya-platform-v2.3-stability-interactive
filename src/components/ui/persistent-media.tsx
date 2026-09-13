@@ -39,15 +39,18 @@ function toCloudinaryImageUrl(url: string, widthPx?: number): string {
 }
 
 // sp_auto (streaming profile: auto) generates adaptive-bitrate HLS renditions
-// from the original upload on the fly - no separate encode step needed.
-// q_auto:best raises the target quality of every rung in that ladder (same
-// reasoning as the image transform above). Returns null for anything that
-// isn't a genuine Cloudinary video URL, so demo-mode blobs and any other
-// source keep playing exactly as before.
+// from the original upload on the fly - no separate encode step needed, and
+// each rendition already carries its own quality/bitrate, so no q_auto is
+// needed alongside it. Cloudinary rejects sp_* combined with any other
+// directive in the same transformation component (400, "streaming_profile
+// must be the only directive in the transformation component") - it has to
+// sit in its own path segment. Returns null for anything that isn't a
+// genuine Cloudinary video URL, so demo-mode blobs and any other source keep
+// playing exactly as before.
 function toCloudinaryHlsUrl(url: string): string | null {
   const match = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/)(.*)\.[a-zA-Z0-9]+$/);
   if (!match) return null;
-  return `${match[1]}sp_auto,q_auto:best/${match[2]}.m3u8`;
+  return `${match[1]}sp_auto/${match[2]}.m3u8`;
 }
 
 export const PersistentVideo = forwardRef<HTMLVideoElement, React.VideoHTMLAttributes<HTMLVideoElement> & { src?: string }>(function PersistentVideo({ src, poster, ...props }, forwardedRef) {
