@@ -31,6 +31,11 @@ function checkoutErrorMessage(error: unknown, locale: "ar" | "en") {
   };
   const match = Object.entries(messages).find(([code]) => value.includes(code));
   if (match) return match[1][locale === "ar" ? 0 : 1];
+  // createOrder's own client-side checks (empty cart, store unavailable,
+  // multi-store cart, ...) already throw a friendly, localized sentence
+  // rather than one of the codes above - show it as-is instead of masking
+  // it with a generic message that hides the real reason.
+  if (value) return value;
   return locale === "ar" ? "تعذر تأكيد الطلب حاليًا. حاول مرة أخرى." : "Unable to place the order right now. Please try again.";
 }
 
