@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Copy, LoaderCircle, MapPin, ShieldCheck } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, ReactNode, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { MediaUploader } from "./media-uploader";
@@ -34,7 +34,7 @@ function checkoutErrorMessage(error: unknown, locale: "ar" | "en") {
   return locale === "ar" ? "تعذر تأكيد الطلب حاليًا. حاول مرة أخرى." : "Unable to place the order right now. Please try again.";
 }
 
-export function CheckoutForm({ zone, onZoneChange, store }: { zone: DeliveryZone | ""; onZoneChange: (zone: DeliveryZone) => void; store?: Store }) {
+export function CheckoutForm({ zone, onZoneChange, store, mobileSummary }: { zone: DeliveryZone | ""; onZoneChange: (zone: DeliveryZone) => void; store?: Store; mobileSummary?: ReactNode }) {
   const { locale, cart, currentUser, createOrder, toast } = useApp();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -100,6 +100,8 @@ export function CheckoutForm({ zone, onZoneChange, store }: { zone: DeliveryZone
       <label className="field"><span>{locale === "ar" ? "ملاحظات اختيارية" : "Optional notes"}</span><textarea name="notes" rows={3} maxLength={1000} /></label>
     </div>
 
+    {mobileSummary && <div className="checkout-summary-mobile">{mobileSummary}</div>}
+
     <div className="checkout-section">
       <span className="eyebrow">PAYMENT</span>
       <h2>{locale === "ar" ? "طريقة الدفع" : "Payment method"}</h2>
@@ -124,7 +126,7 @@ export function CheckoutForm({ zone, onZoneChange, store }: { zone: DeliveryZone
         <button type="button" className="button button-ghost" onClick={copyNumber}><Copy />{copied ? (locale === "ar" ? "تم النسخ" : "Copied") : (locale === "ar" ? "نسخ الرقم" : "Copy number")}</button>
       </div>
 
-      <MediaUploader resourceType="image" folder="tijvorya/payments" value={proofUrl} onChange={setProofUrl} maxMB={8} label={locale === "ar" ? "صورة إشعار التحويل" : "Transfer receipt screenshot"} />
+      <MediaUploader resourceType="image" folder="tijvorya/payments" value={proofUrl} onChange={setProofUrl} maxMB={8} label={locale === "ar" ? "صورة إشعار التحويل" : "Transfer receipt screenshot"} dropzoneText={locale === "ar" ? "أرفق صورة إشعار التحويل" : "Attach the transfer receipt image"} />
 
       <p className="payment-verify-note"><ShieldCheck />{locale === "ar" ? "سيتم التأكد من عملية التحويل والتواصل معك في أقرب وقت ممكن." : "We'll verify the transfer and get in touch with you as soon as possible."}</p>
     </div>

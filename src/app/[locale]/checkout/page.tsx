@@ -14,5 +14,5 @@ export default function CheckoutPage(){
     return product?stores.find((item)=>item.id===product.storeId):undefined;
   },[cart,products,stores]);
   const deliveryFee=zone&&store?Math.max(0,store.deliveryFees?.[zone]??0):undefined;
-  return <CheckoutShell locale={locale}><section className="page-hero compact"><div className="container"><span className="eyebrow">CHECKOUT</span><h1>{locale==="ar"?"إتمام الطلب":"Checkout"}</h1></div></section><section className="section container">{cart.length?<div className="checkout-layout"><CheckoutForm zone={zone} onZoneChange={setZone} store={store}/><div className="checkout-cart"><CartPanel deliveryFee={deliveryFee}/></div></div>:<CartPanel/>}</section></CheckoutShell>;
+  return <CheckoutShell locale={locale}><section className="page-hero compact"><div className="container"><span className="eyebrow">CHECKOUT</span><h1>{locale==="ar"?"إتمام الطلب":"Checkout"}</h1></div></section><section className="section container">{cart.length?<div className="checkout-layout"><CheckoutForm zone={zone} onZoneChange={setZone} store={store} mobileSummary={<CartPanel deliveryFee={deliveryFee} hideCheckoutCta/>}/><div className="checkout-cart"><CartPanel deliveryFee={deliveryFee}/></div></div>:<CartPanel/>}</section></CheckoutShell>;
 }
