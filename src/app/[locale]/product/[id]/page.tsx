@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Heart, Minus, Plus, ShieldCheck, ShoppingBag, Star, Store as StoreIcon, Truck } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ProductCard } from "@/components/commerce/product-card";
 import { PublicShell } from "@/components/layout/public-shell";
 import { PersistentImage } from "@/components/ui/persistent-media";
@@ -21,6 +21,7 @@ export default function ProductPage() {
   const [qty, setQty] = useState(1);
   const [variant, setVariant] = useState("");
   const [activeImage, setActiveImage] = useState(0);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => { setActiveImage(0); }, [product?.id]);
 
@@ -56,7 +57,23 @@ export default function ProductPage() {
   const gallery = (product.images?.length ? product.images : [product.image]).filter(Boolean);
   const productAlt = locale === "ar" ? product.name : product.nameEn;
 
-  return <PublicShell locale={locale} hideFooter><section className="section container"><div className="product-detail"><div className="product-detail-media"><PersistentImage className="media-fill" src={gallery[activeImage] ?? product.image} alt={productAlt} optimized sizes="(max-width: 850px) 100vw, 50vw" />{gallery.length > 1 && <>
+  // Touch swipe for the gallery on mobile - matches the fixed left/right
+  // (not RTL-logical) placement of the prev/next arrow buttons: dragging
+  // left pulls in the next image from the right, same side as the "next"
+  // button, and vice versa.
+  function handleGalleryTouchStart(event: React.TouchEvent) {
+    touchStartX.current = event.touches[0].clientX;
+  }
+  function handleGalleryTouchEnd(event: React.TouchEvent) {
+    if (touchStartX.current === null || gallery.length < 2) return;
+    const deltaX = event.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(deltaX) < 40) return;
+    if (deltaX < 0) setActiveImage((index) => (index + 1) % gallery.length);
+    else setActiveImage((index) => (index - 1 + gallery.length) % gallery.length);
+  }
+
+  return <PublicShell locale={locale} hideFooter><section className="section container"><div className="product-detail"><div className="product-detail-media" onTouchStart={handleGalleryTouchStart} onTouchEnd={handleGalleryTouchEnd}><PersistentImage className="media-fill" src={gallery[activeImage] ?? product.image} alt={productAlt} optimized sizes="(max-width: 850px) 100vw, 50vw" />{gallery.length > 1 && <>
     <button type="button" className="gallery-nav prev" onClick={() => setActiveImage((index) => (index - 1 + gallery.length) % gallery.length)} aria-label={locale === "ar" ? "الصورة السابقة" : "Previous image"}><ChevronLeft /></button>
     <button type="button" className="gallery-nav next" onClick={() => setActiveImage((index) => (index + 1) % gallery.length)} aria-label={locale === "ar" ? "الصورة التالية" : "Next image"}><ChevronRight /></button>
     <div className="gallery-dots">{gallery.map((_, index) => <button type="button" key={index} className={index === activeImage ? "is-active" : ""} onClick={() => setActiveImage(index)} aria-label={`${locale === "ar" ? "صورة" : "Image"} ${index + 1}`} />)}</div>
