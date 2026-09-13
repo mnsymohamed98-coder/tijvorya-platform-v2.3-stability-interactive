@@ -5,8 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { ProductCard } from "@/components/commerce/product-card";
 import { PublicShell } from "@/components/layout/public-shell";
 import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
 import { useApp } from "@/providers/app-provider";
 import { loadPublicCategories, searchPublicProducts, type PublicProductSort } from "@/lib/supabase/repository";
+import { useDelayedLoading } from "@/lib/use-delayed-loading";
 import type { Product } from "@/types";
 
 const PAGE_SIZE = 24;
@@ -48,6 +50,7 @@ export default function MarketplacePage() {
   const [liveTotal, setLiveTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(!productionMode);
 
   useEffect(() => {
     if (!productionMode) return;
@@ -70,10 +73,16 @@ export default function MarketplacePage() {
           setPage(0);
           mergeProducts(found);
         })
-        .catch(console.error);
+        .catch(console.error)
+        .finally(() => { if (active) setHasLoadedOnce(true); });
     }, delay);
     return () => { active = false; window.clearTimeout(timer); };
   }, [query, category, sort, productionMode, mergeProducts]);
+
+  // The initial fetch flashes an empty-state illustration on a slow
+  // connection before the first results ever arrive - only show a spinner
+  // (after a short delay, so fast loads never flicker one) until then.
+  const showInitialSpinner = useDelayedLoading(!hasLoadedOnce);
 
   function loadMore() {
     const nextPage = page + 1;
@@ -135,7 +144,7 @@ export default function MarketplacePage() {
           </div>
         </div>
         <div className="results-line"><span><strong>{total}</strong> {locale === "ar" ? "منتج" : "products"}</span>{hasFilters && <button type="button" onClick={resetFilters}><X /> {locale === "ar" ? "مسح الفلاتر" : "Clear filters"}</button>}</div>
-        {visible.length ? <>
+        {!hasLoadedOnce ? (showInitialSpinner ? <LoadingState text={locale === "ar" ? "جارٍ تحميل المنتجات..." : "Loading products..."} /> : null) : visible.length ? <>
           <div className="marketplace-results">{chunk(visible, ROW_SIZE).map((row, index) => <div className="product-grid marketplace-row" key={index}>{row.map((product) => <ProductCard key={product.id} product={product} store={storeById.get(product.storeId)} />)}</div>)}</div>
           {hasMore && <button type="button" className="button button-ghost button-block" disabled={loadingMore} onClick={loadMore}>{loadingMore ? (locale === "ar" ? "جارٍ التحميل..." : "Loading...") : (locale === "ar" ? "تحميل المزيد" : "Load more")}</button>}
         </> : <EmptyState title={locale === "ar" ? "لا توجد نتائج" : "No results"} text={locale === "ar" ? "جرّب كلمات أو تصنيفًا مختلفًا، أو ألغِ بعض الفلاتر." : "Try a different query, category or fewer filters."} />}

@@ -5,9 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { StoreCard } from "@/components/commerce/store-card";
 import { PublicShell } from "@/components/layout/public-shell";
 import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
 import { useApp } from "@/providers/app-provider";
 import { businessCategoryLabel } from "@/lib/store-website";
 import { loadPublicStoreCategories, searchPublicStores } from "@/lib/supabase/repository";
+import { useDelayedLoading } from "@/lib/use-delayed-loading";
 import type { Store } from "@/types";
 
 const PAGE_SIZE = 18;
@@ -24,6 +26,7 @@ export default function StoresDirectoryPage() {
   const [liveTotal, setLiveTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(!productionMode);
 
   useEffect(() => {
     if (!productionMode) return;
@@ -44,10 +47,15 @@ export default function StoresDirectoryPage() {
           setLiveTotal(total);
           setPage(0);
         })
-        .catch(console.error);
+        .catch(console.error)
+        .finally(() => { if (active) setHasLoadedOnce(true); });
     }, delay);
     return () => { active = false; window.clearTimeout(timer); };
   }, [query, category, productionMode]);
+
+  // Avoid flashing the empty-state illustration during the initial slow-
+  // network fetch - only show a spinner (after a short delay) until then.
+  const showInitialSpinner = useDelayedLoading(!hasLoadedOnce);
 
   function loadMore() {
     const nextPage = page + 1;
@@ -90,7 +98,7 @@ export default function StoresDirectoryPage() {
         {categories.map((item) => <button type="button" key={item} className={category === item ? "is-active" : ""} onClick={() => setCategory(item)} aria-pressed={category === item}>{businessCategoryLabel(item, locale)}</button>)}
       </div>
       <div className="results-line"><span><strong>{total}</strong> {locale === "ar" ? "متجر" : "stores"}</span>{hasFilters && <button type="button" onClick={resetFilters}><X /> {locale === "ar" ? "مسح الفلاتر" : "Clear filters"}</button>}</div>
-      {results.length ? <>
+      {!hasLoadedOnce ? (showInitialSpinner ? <LoadingState text={locale === "ar" ? "جارٍ تحميل المتاجر..." : "Loading stores..."} /> : null) : results.length ? <>
         <div className="store-grid store-grid-logo-showcase">{results.map((store) => <StoreCard key={store.id} store={store} locale={locale} />)}</div>
         {hasMore && <button type="button" className="button button-ghost button-block" disabled={loadingMore} onClick={loadMore}>{loadingMore ? (locale === "ar" ? "جارٍ التحميل..." : "Loading...") : (locale === "ar" ? "تحميل المزيد" : "Load more")}</button>}
       </> : <EmptyState title={locale === "ar" ? "لا توجد متاجر مطابقة" : "No matching stores"} text={locale === "ar" ? "جرّب كلمات أو تصنيفًا مختلفًا." : "Try a different query or category."} />}
