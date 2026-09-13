@@ -733,7 +733,7 @@ body.interactions-ready .reveal-ready{transition:opacity .48s ease,transform .48
 .reel-more-wrap{position:relative}.reel-more-menu{position:absolute;z-index:15;inset-inline-end:54px;bottom:0;min-width:165px;padding:6px;background:rgba(18,24,36,.96);border:1px solid rgba(255,255,255,.16);border-radius:11px;box-shadow:0 16px 35px rgba(0,0,0,.28);backdrop-filter:blur(10px)}.reel-more-menu button{width:100%;min-height:38px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#fff;text-align:start;font-size:11px;font-weight:800}.reel-more-menu button:hover{background:rgba(255,255,255,.10)}
 
 /* v2.3.1 dashboard overflow + avatar hotfix */
-html,body{max-width:100%;overflow-x:hidden}
+body{max-width:100%;overflow-x:hidden}
 .dashboard-layout,.dashboard-main,.dashboard-content,.dashboard-topbar{min-width:0;max-width:100%}
 .dashboard-main{overflow-x:hidden}
 .dashboard-content{width:100%;overflow-x:hidden}
