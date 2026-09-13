@@ -754,7 +754,12 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     }
     if (storeIds.size !== 1) throw new Error(locale === "ar" ? "يجب أن يحتوي الطلب على منتجات من متجر واحد فقط." : "An order can contain products from one store only.");
     const storeId = [...storeIds][0] ?? "";
-    const store = state.stores.find((item) => item.id === storeId);
+    // Don't rely solely on the store already being cached in state - a
+    // customer who lands straight on a product page (a shared link, a
+    // reel) may reach checkout before that page's own background fetch
+    // has merged the store in, which would otherwise fail the order with
+    // a false "store unavailable".
+    const store = await resolveStoreById(storeId);
     if (!store || (store.status ?? "active") !== "active") throw new Error(locale === "ar" ? "المتجر غير متاح لاستقبال الطلبات حاليًا." : "The store is not currently accepting orders.");
     const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
     const deliveryFee = Math.max(0, store.deliveryFees?.[input.deliveryZone] ?? 0);
@@ -774,7 +779,7 @@ export function AppProvider({ children, locale }: { children: React.ReactNode; l
     }));
     toast(locale === "ar" ? `تم إنشاء الطلب ${order.id}` : `Order ${order.id} created`);
     return order;
-  }, [state.cart, state.stores, state.currentUser, locale, productionMode, toast, resolveProduct]);
+  }, [state.cart, state.stores, state.currentUser, locale, productionMode, toast, resolveProduct, resolveStoreById]);
 
   const updateOrderStatus = useCallback(async (id: string, status: Order["status"]) => {
     if (productionMode) await changeOrderStatus(id, status);
