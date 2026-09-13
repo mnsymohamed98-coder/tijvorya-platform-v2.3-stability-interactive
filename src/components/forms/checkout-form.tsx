@@ -14,7 +14,14 @@ const TRANSFER_NUMBER = "0567954507";
 const TRANSFER_NAME = "محمد منسي";
 
 function checkoutErrorMessage(error: unknown, locale: "ar" | "en") {
-  const value = error instanceof Error ? error.message : String(error ?? "");
+  // Supabase throws plain PostgrestError objects ({message, details, hint,
+  // code}), not real Error instances - stringifying one of those directly
+  // produces the literal text "[object Object]" instead of its message.
+  const value = error instanceof Error
+    ? error.message
+    : error && typeof error === "object" && "message" in error && typeof (error as { message: unknown }).message === "string"
+      ? (error as { message: string }).message
+      : typeof error === "string" ? error : "";
   const messages: Record<string, [string, string]> = {
     INVALID_CUSTOMER_NAME: ["تحقق من الاسم الكامل.", "Check the full name."],
     INVALID_PHONE: ["تحقق من رقم الهاتف.", "Check the phone number."],
@@ -77,6 +84,7 @@ export function CheckoutForm({ zone, onZoneChange, store, mobileSummary }: { zon
       });
       router.push(`/${locale}/order/${order.id}`);
     } catch (error) {
+      console.error("CHECKOUT_ORDER_ERROR", error);
       toast(checkoutErrorMessage(error, locale), "error");
     } finally {
       setLoading(false);
