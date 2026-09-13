@@ -14,6 +14,7 @@ export function MediaUploader({
   onChange,
   maxMB = 20,
   label,
+  dropzoneText,
 }: {
   resourceType: UploadResourceType;
   folder: "tijvorya/products" | "tijvorya/reels" | "tijvorya/stores" | "tijvorya/payments";
@@ -21,6 +22,7 @@ export function MediaUploader({
   onChange: (url: string) => void;
   maxMB?: number;
   label: string;
+  dropzoneText?: string;
 }) {
   const { locale, productionMode, toast } = useApp();
   const input = useRef<HTMLInputElement>(null);
@@ -68,8 +70,8 @@ export function MediaUploader({
       disabled={uploading}
     >
       {uploading ? <LoaderCircle className="spin" /> : resourceType === "video" ? <FileVideo2 /> : <ImagePlus />}
-      <strong>{uploading ? progressText : dragging ? (locale === "ar" ? "أفلت الملف للرفع" : "Drop to upload") : (locale === "ar" ? "اختر ملفًا من الجهاز" : "Choose a file from your device")}</strong>
-      <span>{locale === "ar" ? "اضغط للتصفح أو اسحب الملف هنا" : "Click to browse or drag the file here"}</span>
+      <strong>{uploading ? progressText : dragging ? (locale === "ar" ? "أفلت الملف للرفع" : "Drop to upload") : dropzoneText ?? (locale === "ar" ? "اختر ملفًا من الجهاز" : "Choose a file from your device")}</strong>
+      {!dropzoneText && <span>{locale === "ar" ? "اضغط للتصفح أو اسحب الملف هنا" : "Click to browse or drag the file here"}</span>}
       {!uploading && <UploadCloud />}
     </button>}
     <input ref={input} type="file" hidden accept={resourceType === "video" ? "video/mp4,video/webm,video/quicktime" : "image/jpeg,image/png,image/webp,image/avif"} onChange={(event) => { void handleFile(event.target.files?.[0]); event.currentTarget.value = ""; }} />
