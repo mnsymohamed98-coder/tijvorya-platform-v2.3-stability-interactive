@@ -16,24 +16,44 @@ const sequence = ["pending", "accepted", "preparing", "ready", "out_for_delivery
 
 function buildWhatsAppOrderMessage(order: Order, locale: Locale, products: Product[]) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const lines = locale === "ar"
-    ? [`مرحباً، أكدت طلب رقم ${order.id} على تيجفوريا:`, ""]
-    : [`Hi, I just placed order ${order.id} on Tijvorya:`, ""];
-  for (const item of order.items) {
-    const product = products.find((entry) => entry.id === item.productId);
+  const ar = locale === "ar";
+  const productImageUrls = order.items
+    .map((item) => products.find((entry) => entry.id === item.productId)?.image)
+    .filter((image): image is string => Boolean(image))
+    .map((image) => (image.startsWith("http") ? image : `${origin}${image}`));
+
+  const lines = [ar ? `مرحباً، أكدت طلب رقم ${order.id} على تيجفوريا:` : `Hi, I just placed order ${order.id} on Tijvorya:`, ""];
+
+  // Links first, exactly as requested - the receipt link alongside the
+  // product photo(s) - then the structured data as its own block.
+  lines.push(ar ? "🔗 الروابط" : "🔗 Links");
+  productImageUrls.forEach((url, index) => {
+    const label = productImageUrls.length > 1
+      ? (ar ? `صورة المنتج ${index + 1}` : `Product photo ${index + 1}`)
+      : (ar ? "صورة المنتج" : "Product photo");
+    lines.push(`${label}: ${url}`);
+  });
+  if (order.paymentProofUrl) lines.push(`${ar ? "صورة إشعار التحويل" : "Transfer receipt"}: ${order.paymentProofUrl}`);
+  lines.push("");
+
+  lines.push(ar ? "📋 بيانات الطلب" : "📋 Order details");
+  lines.push("```");
+  order.items.forEach((item) => {
     const variant = item.variant ? ` · ${item.variant}` : "";
-    lines.push(`- ${item.name} × ${item.quantity}${variant} — ${formatMoney(item.unitPrice * item.quantity, locale)}`);
-    if (product?.image) {
-      const imageUrl = product.image.startsWith("http") ? product.image : `${origin}${product.image}`;
-      lines.push(locale === "ar" ? `  صورة المنتج: ${imageUrl}` : `  Product photo: ${imageUrl}`);
-    }
-  }
+    lines.push(`${item.name}${variant}`);
+    lines.push(`${ar ? "الكمية" : "Qty"}: ${item.quantity}  |  ${ar ? "السعر" : "Price"}: ${formatMoney(item.unitPrice * item.quantity, locale)}`);
+  });
+  lines.push("------------------------");
+  if (order.deliveryZone) lines.push(`${ar ? "منطقة التوصيل" : "Delivery area"}: ${deliveryZoneLabel(order.deliveryZone, locale)}`);
+  lines.push(`${ar ? "الإجمالي" : "Total"}: ${formatMoney(order.total, locale)}`);
+  lines.push(`${ar ? "الاسم" : "Name"}: ${order.customerName}`);
+  lines.push(`${ar ? "الهاتف" : "Phone"}: ${order.phone}`);
+  lines.push(`${ar ? "العنوان" : "Address"}: ${order.address}`);
+  if (order.notes) lines.push(`${ar ? "ملاحظات" : "Notes"}: ${order.notes}`);
+  lines.push("```");
+
   lines.push("");
-  lines.push(`${locale === "ar" ? "الإجمالي" : "Total"}: ${formatMoney(order.total, locale)}`);
-  lines.push(`${locale === "ar" ? "عنوان التوصيل" : "Delivery address"}: ${order.address}`);
-  lines.push(`${locale === "ar" ? "الاسم والهاتف" : "Name and phone"}: ${order.customerName} · ${order.phone}`);
-  lines.push("");
-  lines.push(locale === "ar" ? "بانتظار تأكيدكم لإتمام الدفع، شكراً." : "Waiting for your confirmation to complete payment, thanks.");
+  lines.push(ar ? "بانتظار تأكيدكم لإتمام الدفع، شكراً." : "Waiting for your confirmation to complete payment, thanks.");
   return lines.join("\n");
 }
 
