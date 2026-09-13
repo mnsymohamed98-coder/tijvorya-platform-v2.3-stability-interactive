@@ -27,10 +27,10 @@ import { PublicShell } from "@/components/layout/public-shell";
 import { ProductCard } from "@/components/commerce/product-card";
 import { HeroCommercePreview } from "@/components/commerce/hero-commerce-preview";
 import { StoreCard } from "@/components/commerce/store-card";
-import { PersistentImage, PersistentVideo } from "@/components/ui/persistent-media";
+import { PersistentVideo } from "@/components/ui/persistent-media";
 import { HomeStructuredData } from "@/components/seo/structured-data";
 import { useApp } from "@/providers/app-provider";
-import { chunk, formatMoney } from "@/lib/utils";
+import { chunk } from "@/lib/utils";
 import { loadHomepagePreviewProducts, loadHomepagePreviewReels, loadHomepageReadyStores, loadPublicStats } from "@/lib/supabase/repository";
 import type { Product, Reel, Store as StoreType } from "@/types";
 
@@ -172,11 +172,7 @@ export default function HomePage() {
       <div className="metrics-track-set" aria-hidden="true">{metrics.map(({ icon: Icon, label }, index) => <div className="metrics-chip" key={`metric-b-${index}`}><span className="metrics-chip-icon"><Icon /></span><span>{label}</span></div>)}</div>
     </div></div></section>
 
-    {discoverProducts.length > 0 && <section className="section section-soft"><div className="container"><div className="section-head"><div><span className="eyebrow">FEATURED PICKS</span><h2>{locale === "ar" ? "منتجات مختارة تستحق نظرة سريعة." : "Featured products worth a quick look."}</h2></div><Link href={`/${locale}/marketplace`}>{locale === "ar" ? "عرض كل المنتجات" : "View all products"}<Arrow /></Link></div><div className="product-strip-showcase">{discoverProducts.slice(0, 6).map((product) => { const store = activeStores.find((item) => item.id === product.storeId); return <Link className="product-strip-link" key={product.id} href={`/${locale}/product/${product.id}`}>
-      <span className="product-strip-thumb"><PersistentImage className="media-fill" src={product.image} alt={locale === "ar" ? product.name : product.nameEn} optimized sizes="56px" /></span>
-      <span className="product-strip-body"><strong>{locale === "ar" ? product.name : product.nameEn}</strong>{store && <span>{locale === "ar" ? store.name : store.nameEn}</span>}</span>
-      <span className="product-strip-price"><strong>{formatMoney(product.price, locale)}</strong><Arrow /></span>
-    </Link>; })}</div></div></section>}
+    {discoverProducts.length > 0 && <section className="section section-soft"><div className="container"><div className="section-head"><div><span className="eyebrow">FEATURED PICKS</span><h2>{locale === "ar" ? "منتجات مختارة تستحق نظرة سريعة." : "Featured products worth a quick look."}</h2></div><Link href={`/${locale}/marketplace`}>{locale === "ar" ? "عرض كل المنتجات" : "View all products"}<Arrow /></Link></div><div className="product-carousel">{discoverProducts.slice(0, 6).map((product) => <ProductCard key={product.id} product={product} store={activeStores.find((item) => item.id === product.storeId)} />)}</div></div></section>}
 
     <section className="section container"><div className="section-head"><div><span className="eyebrow">DISCOVER</span><h2>{locale === "ar" ? "منتجات جاهزة للاكتشاف والشراء." : "Products ready to be discovered and purchased."}</h2><p>{locale === "ar" ? "كل منتج مرتبط بمتجر فعلي ويمكن شراؤه من السوق أو مباشرة من الريلز." : "Every product belongs to a real store and can be purchased from the marketplace or directly from reels."}</p></div>{discoverProducts.length > 0 && <Link href={`/${locale}/marketplace`}>{locale === "ar" ? "عرض السوق" : "View marketplace"}<Arrow /></Link>}</div>{discoverProducts.length > 0 ? <div className="product-rows">{discoverRows.map((row, index) => <div className="product-carousel" key={index}>{row.map((product) => <ProductCard key={product.id} product={product} store={activeStores.find((store) => store.id === product.storeId)} />)}</div>)}{hasMoreDiscoverProducts && <Link className="product-rows-more" href={`/${locale}/marketplace`}>{locale === "ar" ? "استكشف باقي المنتجات في السوق" : "Explore the rest in the marketplace"}<Arrow /></Link>}</div> : <div className="public-empty-showcase"><ShoppingBag /><div><strong>{locale === "ar" ? "السوق يستعد لاستقبال أول المنتجات" : "The marketplace is ready for its first products"}</strong><span>{locale === "ar" ? "عند نشر منتجات حقيقية من متجر نشط ستظهر هنا تلقائيًا." : "Real products from active stores will appear here automatically once published."}</span></div><Link className="button button-dark" href={`/${locale}/contact`}>{locale === "ar" ? "ابدأ كأول تاجر" : "Start as a merchant"}<Arrow /></Link></div>}</section>
 
