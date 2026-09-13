@@ -49,14 +49,14 @@ export default function ProductPage() {
     void resolveStoreById(productStoreId);
   }, [productStoreId, store, productionMode, resolveStoreById]);
 
-  if (!product) return <PublicShell locale={locale}><main className="centered-page"><div className="empty-state"><h1>{locale === "ar" ? "المنتج غير موجود" : "Product not found"}</h1><Link className="button button-dark" href={`/${locale}/marketplace`}>{locale === "ar" ? "العودة للسوق" : "Back to marketplace"}</Link></div></main></PublicShell>;
-  if (!store) return <PublicShell locale={locale}><main className="centered-page"><div className="empty-state"><h1>{locale === "ar" ? "المتجر غير متاح" : "Store unavailable"}</h1><Link className="button button-dark" href={`/${locale}/marketplace`}>{locale === "ar" ? "العودة للسوق" : "Back to marketplace"}</Link></div></main></PublicShell>;
+  if (!product) return <PublicShell locale={locale} hideFooter><main className="centered-page"><div className="empty-state"><h1>{locale === "ar" ? "المنتج غير موجود" : "Product not found"}</h1><Link className="button button-dark" href={`/${locale}/marketplace`}>{locale === "ar" ? "العودة للسوق" : "Back to marketplace"}</Link></div></main></PublicShell>;
+  if (!store) return <PublicShell locale={locale} hideFooter><main className="centered-page"><div className="empty-state"><h1>{locale === "ar" ? "المتجر غير متاح" : "Store unavailable"}</h1><Link className="button button-dark" href={`/${locale}/marketplace`}>{locale === "ar" ? "العودة للسوق" : "Back to marketplace"}</Link></div></main></PublicShell>;
   const related = products.filter((item) => item.storeId === product.storeId && item.id !== product.id && item.status === "active").slice(0, 4);
   const fav = favoriteIds.includes(product.id);
   const gallery = (product.images?.length ? product.images : [product.image]).filter(Boolean);
   const productAlt = locale === "ar" ? product.name : product.nameEn;
 
-  return <PublicShell locale={locale}><section className="section container"><div className="product-detail"><div className="product-detail-media"><PersistentImage className="media-fill" src={gallery[activeImage] ?? product.image} alt={productAlt} optimized sizes="(max-width: 850px) 100vw, 50vw" />{gallery.length > 1 && <>
+  return <PublicShell locale={locale} hideFooter><section className="section container"><div className="product-detail"><div className="product-detail-media"><PersistentImage className="media-fill" src={gallery[activeImage] ?? product.image} alt={productAlt} optimized sizes="(max-width: 850px) 100vw, 50vw" />{gallery.length > 1 && <>
     <button type="button" className="gallery-nav prev" onClick={() => setActiveImage((index) => (index - 1 + gallery.length) % gallery.length)} aria-label={locale === "ar" ? "الصورة السابقة" : "Previous image"}><ChevronLeft /></button>
     <button type="button" className="gallery-nav next" onClick={() => setActiveImage((index) => (index + 1) % gallery.length)} aria-label={locale === "ar" ? "الصورة التالية" : "Next image"}><ChevronRight /></button>
     <div className="gallery-dots">{gallery.map((_, index) => <button type="button" key={index} className={index === activeImage ? "is-active" : ""} onClick={() => setActiveImage(index)} aria-label={`${locale === "ar" ? "صورة" : "Image"} ${index + 1}`} />)}</div>
