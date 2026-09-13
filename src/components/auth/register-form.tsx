@@ -58,7 +58,7 @@ export function RegisterForm() {
   }
 
   return <form className="auth-form wide" onSubmit={submit}>
-    <div className="auth-heading"><span className="eyebrow">JOIN TIJVORYA</span><h1>{locale === "ar" ? "أنشئ حسابك" : "Create your account"}</h1><p>{locale === "ar" ? "ابدأ كمتسوق أو افتح متجرًا قابلًا للبيع بالفيديو." : "Join as a shopper or open a store built for video commerce."}</p></div>
+    <div className="auth-heading"><span className="eyebrow">JOIN TIJVORYA</span><h1>{locale === "ar" ? "أنشئ حسابك" : "Create your account"}</h1><p>{locale === "ar" ? "أنشئ حسابك كمتسوق لتبدأ بتجربة أسهل وأسرع." : "Create your shopper account to start an easier, faster experience."}</p></div>
 
     <div className="role-picker"><button type="button" className={role === "customer" ? "is-active" : ""} onClick={() => setRole("customer")}><strong>{locale === "ar" ? "متسوق" : "Customer"}</strong><span>{locale === "ar" ? "تصفح، حفظ وشراء" : "Browse, save and shop"}</span></button>{platformSettings.merchantRegistrationEnabled && <button type="button" className={role === "merchant" ? "is-active" : ""} onClick={() => setRole("merchant")}><strong>{locale === "ar" ? "تاجر" : "Merchant"}</strong><span>{locale === "ar" ? "متجر، منتجات، ريلز وطلبات" : "Store, products, reels and orders"}</span></button>}</div>
     {!platformSettings.merchantRegistrationEnabled && <p className="field-hint">{locale === "ar" ? "تسجيل التجار الذاتي متوقف حاليًا." : "Merchant self-registration is currently closed."} <Link href={`/${locale}/contact`}>{locale === "ar" ? "تواصل معنا لفتح متجرك" : "Contact us to open your store"}</Link></p>}

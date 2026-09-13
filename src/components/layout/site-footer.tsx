@@ -18,7 +18,7 @@ export function SiteFooter({ locale }: { locale: "ar" | "en" }) {
           <Image src="/assets/tijvorya-mark-official.png" alt="" width={36} height={36} />
           <span>Tijvorya</span>
         </Link>
-        <p>{locale === "ar" ? "منصة تجارة اجتماعية متعددة اللغات تجمع المتجر والريلز القابلة للشراء والطلبات في تجربة واحدة." : "A multilingual social-commerce platform unifying storefronts, shoppable reels and orders in one experience."}</p>
+        <p>{locale === "ar" ? "منصة تجارة اجتماعية تهدف إلى تعزيز التجارة الإلكترونية في غزة وتنفيذ عملية الشراء إلكترونيًا وبسرعة وأمان." : "A social-commerce platform aiming to grow e-commerce in Gaza, making online purchases fast and secure."}</p>
         <span className="footer-trust"><ShieldCheck />{locale === "ar" ? "بنية صلاحيات ومراجعة محتوى للنسخة الإنتاجية" : "Production-ready permissions and content moderation foundation"}</span>
         <div className="footer-social">{socialLinks.map((social) => <a key={social.name} href={social.href} aria-label={social.name} target="_blank" rel="noopener noreferrer">{social.icon}</a>)}</div>
       </div>
