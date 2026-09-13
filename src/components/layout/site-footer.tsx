@@ -19,6 +19,7 @@ export function SiteFooter({ locale }: { locale: "ar" | "en" }) {
         </Link>
         <p>{locale === "ar" ? "منصة تجارة اجتماعية تهدف إلى تعزيز التجارة الإلكترونية في غزة وتنفيذ عملية الشراء إلكترونيًا وبسرعة وأمان." : "A social-commerce platform aiming to grow e-commerce in Gaza, making online purchases fast and secure."}</p>
         <div className="footer-social">{socialLinks.map((social) => <a key={social.name} href={social.href} aria-label={social.name} target="_blank" rel="noopener noreferrer">{social.icon}</a>)}</div>
+        <p className="footer-social-note">{locale === "ar" ? "تابعنا على جميع صفحاتنا على وسائل التواصل الاجتماعي للاستفادة من أحدث العروض والحملات." : "Follow us on all our social media pages to catch our latest offers and campaigns."}</p>
       </div>
       <div><strong>{locale === "ar" ? "اكتشف" : "Discover"}</strong><Link href={`/${locale}/marketplace`}>{locale === "ar" ? "السوق" : "Marketplace"}</Link><Link href={`/${locale}/reels`}>{locale === "ar" ? "الريلز" : "Reels"}</Link></div>
       <div><strong>{locale === "ar" ? "الشركة" : "Company"}</strong><Link href={`/${locale}/about`}>{locale === "ar" ? "من نحن" : "About"}</Link><Link href={`/${locale}/contact`}>{locale === "ar" ? "تواصل معنا" : "Contact"}</Link></div>
