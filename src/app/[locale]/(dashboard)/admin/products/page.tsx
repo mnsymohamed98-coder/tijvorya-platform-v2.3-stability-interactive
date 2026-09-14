@@ -1,6 +1,7 @@
 "use client";
 
-import { ArchiveRestore, ArchiveX } from "lucide-react";
+import { ArchiveRestore, ArchiveX, Search } from "lucide-react";
+import { useState } from "react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatusPill } from "@/components/ui/status-pill";
 import { PersistentImage } from "@/components/ui/persistent-media";
@@ -8,5 +9,13 @@ import { useApp } from "@/providers/app-provider";
 
 export default function Page() {
   const { locale, products, stores, saveProduct } = useApp();
-  return <><PageHeader eyebrow="CATALOG GOVERNANCE" title={locale === "ar" ? "إدارة المنتجات" : "Product management"} text={locale === "ar" ? "مراجعة كتالوج المنصة وأرشفة المنتجات المخالفة أو إعادتها للنشر." : "Review the platform catalog and archive or restore products."} /><article className="editor-card"><div className="table-wrap"><table><thead><tr><th>{locale === "ar" ? "المنتج" : "Product"}</th><th>{locale === "ar" ? "المتجر" : "Store"}</th><th>{locale === "ar" ? "السعر" : "Price"}</th><th>{locale === "ar" ? "المخزون" : "Stock"}</th><th>{locale === "ar" ? "الحالة" : "Status"}</th><th>{locale === "ar" ? "إجراء" : "Action"}</th></tr></thead><tbody>{products.map((product) => { const store = stores.find((item) => item.id === product.storeId); return <tr key={product.id}><td><div className="table-product"><PersistentImage className="table-media" src={product.image} alt="" optimized width={44} height={44} /><strong>{locale === "ar" ? product.name : product.nameEn}</strong></div></td><td>{store ? (locale === "ar" ? store.name : store.nameEn) : product.storeId}</td><td>{product.price}</td><td>{product.stock}</td><td><StatusPill status={product.status} locale={locale} /></td><td><button className="icon-button" onClick={() => saveProduct({ ...product, status: product.status === "archived" ? "active" : "archived" })}>{product.status === "archived" ? <ArchiveRestore /> : <ArchiveX />}</button></td></tr>; })}</tbody></table></div></article></>;
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredProducts = normalizedQuery
+    ? products.filter((product) => {
+        const store = stores.find((item) => item.id === product.storeId);
+        return [product.name, product.nameEn, store?.name, store?.nameEn].some((value) => value?.toLowerCase().includes(normalizedQuery));
+      })
+    : products;
+  return <><PageHeader eyebrow="CATALOG GOVERNANCE" title={locale === "ar" ? "إدارة المنتجات" : "Product management"} text={locale === "ar" ? "مراجعة كتالوج المنصة وأرشفة المنتجات المخالفة أو إعادتها للنشر." : "Review the platform catalog and archive or restore products."} actions={<label className="search-field"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={locale === "ar" ? "ابحث عن منتج أو متجر" : "Search products or stores"} aria-label={locale === "ar" ? "البحث في المنتجات" : "Search products"} /></label>} /><article className="editor-card"><div className="table-wrap"><table><thead><tr><th>{locale === "ar" ? "المنتج" : "Product"}</th><th>{locale === "ar" ? "المتجر" : "Store"}</th><th>{locale === "ar" ? "السعر" : "Price"}</th><th>{locale === "ar" ? "المخزون" : "Stock"}</th><th>{locale === "ar" ? "الحالة" : "Status"}</th><th>{locale === "ar" ? "إجراء" : "Action"}</th></tr></thead><tbody>{filteredProducts.map((product) => { const store = stores.find((item) => item.id === product.storeId); return <tr key={product.id}><td><div className="table-product"><PersistentImage className="table-media" src={product.image} alt="" optimized width={44} height={44} /><strong>{locale === "ar" ? product.name : product.nameEn}</strong></div></td><td>{store ? (locale === "ar" ? store.name : store.nameEn) : product.storeId}</td><td>{product.price}</td><td>{product.stock}</td><td><StatusPill status={product.status} locale={locale} /></td><td><button className="icon-button" onClick={() => saveProduct({ ...product, status: product.status === "archived" ? "active" : "archived" })}>{product.status === "archived" ? <ArchiveRestore /> : <ArchiveX />}</button></td></tr>; })}</tbody></table></div></article></>;
 }
