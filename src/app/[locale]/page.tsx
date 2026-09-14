@@ -140,6 +140,7 @@ export default function HomePage() {
 
     <section className="hero-section hero-global"><span className="hero-ambient hero-ambient-a" aria-hidden="true" /><span className="hero-ambient hero-ambient-b" aria-hidden="true" /><span className="hero-ambient hero-ambient-c" aria-hidden="true" /><div className="container hero-grid hero-grid-enhanced">
       <div className="hero-visual-mobile-photo"><Image src="/assets/hero-mobile-visual.jpg" alt="" width={1521} height={1034} priority sizes="100vw" /></div>
+      <div className="hero-visual-mobile-fade" aria-hidden="true" />
       <div className="hero-copy">
         <span className="hero-badge"><Zap /> {locale === "ar" ? "منصة تجارة اجتماعية تفاعلية وذكية" : "An interactive, smart social-commerce platform"}</span>
         <h1>{locale === "ar" ? "شاهد، اكتشف، واشترِ منتجاتك المفضلة — في مكان واحد." : "Watch, discover, and buy your favorite products — all in one place."}</h1>
