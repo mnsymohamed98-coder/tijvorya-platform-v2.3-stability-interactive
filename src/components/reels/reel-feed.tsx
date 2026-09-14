@@ -238,7 +238,8 @@ function ReelItem({
   if (!product || !store) return null;
   const caption = locale === "ar" ? reel.caption : reel.captionEn;
   const productName = locale === "ar" ? product.name : product.nameEn;
-  const merchantWhatsappHref = whatsappHref(store.whatsapp, locale === "ar" ? `مرحبًا، شفت الريلز عن ${productName} وحابب أسأل عنه.` : `Hi, I saw the reel about ${productName} and wanted to ask about it.`);
+  const reelUrl = typeof window !== "undefined" ? `${window.location.origin}/${locale}/reels?reel=${reel.id}` : "";
+  const merchantWhatsappHref = whatsappHref(store.whatsapp, locale === "ar" ? `مرحبًا، شفت الريلز عن ${productName} وحابب أسأل عنه.\n${reelUrl}` : `Hi, I saw the reel about ${productName} and wanted to ask about it.\n${reelUrl}`);
   function contactMerchant() {
     if (merchantWhatsappHref) window.open(merchantWhatsappHref, "_blank", "noopener,noreferrer");
     else onOpenComments();
