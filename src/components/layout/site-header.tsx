@@ -35,7 +35,9 @@ export function SiteHeader() {
     [`/${locale}/contact`, t.nav.contact],
   ] as const;
 
-  return <header className="site-header">
+  const isHome = pathname === `/${locale}`;
+
+  return <header className={`site-header ${isHome ? "home-header" : ""}`}>
     <div className="container header-inner">
       <Logo locale={locale} />
       <button
