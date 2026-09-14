@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CheckCircle2, Copy, LoaderCircle, ShieldCheck, UserPlus } from "lucide-react";
+import { Ban, CheckCircle2, Copy, LoaderCircle, Search, ShieldCheck, UserPlus } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { adminRoleLabel } from "@/lib/admin-permissions";
@@ -16,6 +16,12 @@ export default function Page() {
   const { locale, currentUser, users, setUserRole, setAdminRole, setUserStatus, createMerchantAccount } = useApp();
   const canManageRoles = currentUser?.adminRole === "super_admin";
   const canManageStatus = canManageRoles || currentUser?.adminRole === "customer_support";
+
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredUsers = normalizedQuery
+    ? users.filter((user) => [user.fullName, user.email].some((value) => value?.toLowerCase().includes(normalizedQuery)))
+    : users;
 
   const [newAccountRole, setNewAccountRole] = useState<"merchant" | "influencer">("merchant");
   const [creating, setCreating] = useState(false);
@@ -59,7 +65,7 @@ export default function Page() {
   }
 
   return <>
-    <PageHeader eyebrow="IDENTITIES & ACCESS" title={locale === "ar" ? "المستخدمون والصلاحيات" : "Users and permissions"} text={locale === "ar" ? "إدارة حسابات العملاء والتجار، وتوزيع صلاحيات الموظفين الإداريين وفق مبدأ أقل صلاحية لازمة." : "Manage customer and merchant accounts and assign staff access using least-privilege controls."} />
+    <PageHeader eyebrow="IDENTITIES & ACCESS" title={locale === "ar" ? "المستخدمون والصلاحيات" : "Users and permissions"} text={locale === "ar" ? "إدارة حسابات العملاء والتجار، وتوزيع صلاحيات الموظفين الإداريين وفق مبدأ أقل صلاحية لازمة." : "Manage customer and merchant accounts and assign staff access using least-privilege controls."} actions={<label className="search-field"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={locale === "ar" ? "ابحث بالاسم أو البريد" : "Search by name or email"} aria-label={locale === "ar" ? "البحث في المستخدمين" : "Search users"} /></label>} />
 
     {canManageRoles && <section className="editor-card">
       <div className="card-head"><div><span className="eyebrow">PROVISION ACCOUNT</span><h3>{locale === "ar" ? "إنشاء حساب تاجر" : "Create a merchant account"}</h3></div><UserPlus /></div>
@@ -81,7 +87,7 @@ export default function Page() {
       </div>}
     </section>}
 
-    <section className="editor-card"><div className="table-wrap"><table><thead><tr><th>{locale === "ar" ? "المستخدم" : "User"}</th><th>{locale === "ar" ? "البريد" : "Email"}</th><th>{locale === "ar" ? "الدور" : "Role"}</th><th>{locale === "ar" ? "الصلاحية الإدارية" : "Admin permission"}</th><th>{locale === "ar" ? "الحالة" : "Status"}</th><th>{locale === "ar" ? "الإجراء" : "Action"}</th></tr></thead><tbody>{users.map((user) => <tr key={user.id}>
+    <section className="editor-card"><div className="table-wrap"><table><thead><tr><th>{locale === "ar" ? "المستخدم" : "User"}</th><th>{locale === "ar" ? "البريد" : "Email"}</th><th>{locale === "ar" ? "الدور" : "Role"}</th><th>{locale === "ar" ? "الصلاحية الإدارية" : "Admin permission"}</th><th>{locale === "ar" ? "الحالة" : "Status"}</th><th>{locale === "ar" ? "الإجراء" : "Action"}</th></tr></thead><tbody>{filteredUsers.map((user) => <tr key={user.id}>
       <td><div className="user-cell"><span className="avatar">{user.avatar}</span><strong>{user.fullName}</strong></div></td>
       <td>{user.email}</td>
       <td>{user.role === "admin" ? <span className="admin-role-pill"><ShieldCheck /> admin</span> : canManageRoles ? <select className="admin-inline-select" value={user.role} onChange={(event) => setUserRole(user.id, event.target.value as UserRole)}>{roles.map((role) => <option key={role} value={role}>{role}</option>)}</select> : <span>{user.role}</span>}</td>
